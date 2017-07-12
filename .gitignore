@@ -1,0 +1,17 @@
+# eclipse conf file
+.settings
+.classpath
+.project
+.manager
+.scala_dependencies
+.cache-main
+.cache-tests
+
+
+# idea
+.idea
+
+# building
+target
+project/project
+project/target

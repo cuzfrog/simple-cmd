@@ -30,16 +30,11 @@ object CommonSettings {
       "junit" % "junit" % "4.12" % "test",
       "com.novocode" % "junit-interface" % "0.11" % "test->default"
     ),
-    libraryDependencies ++= loggingDependencies,
+    //libraryDependencies ++= loggingDependencies,
     logBuffered in Test := false,
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-v", "-q", "-a"),
     parallelExecution in Test := false,
-    licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
-    // a 'compileonly' configuation
-    ivyConfigurations += config("compileonly").hide,
-    // appending everything from 'compileonly' to unmanagedClasspath
-    unmanagedClasspath in Compile ++=
-      update.value.select(configurationFilter("compileonly"))
+    licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
   )
 
   val publicationSettings = Seq(

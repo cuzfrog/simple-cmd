@@ -19,7 +19,7 @@ private object ScmdDefMacroImpl {
     val parseMethod =
       q"""
          /** Parse arguments. */
-         def parse(args: Array[String]): Unit = { println(args) }
+         def parse(args: Array[String]): Unit = { args.foreach(println) }
         """
     val moreStats = stats :+ parseMethod
 

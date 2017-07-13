@@ -45,6 +45,7 @@ private object ScmdDefMacroImpl {
     }
 
     argDefs.foreach(println)
+    println(ArgBuilder.buildArgGraphByIdx(argDefs))
 
     val addMethods = Seq(
       //q"val argDefs = _root_.scala.collection.Seq(..$argDefs)",

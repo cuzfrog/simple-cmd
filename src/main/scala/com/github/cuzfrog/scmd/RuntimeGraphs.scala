@@ -1,6 +1,4 @@
-package com.github.cuzfrog.scmd.runtime
-
-import com.github.cuzfrog.scmd.{Argument, Command, OptionArg, Parameter}
+package com.github.cuzfrog.scmd
 
 import scala.reflect.ClassTag
 

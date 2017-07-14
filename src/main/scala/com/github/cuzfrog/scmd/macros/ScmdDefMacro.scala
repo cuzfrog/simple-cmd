@@ -13,14 +13,9 @@ private[scmd] object ScmdDefMacro {
 
     val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
 
-    val ss: List[Term] = List(q"1", q"2")
-    val seq = q"Seq(..$ss)"
+    val argGraph = GraphBuilder.buildArgGraphByIdx(argDefs).defnRuntimeTerm
 
-    println(seq.structure)
-    println(seq.syntax)
-
-    //argDefs.foreach(println)
-    //    println(ArgBuilder.buildArgGraphByIdx(argDefs))
+    println(argGraph.syntax)
 
     val addMethods = Seq(
       //q"val argDefs = _root_.scala.collection.Seq(..$argDefs)",

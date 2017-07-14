@@ -2,13 +2,13 @@ package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.Constents._
 import com.github.cuzfrog.scmd.{Argument, Command, Defaults, Parameter}
-
+import scala.collection.immutable
 import scala.meta._
 
 
 private final case class RawArg(arg: Argument[_], idx: Int, tpe: Type)
 private object RawArg {
-  def collectRawArg(stats: Seq[Stat]): Seq[RawArg] = {
+  def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
     stats.zipWithIndex collect {
       case (q"val $cmd: $_ = cmdDef($dscr)", idx) =>
         val dscrContent = dscr match {

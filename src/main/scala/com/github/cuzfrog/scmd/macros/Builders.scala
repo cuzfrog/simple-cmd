@@ -1,14 +1,15 @@
 package com.github.cuzfrog.scmd.macros
 
 import scala.annotation.tailrec
+import scala.collection.immutable
 import scala.meta._
 
 
 private object GraphBuilder {
   @inline
-  def buildArgGraphByIdx(argDefs: Seq[TermArg]): TermArgGraph = {
+  def buildArgGraphByIdx(argDefs: immutable.Seq[TermArg]): TermArgGraph = {
     @tailrec
-    def recAdd(builder: TermNodeBuilder, args: Seq[TermArg]): TermNodeBuilder = {
+    def recAdd(builder: TermNodeBuilder, args: immutable.Seq[TermArg]): TermNodeBuilder = {
       if (args.isEmpty) builder
       else recAdd(builder.add(args.head), args.tail)
     }
@@ -31,8 +32,7 @@ private object GraphBuilder {
   }
 
   def defnTermGraph(rawArgGraph: TermArgGraph): Defn.Val = {
-
-
+    val topParams= rawArgGraph.topParams
 
     def recReifyCommand(rawCmdNode: TermCmdNode) = {
       rawCmdNode.children match {
@@ -42,8 +42,6 @@ private object GraphBuilder {
     }
 
     val cmd = rawArgGraph.commands.head.cmd
-
-
     q"val argGraph = 1"
   }
 }
@@ -57,9 +55,9 @@ private object NodeBuilder {
 
 private final class TermNodeBuilder(cmd: TermCmd, lastSibling: Option[TermNodeBuilder]) {
 
-  private[this] var params: Seq[TermParam] = Seq.empty
-  private[this] var opts: Seq[TermOpt] = Seq.empty
-  private[this] var children: Seq[TermCmdNode] = Seq.empty
+  private[this] var params: immutable.Seq[TermParam] = immutable.Seq.empty
+  private[this] var opts: immutable.Seq[TermOpt] = immutable.Seq.empty
+  private[this] var children: immutable.Seq[TermCmdNode] = immutable.Seq.empty
 
   def add(arg: TermArg): TermNodeBuilder = arg match {
     case cmd: TermCmd => new TermNodeBuilder(cmd, Option(this))
@@ -76,11 +74,11 @@ private final class TermNodeBuilder(cmd: TermCmd, lastSibling: Option[TermNodeBu
   private def build: TermCmdNode = TermCmdNode(cmd, params, opts, children)
 
   @tailrec
-  private def lastSeal: Seq[TermCmdNode] = lastSibling match {
-    case None => Seq(this.build)
+  private def lastSeal: immutable.Seq[TermCmdNode] = lastSibling match {
+    case None => immutable.Seq(this.build)
     case Some(last) => last.lastSeal
   }
 
   @inline
-  def seal: Seq[TermCmdNode] = lastSeal :+ this.build
+  def seal: immutable.Seq[TermCmdNode] = lastSeal :+ this.build
 }

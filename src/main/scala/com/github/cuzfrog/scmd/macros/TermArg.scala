@@ -36,8 +36,28 @@ private object TermArg {
         TermOpt(term, rawArg.idx, rawArg.tpe)
     }
   }
+
+
 }
 
 private final case class TermCmd(arg: Term, idx: Int) extends TermArg {val tpe = TYPE_NOTHING}
 private final case class TermParam(arg: Term, idx: Int, tpe: Type) extends TermArg
 private final case class TermOpt(arg: Term, idx: Int, tpe: Type) extends TermArg
+
+private object TermParam {
+  implicit val definable: Definable[TermParam] = (a: TermParam) => {
+    q"""new ParamNode[${a.tpe}]{
+            val entity:Parameter[${a.tpe}] = ${a.arg}
+            val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
+        }"""
+  }
+}
+
+private object TermOpt {
+  implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
+    q"""new OptNode[${a.tpe}]{
+            val entity:Parameter[${a.tpe}] = ${a.arg}
+            val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
+        }"""
+  }
+}

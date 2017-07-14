@@ -14,9 +14,9 @@ private[scmd] object ScmdDefMacro {
     val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
 
 
-    //reifiedArgs.foreach(t => println(t.structure))
+    argDefs.foreach(t => println(t.arg.structure))
 
-    //    argDefs.foreach(println)
+    //argDefs.foreach(println)
     //    println(ArgBuilder.buildArgGraphByIdx(argDefs))
 
     val addMethods = Seq(

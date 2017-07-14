@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{Argument, Command, OptionArg, Parameter, RawArg, RawArgGraph, RawCmdNode}
+import com.github.cuzfrog.scmd.{Argument, Command, OptionArg, Parameter}
 
 import scala.annotation.tailrec
 import scala.meta._

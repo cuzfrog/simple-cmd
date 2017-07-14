@@ -6,7 +6,7 @@ import com.github.cuzfrog.scmd._
 object Tmp {
 
   def main(args: Array[String]): Unit = {
-    println(CatArgDef.argGraph)
+    CatArgDef.parse(args)
   }
 }
 

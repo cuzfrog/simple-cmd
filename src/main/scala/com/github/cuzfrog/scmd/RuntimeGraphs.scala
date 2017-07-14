@@ -21,3 +21,5 @@ trait OptNode[T] extends Node[OptionArg[T], T]
 final case class ArgGraph(commands: Seq[CmdNode],
                                   topParams: Seq[ParamNode[_]],
                                   topOpts: Seq[OptNode[_]])
+
+//todo: find out is it able to new private class.

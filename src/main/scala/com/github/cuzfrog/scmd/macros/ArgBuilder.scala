@@ -1,38 +1,42 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{Argument, Command, OptionArg, Parameter}
-
 import scala.annotation.tailrec
 import scala.meta._
 
 
 private object ArgBuilder {
-  @inline def buildArgGraphByIdx(argDefs: Seq[RawArg]): RawArgGraph = {
-    val topLevelOpts = argDefs.takeWhile(_.arg.isInstanceOf[OptionArg[_]])
-    val tail = argDefs.drop(topLevelOpts.length)
-    if (tail.isEmpty) abort("Not enough args defined.")
-    val (cmd1 :: rest) = tail
-    if (!cmd1.arg.isInstanceOf[Command]) abort("Only options can be defined before command.")
-    val builder = NodeBuilder.newBuilder(cmd1.arg.asInstanceOf[Command])
-
+  @inline
+  def buildArgGraphByIdx(argDefs: Seq[TermArg]): TermArgGraph = {
     @tailrec
-    @inline
-    def recAdd(builder: NodeBuilder, args: Seq[RawArg]): NodeBuilder = {
+    def recAdd(builder: TermNodeBuilder, args: Seq[TermArg]): TermNodeBuilder = {
       if (args.isEmpty) builder
-      else {
-        val head = args.head
-        recAdd(builder.add(head.arg, head.tpe), args.tail)
-      }
+      else recAdd(builder.add(args.head), args.tail)
     }
 
-    val commands = recAdd(builder, rest).seal
-    RawArgGraph(commands, topLevelOpts.map(r => (r.arg.asInstanceOf[OptionArg[_]], r.tpe)))
+    argDefs.collectFirst { case cmd: TermCmd => cmd } match {
+      case None =>
+        val params = argDefs.collect { case param: TermParam => param }
+        val opts = argDefs.collect { case opt: TermOpt => opt }
+        TermArgGraph(Nil, params, opts)
+      case Some(cmd1) =>
+        val topLevelOpts = argDefs.filter(_.idx < cmd1.idx).collect {
+          case opt: TermOpt => opt
+          case param: TermParam => abort("Parameters cannot be defined before first command.")
+        }
+        val tail = argDefs.filter(_.idx > cmd1.idx)
+        val builder = NodeBuilder.newTermBuilder(cmd1.asInstanceOf[TermCmd])
+        val commands = recAdd(builder, tail).seal
+        TermArgGraph(commands, Nil, topLevelOpts)
+    }
   }
 
-  private def reifyRawGraph(rawArgGraph: RawArgGraph):Defn.Val={
+  private def reifyTermGraph(rawArgGraph: TermArgGraph): Defn.Val = {
 
-    def recReifyCommand(rawCmdNode: RawCmdNode)={
-      rawCmdNode.cmd
+    def recReifyCommand(rawCmdNode: TermCmdNode) = {
+      rawCmdNode.children match {
+        case Nil =>
+        case children =>
+      }
     }
 
     val cmd = rawArgGraph.commands.head.cmd
@@ -44,35 +48,37 @@ private object ArgBuilder {
 
 
 private object NodeBuilder {
-  def newBuilder(cmd: Command): NodeBuilder = {
-    new NodeBuilder(cmd, None)
+  def newTermBuilder(cmd: TermCmd): TermNodeBuilder = {
+    new TermNodeBuilder(cmd, None)
   }
 }
 
-private final class NodeBuilder(cmd: Command, lastSibling: Option[NodeBuilder]) {
+private final class TermNodeBuilder(cmd: TermCmd, lastSibling: Option[TermNodeBuilder]) {
 
-  private var params: Seq[(Parameter[_], Type)] = Seq.empty
-  private var opts: Seq[(OptionArg[_], Type)] = Seq.empty
-  private var children: Seq[RawCmdNode] = Seq.empty
+  private[this] var params: Seq[TermParam] = Seq.empty
+  private[this] var opts: Seq[TermOpt] = Seq.empty
+  private[this] var children: Seq[TermCmdNode] = Seq.empty
 
-  def add(arg: Argument[_], tpe: Type): NodeBuilder = arg match {
-    case cmd: Command => new NodeBuilder(cmd, Option(this))
-    case param: Parameter[_] => this.params :+= (param, tpe); this
-    case opt: OptionArg[_] => this.opts :+= (opt, tpe); this
+  def add(arg: TermArg): TermNodeBuilder = arg match {
+    case cmd: TermCmd => new TermNodeBuilder(cmd, Option(this))
+    case param: TermParam => this.params :+= param; this
+    case opt: TermOpt => this.opts :+= opt; this
   }
 
-  def addChild(node: RawCmdNode): this.type = {
+  def addChild(node: TermCmdNode): this.type = {
     this.children :+= node
     this
   }
 
-  private def build: RawCmdNode = RawCmdNode(cmd, params, opts, children)
+  //non-defensive
+  private def build: TermCmdNode = TermCmdNode(cmd, params, opts, children)
 
   @tailrec
-  private def lastSeal: Seq[RawCmdNode] = lastSibling match {
+  private def lastSeal: Seq[TermCmdNode] = lastSibling match {
     case None => Seq(this.build)
     case Some(last) => last.lastSeal
   }
 
-  def seal: Seq[RawCmdNode] = lastSeal :+ this.build
+  @inline
+  def seal: Seq[TermCmdNode] = lastSeal :+ this.build
 }

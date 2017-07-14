@@ -4,7 +4,6 @@ import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
 
-
 private object GraphBuilder {
   @inline
   def buildArgGraphByIdx(argDefs: immutable.Seq[TermArg]): TermArgGraph = {
@@ -25,13 +24,13 @@ private object GraphBuilder {
           case param: TermParam => abort("Parameters cannot be defined before first command.")
         }
         val tail = argDefs.filter(_.idx > cmd1.idx)
-        val builder = NodeBuilder.newTermBuilder(cmd1.asInstanceOf[TermCmd])
+        val builder = NodeBuilder.newTermBuilder(cmd1)
+
         val commands = recAdd(builder, tail).seal
         TermArgGraph(commands, Nil, topLevelOpts)
     }
   }
 }
-
 
 private object NodeBuilder {
   def newTermBuilder(cmd: TermCmd): TermNodeBuilder = {
@@ -61,7 +60,7 @@ private final class TermNodeBuilder(cmd: TermCmd, lastSibling: Option[TermNodeBu
 
   @tailrec
   private def lastSeal: immutable.Seq[TermCmdNode] = lastSibling match {
-    case None => immutable.Seq(this.build)
+    case None => immutable.Seq.empty
     case Some(last) => last.lastSeal
   }
 

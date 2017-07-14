@@ -15,7 +15,7 @@ private trait TermArg {
 }
 private object TermArg {
   def raw2termArg(rawArg: RawArg): TermArg = {
-    val name = Term.Name(rawArg.arg.name)
+    val name = Lit.String(rawArg.arg.name)
     val description = rawArg.arg.description match {
       case Some(dscr) => q"Option(${Lit.String(dscr)})"
       case None => q"None"
@@ -46,7 +46,7 @@ private final case class TermOpt(arg: Term, idx: Int, tpe: Type) extends TermArg
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    q"""new ParamNode[${a.tpe}]{
+    q"""new com.github.cuzfrog.scmd.ParamNode[${a.tpe}]{
             val entity:Parameter[${a.tpe}] = ${a.arg}
             val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
         }"""
@@ -55,7 +55,7 @@ private object TermParam {
 
 private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
-    q"""new OptNode[${a.tpe}]{
+    q"""new com.github.cuzfrog.scmd.OptNode[${a.tpe}]{
             val entity:Parameter[${a.tpe}] = ${a.arg}
             val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
         }"""

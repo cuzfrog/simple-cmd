@@ -27,7 +27,7 @@ private object TermCmdNode {
       case cdren => q"val children = $TERM_immutable.Seq(..${cdren.map(recDefine)})"
     }
 
-    q"""new CmdNode{
+    q"""new com.github.cuzfrog.scmd.CmdNode{
           $entityVal
           $paramsVal
           $optsVal
@@ -41,7 +41,7 @@ private object TermArgGraph {
     val topParams = a.topParams.map(_.defnRuntimeTerm)
     val topOpts = a.topOpts.map(_.defnRuntimeTerm)
     val commands = a.commands.map(_.defnRuntimeTerm)
-    q"""ArgGraph(
+    q"""com.github.cuzfrog.scmd.ArgGraph(
           commands = $TERM_immutable.Seq(..$commands),
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts)

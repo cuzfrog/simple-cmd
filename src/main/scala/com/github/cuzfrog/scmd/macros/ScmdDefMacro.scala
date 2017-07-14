@@ -15,15 +15,16 @@ private[scmd] object ScmdDefMacro {
 
     val argGraph = GraphBuilder.buildArgGraphByIdx(argDefs).defnRuntimeTerm
 
-    println(argGraph.syntax)
+    //println(argGraph.syntax)
 
+    val importScmd = q"import com.github.cuzfrog.scmd._"
     val addMethods = Seq(
-      //q"val argDefs = _root_.scala.collection.Seq(..$argDefs)",
+      q"val argGraph: com.github.cuzfrog.scmd.ArgGraph = $argGraph",
       q"def parse(args: Array[String]): Unit = { args.foreach(println) }"
     )
-    val moreStats = stats ++ addMethods
+    val moreStats =(importScmd +: stats) ++ addMethods
 
-    abort("dev...")
+    //abort("dev...")
 
     q"object $name { ..$moreStats }"
   }

@@ -12,6 +12,6 @@ object Tmp {
 
 @ScmdDef
 object CatArgDef {
-  val cat = cmdDef("Concatenate contents of files.")
+  val cat = cmdDef(description = "Concatenate contents of files.")
   val files = paraDef[Seq[Path]](description = "Paths of files to concatenate.", isMandatory = true)
 }

@@ -6,18 +6,15 @@ import scala.meta._
 import scala.reflect.ClassTag
 import scala.collection.mutable
 
-/**
-  * Created by cuz on 7/13/17.
-  */
-private object ArgBuilder {
-  @inline def buildArgGraphByIdx(argDefs: Seq[RawArg]): ArgGraph = {
 
+private object ArgBuilder {
+  @inline def buildArgGraphByIdx(argDefs: Seq[RawArg]): RawArgGraph = {
     val topLevelOpts = argDefs.takeWhile(_.arg.isInstanceOf[OptionArg[_]])
     val tail = argDefs.drop(topLevelOpts.length)
     if (tail.isEmpty) abort("Not enough args defined.")
     val (cmd1 :: rest) = tail
     if (!cmd1.arg.isInstanceOf[Command]) abort("Only options can be defined before command.")
-    val builder = CmdNode.newBuilder(cmd1.arg.asInstanceOf[Command])
+    val builder = NodeBuilder.newBuilder(cmd1.arg.asInstanceOf[Command])
 
     @tailrec
     @inline
@@ -30,18 +27,24 @@ private object ArgBuilder {
     }
 
     val commands = recAdd(builder, rest).seal
-    ArgGraph(commands, topLevelOpts.map(r => (r.arg.asInstanceOf[OptionArg[_]], r.tpe)))
+    RawArgGraph(commands, topLevelOpts.map(r => (r.arg.asInstanceOf[OptionArg[_]], r.tpe)))
+  }
+
+  private def reifyRawGraph(rawArgGraph: RawArgGraph):Defn.Val={
+
+    def recReifyCommand(rawCmdNode: RawCmdNode)={
+      rawCmdNode.cmd
+    }
+
+    val cmd = rawArgGraph.commands.head.cmd
+
+
+    q"val argGraph = 1"
   }
 }
 
-private final case class RawArg(arg: Argument[_], idx: Int, tpe: Type)
 
-private final case class CmdNode(cmd: Command,
-                                 params: Seq[(Parameter[_], Type)],
-                                 opts: Seq[(OptionArg[_], Type)],
-                                 children: Seq[CmdNode])
-
-private object CmdNode {
+private object NodeBuilder {
   def newBuilder(cmd: Command): NodeBuilder = {
     new NodeBuilder(cmd, None)
   }
@@ -49,10 +52,9 @@ private object CmdNode {
 
 private final class NodeBuilder(cmd: Command, lastSibling: Option[NodeBuilder]) {
 
-
   private var params: Seq[(Parameter[_], Type)] = Seq.empty
   private var opts: Seq[(OptionArg[_], Type)] = Seq.empty
-  private var children: Seq[CmdNode] = Seq.empty
+  private var children: Seq[RawCmdNode] = Seq.empty
 
   def add(arg: Argument[_], tpe: Type): NodeBuilder = arg match {
     case cmd: Command => new NodeBuilder(cmd, Option(this))
@@ -60,22 +62,18 @@ private final class NodeBuilder(cmd: Command, lastSibling: Option[NodeBuilder]) 
     case opt: OptionArg[_] => this.opts :+= (opt, tpe); this
   }
 
-  def addChild(node: CmdNode): this.type = {
+  def addChild(node: RawCmdNode): this.type = {
     this.children :+= node
     this
   }
 
-  private def build: CmdNode = CmdNode(cmd, params, opts, children)
+  private def build: RawCmdNode = RawCmdNode(cmd, params, opts, children)
 
   @tailrec
-  private def lastSeal: Seq[CmdNode] = lastSibling match {
+  private def lastSeal: Seq[RawCmdNode] = lastSibling match {
     case None => Seq(this.build)
     case Some(last) => last.lastSeal
   }
 
-  def seal: Seq[CmdNode] = lastSeal :+ this.build
-
+  def seal: Seq[RawCmdNode] = lastSeal :+ this.build
 }
-
-private final case class ArgGraph(commands: Seq[CmdNode],
-                                  opts: Seq[(OptionArg[_], Type)])

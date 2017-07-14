@@ -1,5 +1,4 @@
-package com.github.cuzfrog.scmd
-
+package com.github.cuzfrog.scmd.runtime
 
 private final case class ProgramInfo(name: String,
                                      shortDescription: Option[String] = None,

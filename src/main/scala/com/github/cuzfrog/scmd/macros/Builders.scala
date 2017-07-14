@@ -4,7 +4,7 @@ import scala.annotation.tailrec
 import scala.meta._
 
 
-private object ArgBuilder {
+private object GraphBuilder {
   @inline
   def buildArgGraphByIdx(argDefs: Seq[TermArg]): TermArgGraph = {
     @tailrec
@@ -30,7 +30,9 @@ private object ArgBuilder {
     }
   }
 
-  private def reifyTermGraph(rawArgGraph: TermArgGraph): Defn.Val = {
+  def defnTermGraph(rawArgGraph: TermArgGraph): Defn.Val = {
+
+
 
     def recReifyCommand(rawCmdNode: TermCmdNode) = {
       rawCmdNode.children match {

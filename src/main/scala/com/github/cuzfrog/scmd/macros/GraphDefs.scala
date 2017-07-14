@@ -1,4 +1,6 @@
-package com.github.cuzfrog.scmd
+package com.github.cuzfrog.scmd.macros
+
+import com.github.cuzfrog.scmd.{Argument, Command, OptionArg, Parameter}
 
 import scala.meta.{Term, Type}
 import scala.reflect.ClassTag

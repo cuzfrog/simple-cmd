@@ -1,21 +1,13 @@
-package com.github.cuzfrog.scmd
+package com.github.cuzfrog.scmd.macros
 
-import scala.collection.immutable
+
+import com.github.cuzfrog.scmd.{Command, Defaults, OptionArg, Parameter}
+
 import scala.meta._
-import scala.reflect.ClassTag
+import scala.collection.immutable
 
-class ScmdDef extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Any): Any = meta {
-    defn match {
-      case q"..$mods object $name { ..$stats }" =>
-        ScmdDefMacroImpl.expand(name, stats)
-      case _ =>
-        abort("@ScmdDef must annotate an object.")
-    }
-  }
-}
 
-private object ScmdDefMacroImpl {
+private[scmd] object ScmdDefMacro {
   private val TERM_NAME = Term.Name("name")
   private val TERM_DESCRIPTION = Term.Name("description")
   private val TERM_IS_MANDATORY = Term.Name("isMandatory")
@@ -77,6 +69,16 @@ private object ScmdDefMacroImpl {
     val (term, argTpe) = rawArg.arg match {
       case _: Command =>
         (q"Command($TERM_NAME = $name,$TERM_DESCRIPTION = $desciption)", ArgType.Cmd)
+      case param: Parameter[_] =>
+        val isMandatory = Lit.Boolean(param.isMandatory)
+        val term =
+          q"""Parameter[${rawArg.tpe}]($TERM_NAME = $name,
+                                     $TERM_DESCRIPTION = $desciption,
+                                     $TERM_IS_MANDATORY = $isMandatory)"""
+        (term, ArgType.Param)
+      case _: OptionArg[_] =>
+        val term = q"OptionArg[${rawArg.tpe}]($TERM_NAME = $name,$TERM_DESCRIPTION = $desciption)"
+        (term, ArgType.Opt)
     }
     TermArg(term, argTpe, rawArg.idx, rawArg.tpe)
   }

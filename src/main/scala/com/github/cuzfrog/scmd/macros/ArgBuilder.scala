@@ -1,10 +1,9 @@
-package com.github.cuzfrog.scmd
+package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.{Argument, Command, OptionArg, Parameter, RawArg, RawArgGraph, RawCmdNode}
 
 import scala.annotation.tailrec
 import scala.meta._
-import scala.reflect.ClassTag
-import scala.collection.mutable
 
 
 private object ArgBuilder {

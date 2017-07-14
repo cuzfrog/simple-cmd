@@ -13,8 +13,11 @@ private[scmd] object ScmdDefMacro {
 
     val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
 
+    val ss: List[Term] = List(q"1", q"2")
+    val seq = q"Seq(..$ss)"
 
-    argDefs.foreach(t => println(t.arg.structure))
+    println(seq.structure)
+    println(seq.syntax)
 
     //argDefs.foreach(println)
     //    println(ArgBuilder.buildArgGraphByIdx(argDefs))

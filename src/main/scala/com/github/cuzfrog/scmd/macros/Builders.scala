@@ -32,7 +32,8 @@ private object GraphBuilder {
   }
 
   def defnTermGraph(rawArgGraph: TermArgGraph): Defn.Val = {
-    val topParams= rawArgGraph.topParams
+    val topParams = rawArgGraph.topParams.map(_.defnRuntimeTerm)
+    val topOpts
 
     def recReifyCommand(rawCmdNode: TermCmdNode) = {
       rawCmdNode.children match {

@@ -18,8 +18,8 @@ trait CmdNode extends Node[Command, Nothing] {
 trait ParamNode[T] extends Node[Parameter[T], T]
 trait OptNode[T] extends Node[OptionArg[T], T]
 
-final case class ArgGraph(commands: Seq[CmdNode],
-                                  topParams: Seq[ParamNode[_]],
-                                  topOpts: Seq[OptNode[_]])
+final case class ArgTree(commands: Seq[CmdNode],
+                         topParams: Seq[ParamNode[_]],
+                         topOpts: Seq[OptNode[_]])
 
 //todo: find out is it able to new private class.

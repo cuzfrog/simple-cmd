@@ -11,7 +11,7 @@ private final case class TermCmdNode(cmd: TermCmd,
                                      opts: immutable.Seq[TermOpt],
                                      children: immutable.Seq[TermCmdNode])
 
-private final case class TermArgGraph(commands: immutable.Seq[TermCmdNode],
+private final case class TermArgTree(commands: immutable.Seq[TermCmdNode],
                                       topParams: immutable.Seq[TermParam],
                                       topOpts: immutable.Seq[TermOpt])
 
@@ -36,12 +36,12 @@ private object TermCmdNode {
   }
 }
 
-private object TermArgGraph {
-  implicit val definable: Definable[TermArgGraph] = (a: TermArgGraph) => {
+private object TermArgTree {
+  implicit val definable: Definable[TermArgTree] = (a: TermArgTree) => {
     val topParams = a.topParams.map(_.defnRuntimeTerm)
     val topOpts = a.topOpts.map(_.defnRuntimeTerm)
     val commands = a.commands.map(_.defnRuntimeTerm)
-    q"""com.github.cuzfrog.scmd.ArgGraph(
+    q"""com.github.cuzfrog.scmd.ArgTree(
           commands = $TERM_immutable.Seq(..$commands),
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts)

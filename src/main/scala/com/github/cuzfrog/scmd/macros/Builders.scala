@@ -4,9 +4,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
 
-private object GraphBuilder {
+private object TreeBuilder {
   @inline
-  def buildArgGraphByIdx(argDefs: immutable.Seq[TermArg]): TermArgGraph = {
+  def buildArgGraphByIdx(argDefs: immutable.Seq[TermArg]): TermArgTree = {
     @tailrec
     def recAdd(builder: TermNodeBuilder, args: immutable.Seq[TermArg]): TermNodeBuilder = {
       if (args.isEmpty) builder
@@ -17,7 +17,7 @@ private object GraphBuilder {
       case None =>
         val params = argDefs.collect { case param: TermParam => param }
         val opts = argDefs.collect { case opt: TermOpt => opt }
-        TermArgGraph(Nil, params, opts)
+        TermArgTree(Nil, params, opts)
       case Some(cmd1) =>
         val topLevelOpts = argDefs.filter(_.idx < cmd1.idx).collect {
           case opt: TermOpt => opt
@@ -27,7 +27,7 @@ private object GraphBuilder {
         val builder = NodeBuilder.newTermBuilder(cmd1)
 
         val commands = recAdd(builder, tail).seal
-        TermArgGraph(commands, Nil, topLevelOpts)
+        TermArgTree(commands, Nil, topLevelOpts)
     }
   }
 }

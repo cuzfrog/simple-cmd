@@ -12,7 +12,7 @@ private[scmd] object ScmdDefMacro {
   def expand(name: Term.Name, stats: immutable.Seq[Stat]): Defn.Object = {
 
     val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
-    val argGraph = GraphBuilder.buildArgGraphByIdx(argDefs).defnRuntimeTerm
+    val argTree = TreeBuilder.buildArgGraphByIdx(argDefs).defnRuntimeTerm
 
     //println(argGraph.syntax)
 
@@ -20,7 +20,7 @@ private[scmd] object ScmdDefMacro {
       q"import com.github.cuzfrog.scmd._"
     )
     val addMethods = List(
-      q"private val argGraph: com.github.cuzfrog.scmd.ArgGraph = $argGraph",
+      q"private val argGraph: com.github.cuzfrog.scmd.ArgTree = $argTree",
       q"def parse(args: Array[String]): Unit = { args.foreach(println) }"
     )
     val moreStats = headers ++ stats ++ addMethods

@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.macros.Constents._
+import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.{Command, OptionArg, Parameter}
 
 import scala.meta._
@@ -31,8 +31,15 @@ private object TermArg {
                                      $TERM_DESCRIPTION = $description,
                                      $TERM_IS_MANDATORY = $isMandatory)"""
         TermParam(term, rawArg.idx, rawArg.tpe)
-      case _: OptionArg[_] =>
-        val term = q"OptionArg[${rawArg.tpe}]($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
+      case opt: OptionArg[_] =>
+        val abbr = opt.abbr match{
+          case Some(s)=> q"Option(${Lit.String(s)})"
+          case None => q"None"
+        }
+        val term =
+          q"""OptionArg[${rawArg.tpe}]($TERM_NAME = $name,
+                                       $TERM_ABBREVIATION = $abbr
+                                       $TERM_DESCRIPTION = $description)"""
         TermOpt(term, rawArg.idx, rawArg.tpe)
     }
   }

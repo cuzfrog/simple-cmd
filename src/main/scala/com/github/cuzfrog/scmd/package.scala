@@ -6,7 +6,7 @@ package object scmd{
   def paraDef[T](description: String = "",
                  isMandatory: Boolean = false): Parameter[Nothing] = DummyParameter
 
-  def optDef[T](name: String = "", description: String = ""): OptionArg[Nothing] = DummyOptionArg
+  def optDef[T](abbr: String = "", description: String = ""): OptionArg[Nothing] = DummyOptionArg
 
   private object DummyCommand extends Command("", None)
   private object DummyParameter extends Parameter[Nothing]("")

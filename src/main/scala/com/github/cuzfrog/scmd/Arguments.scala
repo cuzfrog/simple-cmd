@@ -11,4 +11,5 @@ case class Command(name: String, description: Option[String]) extends Argument[N
 case class Parameter[T](name: String, description: Option[String] = None,
                         isMandatory: Boolean = Defaults.isMandatory) extends Argument[T]
 
-case class OptionArg[T](name: String, description: Option[String] = None) extends Argument[T]
+case class OptionArg[T](name: String, abbr: Option[String] = None,
+                        description: Option[String] = None) extends Argument[T]

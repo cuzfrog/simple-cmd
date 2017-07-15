@@ -4,7 +4,7 @@ import scala.annotation.tailrec
 import scala.meta._
 import scala.collection.immutable
 
-import Constents._
+import Constants._
 
 private final case class TermCmdNode(cmd: TermCmd,
                                      params: immutable.Seq[TermParam],

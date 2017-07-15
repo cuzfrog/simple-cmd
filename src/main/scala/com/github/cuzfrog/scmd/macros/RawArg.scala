@@ -1,38 +1,53 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.Constants._
-import com.github.cuzfrog.scmd.{Argument, Command, Defaults, Parameter}
+import com.github.cuzfrog.scmd.{Argument, Command, Defaults, OptionArg, Parameter}
+
 import scala.collection.immutable
 import scala.meta._
+import scala.reflect.ClassTag
 
 
 private final case class RawArg(arg: Argument[_], idx: Int, tpe: Type)
 private object RawArg {
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
     stats.zipWithIndex collect {
-      case (q"val $cmd: $_ = cmdDef($dscr)", idx) =>
-        val dscrContent = dscr match {
-          case Term.Arg.Named(_, Lit.String(c)) => c
-          case Lit.String(c) => c
-        }
-        RawArg(Command(cmd.syntax, dscrContent), idx, TYPE_NOTHING)
+      case (q"val $cmd: $_ = cmdDef(..$params)", idx) =>
+        val description = extract[String](params, TERM_DESCRIPTION)
+        RawArg(Command(cmd.syntax, description), idx, TYPE_NOTHING)
 
       case (q"val $para = paraDef[$tpe](..$params)", idx) =>
-        val dscrCtnt = params.collect {
-          case Term.Arg.Named(TERM_DESCRIPTION, Lit.String(c)) => c
-          case Lit.String(c) => c
-        }.headOption
-        val isMandatory = params.collect {
-          case Term.Arg.Named(TERM_IS_MANDATORY, Lit.Boolean(b)) => b
-          case Lit.Boolean(b) => b
-        }.headOption.getOrElse(Defaults.isMandatory)
+        val description = extract[String](params, TERM_DESCRIPTION)
+        val isMandatory =
+          extract[Boolean](params, TERM_IS_MANDATORY).getOrElse(Defaults.isMandatory)
         RawArg(
-          Parameter(name = para.syntax, description = dscrCtnt, isMandatory = isMandatory)
+          Parameter(name = para.syntax, description = description, isMandatory = isMandatory)
           , idx, tpe
+        )
+
+      case (q"val $opt = optDef[$tpe](..$params)", idx) =>
+        val description = extract[String](params, TERM_DESCRIPTION)
+        val abbr = extract[String](params, TERM_ABBREVIATION)
+        RawArg(
+          OptionArg(name = opt.syntax, abbr = abbr, description = description), idx, tpe
         )
     }
   }
 
   // ============== Helpers ================
-  private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
+  private def extract[T: ClassTag](params: Seq[Term.Arg], paramName: Term.Name): Option[T] = {
+    val ParamName = paramName
+    val value = params.map {
+      case named: Term.Arg.Named => named
+      case unnamed =>
+        abort(s"Arg definition must use named parameter in def for content:${unnamed.syntax}")
+    }.collect { case Term.Arg.Named(ParamName, v) => v }.headOption
+    val tpe = implicitly[ClassTag[T]]
+    val actual = tpe.runtimeClass match {
+      case rc if rc == classOf[String] => value collect { case Lit.String(v) => v }
+      case rc if rc == classOf[Boolean] => value collect { case Lit.Boolean(v) => v }
+      case rc => throw new AssertionError(s"Type not coded for argDef def: $rc")
+    }
+    actual.map(_.asInstanceOf[T])
+  }
 }

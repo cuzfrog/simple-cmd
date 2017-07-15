@@ -16,7 +16,7 @@ private object RawArg {
         val description = extract[String](params, TERM_DESCRIPTION)
         RawArg(Command(cmd.syntax, description), idx, TYPE_NOTHING)
 
-      case (q"val $para = paraDef[$tpe](..$params)", idx) =>
+      case (q"val $para = paramDef[$tpe](..$params)", idx) =>
         val description = extract[String](params, TERM_DESCRIPTION)
         val isMandatory =
           extract[Boolean](params, TERM_IS_MANDATORY).getOrElse(Defaults.isMandatory)

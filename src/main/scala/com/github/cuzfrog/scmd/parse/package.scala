@@ -10,17 +10,19 @@ package object parse {
     def parse(a: A): R
   }
 
-  private[parse] implicit class ParseOps[A: Parser[A, R], R](a: A) {
+  private[parse] implicit class ParseOps[A, R](a: A)(implicit ev: Parser[A, R]) {
     private val parser = implicitly[Parser[A, R]]
     def parsed: R = parser.parse(a)
   }
 
   private[parse] type AnchorEither = Either[ArgParseException, Seq[ValueAnchor]]
 
-
-  private[parse] implicit class HSeqOps[N <: ValueNode[_]](a: Seq[N]) {
-    def collectWithType[T <: NodeTag[T]]: Seq[T] = a.collect {
-      case node if node.tpe.runtimeClass == classOf[T] => node.asInstanceOf[T]
+  private[parse] implicit class HSeqOps[N <: ValueNode](a: Seq[N]) {
+    def collectWithType[T <: NodeTag[T] : ClassTag]: Seq[T] = {
+      val classTag = implicitly[ClassTag[T]]
+      a.collect {
+        case node if node.tpe == classTag => node.asInstanceOf[T]
+      }
     }
   }
 }

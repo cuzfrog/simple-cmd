@@ -38,24 +38,17 @@ private object StateMachine {
   private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
 
 
-  private def categorize[A <: ArgCate[A]](arg: String, nextArg: Option[String], scope: Scope): ArgCate[A] = {
-    arg match {
-      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, nextArg, scope)
-      case LongOptExtractor(lOpt) =>
-      case paramOrCmd =>
-
-    }
-  }
-
-
   private def consumeOneArg(arg: String,
-                            scope: Scope): Either[ArgParseException, (Scope, Seq[ValueAnchor])] = {
+                            nextArg: Option[String],
+                            scope: Scope): AnchorEither = {
     arg match {
-      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, nextArg, scope)
+      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, nextArg, scope).parsed
 
       case LongOptExtractor(lOpt) =>
       case paramOrCmd =>
     }
+
+    ???
   }
 
 }

@@ -21,7 +21,7 @@ private final class StateMachine(argTree: ArgTree) {
   import scala.collection.mutable
 
 
-  private[this] var scope: Scope = Scope(argTree.toTopNode)
+  private[this] var scope: Scope = Scope(argTree.toTopNode, 0)
   private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
 
 
@@ -51,7 +51,7 @@ private object StateMachine {
   private def consumeOneArg(arg: String,
                             scope: Scope): Either[ArgParseException, (Scope, Seq[ValueAnchor])] = {
     arg match {
-      case SingleOptExtractor(sOpt) =>
+      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, nextArg, scope)
 
       case LongOptExtractor(lOpt) =>
       case paramOrCmd =>

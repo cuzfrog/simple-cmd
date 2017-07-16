@@ -15,5 +15,12 @@ package object parse {
     def parsed: R = parser.parse(a)
   }
 
-  private[parse] type AnchorEither = Either[ArgParseException, (Scope, Seq[ValueAnchor])]
+  private[parse] type AnchorEither = Either[ArgParseException, Seq[ValueAnchor]]
+
+
+
+  
+  private[parse] implicit class HSeqOps[A](a:A){
+    def collectWithType[T]:Seq[A]
+  }
 }

@@ -17,16 +17,20 @@ trait CmdNode extends Node[Command, Nothing] {
   def children: Seq[CmdNode]
 }
 
+trait NodeTag[N<:NodeTag[N]]
+
 trait ValueNode[T] extends Node[Argument[T], T] {
   def value: Option[T]
 }
 
 case class ParamNode[T](entity: Parameter[T],
                         tpe: ClassTag[T],
-                        value: Option[T]) extends Node[Parameter[T], T] with ValueNode[T]
+                        value: Option[T])
+  extends Node[Parameter[T], T] with ValueNode[T] with NodeTag[ParamNode[T]]
 case class OptNode[T](entity: OptionArg[T],
                       tpe: ClassTag[T],
-                      value: Option[T]) extends Node[OptionArg[T], T] with ValueNode[T]
+                      value: Option[T])
+  extends Node[OptionArg[T], T] with ValueNode[T] with NodeTag[OptNode[T]]
 
 final case class ArgTree(commands: Seq[CmdNode],
                          topParams: Seq[ParamNode[_]],

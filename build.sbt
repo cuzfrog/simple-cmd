@@ -11,6 +11,15 @@ val macroAnnotationSettings = Seq(
   libraryDependencies += "org.scalameta" %% "scalameta" % "1.8.0" % Provided
 )
 
+val internalMacros = project
+  .settings(commonSettings)
+  .settings(
+    name := "simple-cmd",
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
+    )
+  )
+
 val root = (project in file("."))
   .settings(
     commonSettings, publicationSettings, readmeVersionSettings, macroAnnotationSettings

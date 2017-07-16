@@ -17,37 +17,39 @@ private object SingleOpts {
     val cmdNode = a.scope.cmdNode
     val arg = a.arg
 
-    val matchOpt = cmdNode.opts.find(_.entity.abbr.exists(_.head == arg.head))
+    val matchOpt = cmdNode.opts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
     matchOpt match {
       case Some(optNode1) => optNode1.tpe.runtimeClass match {
-        case rc if rc == classOf[Boolean] => arg match {
-          case BooleanLit(bool) => parseBoolLit(bool, a.scope).right.map { bool =>
-            Seq(ValueAnchor(optNode1.copy(value = Some(bool)), a.scope))
-          }
-          case bools if bools.matches("""\w+""") =>
-            val boolSet = bools.split("").toSet
-            if (boolSet.size < bools.length) {
-              ArgParseException(s"Duplicates in boolean options: $bools", a.scope)
-            }
-            else {
-              val boolNodes = cmdNode.opts.collect {
-                case node if node.tpe.runtimeClass == classOf[Boolean] => node.asInstanceOf[OptNode[Boolean]]
+        case rc if rc == classOf[Boolean] =>
+          arg match {
+            case BooleanLit(bool) => // arg=literal
+              parseBoolLit(bool, a.scope).right.map { bool =>
+                Seq(ValueAnchor(optNode1.copy(value = Some(bool)), a.scope))
               }
-              boolNodes.filter(n => n.entity.abbr.exists(boolSet.contains))
-
-              boolSet.map { b =>
-                boolNodes.find(_.entity.abbr.contains(b)) match {
-                  case Some(optNode) =>
-                    val boolValue = optNode.entity.default.getOrElse(false).unary_!
-                  case None =>
+            case bools if bools.matches("""\w+""") => //folded letters
+              val boolSet = bools.split("").toSet
+              val boolNodes = cmdNode.opts.collectWithType[OptNode[Boolean]]
+                .filter(n => n.entity.abbr.exists(boolSet.contains))
+              if (boolNodes.size < boolSet.size) {
+                val badArgs =
+                  boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
+                ArgParseException(s"Boolean options:[$badArgs] not defined.", a.scope)
+              }
+              else if (boolSet.size < bools.length) {
+                ArgParseException(s"Duplicates in boolean options: $bools", a.scope)
+              }
+              else {
+                val optNodesWithValue = boolNodes.map { n =>
+                  val boolValue = n.entity.default.getOrElse(false).unary_!
+                  ValueAnchor(n.copy(value = Option(boolValue)), a.scope)
                 }
+                optNodesWithValue
               }
 
+            case bad =>
+              ArgParseException(s"Boolean opts[$bad] contain unsupported letter.", a.scope)
+          }
 
-              ???
-
-            }
-        }
         case _ =>
       }
       case None =>
@@ -62,4 +64,6 @@ private object SingleOpts {
       case bad => ArgParseException(s"Unknow bool literal: $bad", scope)
     }
   }
+
+  private implicit def seqValue2Right[L](in: Seq[ValueAnchor]): Either[L, Seq[ValueAnchor]] = Right(in)
 }

@@ -18,9 +18,9 @@ package object parse {
   private[parse] type AnchorEither = Either[ArgParseException, Seq[ValueAnchor]]
 
 
-
-
-  private[parse] implicit class HSeqOps[A](a:A){
-    def collectWithType[T]:Seq[A]
+  private[parse] implicit class HSeqOps[N <: ValueNode[_]](a: Seq[N]) {
+    def collectWithType[T <: NodeTag[T]]: Seq[T] = a.collect {
+      case node if node.tpe.runtimeClass == classOf[T] => node.asInstanceOf[T]
+    }
   }
 }

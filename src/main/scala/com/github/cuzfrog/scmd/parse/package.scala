@@ -19,7 +19,7 @@ package object parse {
 
 
 
-  
+
   private[parse] implicit class HSeqOps[A](a:A){
     def collectWithType[T]:Seq[A]
   }

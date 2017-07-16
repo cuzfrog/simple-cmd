@@ -12,7 +12,7 @@ package object scmd {
                 description: String = "",
                 default: => T = Empty): OptionArg[Nothing] = DummyOptionArg
 
-  private object DummyCommand extends Command("", None)
+  private[scmd] object DummyCommand extends Command("", None)
   private object DummyParameter extends Parameter[Nothing]("")
   private object DummyOptionArg extends OptionArg[Nothing]("")
 

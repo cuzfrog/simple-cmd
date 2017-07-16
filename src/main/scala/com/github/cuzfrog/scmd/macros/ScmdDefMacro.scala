@@ -14,13 +14,13 @@ private[scmd] object ScmdDefMacro {
     val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
     val argTree = TreeBuilder.buildArgGraphByIdx(argDefs).defnRuntimeTerm
 
-    //println(argGraph.syntax)
+    //println(argTree.syntax)
 
     val headers = List(
       q"import com.github.cuzfrog.scmd._"
     )
     val addMethods = List(
-      q"private val argGraph: com.github.cuzfrog.scmd.ArgTree = $argTree",
+      q"private val argTree: com.github.cuzfrog.scmd.ArgTree = $argTree",
       q"def parse(args: Array[String]): Unit = { args.foreach(println) }"
     )
     val moreStats = headers ++ stats ++ addMethods

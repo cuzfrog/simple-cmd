@@ -4,22 +4,40 @@ import scala.reflect.ClassTag
 
 trait Node[+A <: Argument[T], T] {
   def entity: A
-  //def value: Option[T]
   def tpe: ClassTag[T]
 }
 
 trait CmdNode extends Node[Command, Nothing] {
   val tpe = ClassTag(classOf[Nothing])
-  val value = None
+
   def params: Seq[ParamNode[_]]
   def opts: Seq[OptNode[_]]
+
+  def parent: Option[CmdNode]
   def children: Seq[CmdNode]
 }
-trait ParamNode[T] extends Node[Parameter[T], T]
-trait OptNode[T] extends Node[OptionArg[T], T]
+
+trait ValueNode[T] extends Node[Argument[T], T] {
+  def value: Option[T]
+}
+
+case class ParamNode[T](entity: Parameter[T],
+                        tpe: ClassTag[T],
+                        value: Option[T]) extends Node[Parameter[T], T] with ValueNode[T]
+case class OptNode[T](entity: OptionArg[T],
+                      tpe: ClassTag[T],
+                      value: Option[T]) extends Node[OptionArg[T], T] with ValueNode[T]
 
 final case class ArgTree(commands: Seq[CmdNode],
                          topParams: Seq[ParamNode[_]],
-                         topOpts: Seq[OptNode[_]])
+                         topOpts: Seq[OptNode[_]]) {
+  def toTopNode: CmdNode = new CmdNode {
+    override val parent: Option[CmdNode] = None
+    override def params: Seq[ParamNode[_]] = topParams
+    override def opts: Seq[OptNode[_]] = topOpts
+    override def children: Seq[CmdNode] = commands
+    override def entity: Command = Command("AppName",None)
+  }
+}
 
 //todo: find out is it able to new private class.

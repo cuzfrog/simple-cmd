@@ -15,7 +15,6 @@ package object parse {
     def parsed: R = parser.parse(a)
   }
 
-  private[parse] type AnchorEither = Either[ArgParseException, Seq[ValueAnchor]]
 
   private[parse] implicit class HSeqOps[N <: ValueNode](a: Seq[N]) {
     def collectWithType[T <: NodeTag[T] : ClassTag]: Seq[T] = {

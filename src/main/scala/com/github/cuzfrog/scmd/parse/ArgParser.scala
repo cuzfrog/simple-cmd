@@ -16,12 +16,12 @@ private object ArgParser {
 }
 
 
-private final class StateMachine(argTree: ArgTree, args: Seq[String]) {
+private final class StateMachine(argTree: ArgTree, args: Array[String]) {
 
   import scala.collection.mutable
 
 
-  private[this] val context: Context = new Context(argTree.toTopNode, args)
+  private[this] val context: Context = new Context(argTree, args)
   private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
 
 
@@ -33,7 +33,7 @@ private final class StateMachine(argTree: ArgTree, args: Seq[String]) {
   }
 }
 
-private object StateMachine {
+private object StateMachine extends TypeAbbr {
   private val SingleOptExtractor = """-(\w{1}.*)""".r
   private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
 

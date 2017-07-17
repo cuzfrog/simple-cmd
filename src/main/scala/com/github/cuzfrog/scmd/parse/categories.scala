@@ -9,8 +9,9 @@ private case class LongOpt(arg: String, context: Context)
 /** Param or Cmd with no prefix "-". */
 private case class ParamOrCmd(arg: String, context: Context)
 
-private object SingleOpts {
 
+
+private object SingleOpts extends TypeAbbr{
   private val EqualLitertal = """\w=(\w+)""".r
   private val ValueFolding = """\w([^\=]{1}.*)""".r
 
@@ -88,7 +89,7 @@ private object SingleOpts {
   private implicit def seqValue2Right[L](in: Seq[ValueAnchor]): Either[L, Seq[ValueAnchor]] = Right(in)
 }
 
-private object LongOpt {
+private object LongOpt extends TypeAbbr{
   private val EqualLiteral = """-([\-\w\d]+)(=.*)?""".r
 
   implicit val parser: Parser[LongOpt, AnchorEither] = (a: LongOpt) => {
@@ -99,7 +100,9 @@ private object LongOpt {
         val valueOpt = Option(e_Value).map(_.drop(1))
         val matchOpt = cmdNode.opts.find(_.entity.name == name)
         matchOpt match{
-          case Some(optNode) =>
+          case Some(optNode) =>Seq(
+            ValueAnchor
+          )
           case None => ArgParseException(s"Unknow option: $name", a.context)
         }
       case bad => ArgParseException(s"Malformed option: $bad", a.context)

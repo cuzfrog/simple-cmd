@@ -1,13 +1,45 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{CmdNode, ValueNode}
+import com.github.cuzfrog.scmd.{ArgTree, CmdNode, ValueNode}
 
-case class Scope(cmdNode: CmdNode, argCursor: Int)
-case class ValueAnchor(valueNode: ValueNode, scope: Scope)
-case class ArgParseException(msg: String, scope: Scope) extends RuntimeException(msg)
+import scala.collection.mutable
 
+/**
+  * Stateful OOP object representing parsing process.
+  *
+  * Design to be thread-safe by synchronizing actions.
+  */
+private class Context(argTree: ArgTree, initArgs: Seq[String]) {
 
-object ArgParseException {
-  implicit def toLeft[R](argParseException: ArgParseException): Either[ArgParseException, R] =
-    Left(argParseException)
+  @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
+  private[this] val freshArgs = mutable.ArrayStack(initArgs: _*) //first arg on top
+  private[this] val consumedArgs: mutable.ArrayStack[String] = mutable.ArrayStack.empty[String]
+
+  /** Try to regress to parent cmd node and return it. */
+  def nodeRegress: Option[CmdNode] = this.synchronized {
+    currentCmdNode.parent.map { p => this.currentCmdNode = p; p }
+  }
+
+  /** Try to advance to a child cmd node and return it. */
+  def nodeAdvance(cmdName: String): Option[CmdNode] = this.synchronized {
+    this.currentCmdNode.children.find(_.entity.name == cmdName)
+  }
+
+  def getCurrentNode: CmdNode = this.currentCmdNode //return immutable object.
+
+  /** Return current concerned arg, and set cursor to next. */
+  def nextArg: Option[String] = this.synchronized {
+    freshArgs.headOption.map { arg =>
+      consumedArgs.push(arg); freshArgs.pop()
+    }
+  }
+
+  /** Return previously concerned arg, and set cursor back */
+  def lastArg: Option[String] = this.synchronized {
+    consumedArgs.headOption.map { arg =>
+      freshArgs.push(arg); consumedArgs.pop()
+    }
+  }
 }
+
+private case class ValueAnchor(valueNode: ValueNode, context: Context)

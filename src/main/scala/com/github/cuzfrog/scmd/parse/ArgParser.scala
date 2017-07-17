@@ -16,12 +16,12 @@ private object ArgParser {
 }
 
 
-private final class StateMachine(argTree: ArgTree) {
+private final class StateMachine(argTree: ArgTree, args: Seq[String]) {
 
   import scala.collection.mutable
 
 
-  private[this] var scope: Scope = Scope(argTree.toTopNode, 0)
+  private[this] val context: Context = new Context(argTree.toTopNode, args)
   private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
 
 
@@ -39,11 +39,9 @@ private object StateMachine {
 
 
   private def consumeOneArg(arg: String,
-                            nextArg: Option[String],
-                            scope: Scope): AnchorEither = {
+                            context: Context): AnchorEither = {
     arg match {
-      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, nextArg, scope).parsed
-
+      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, context).parsed
       case LongOptExtractor(lOpt) =>
       case paramOrCmd =>
     }

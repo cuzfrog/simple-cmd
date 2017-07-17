@@ -28,7 +28,7 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
 
   /** Try to advance to a child cmd node and return it. */
   def nodeAdvance(cmdName: String): Option[CmdNode] = this.synchronized {
-    currentCmdNode.children.find(_.entity.name == cmdName)
+    currentCmdNode.subCmdEntry.children.find(_.entity.name == cmdName)
   }
 
   def getCurrentCmdNode: CmdNode = this.currentCmdNode //return immutable object.

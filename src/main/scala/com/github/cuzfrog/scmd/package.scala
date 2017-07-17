@@ -5,14 +5,15 @@ package object scmd {
   def cmdDef(description: String = ""): Command = DummyCommand
 
   def paramDef[T](description: String = "",
-                 isMandatory: Boolean = false,
-                 default: => T = Empty): Parameter[Nothing] = DummyParameter
+                  isMandatory: Boolean = false,
+                  default: => T = Empty): Parameter[Nothing] = DummyParameter
 
   def optDef[T](abbr: String = "",
                 description: String = "",
                 default: => T = Empty): OptionArg[Nothing] = DummyOptionArg
 
-  private[scmd] object DummyCommand extends Command("", None)
+  private object DummyCommand extends Command("", None)
+  //private object DefaultEntry extends CommandEntry("", None, true)
   private object DummyParameter extends Parameter[Nothing]("")
   private object DummyOptionArg extends OptionArg[Nothing]("")
 

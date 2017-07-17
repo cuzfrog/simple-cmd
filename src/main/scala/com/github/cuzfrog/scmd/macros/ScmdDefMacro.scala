@@ -1,8 +1,5 @@
 package com.github.cuzfrog.scmd.macros
 
-
-import com.github.cuzfrog.scmd.{Command, Defaults, OptionArg, Parameter}
-
 import scala.meta._
 import scala.collection.immutable
 
@@ -11,8 +8,23 @@ private[scmd] object ScmdDefMacro {
 
   def expand(name: Term.Name, stats: immutable.Seq[Stat]): Defn.Object = {
 
+    /**
+      * A RawArg is macro time instance of arg definition.
+      * A TermArg is macro time term of arg Node.
+      *
+      * This step collects arg defs from source code, checking syntax,
+      * then turn them into Node terms.
+      */
     val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
-    val argTree = TreeBuilder.buildArgGraphByIdx(argDefs).defnRuntimeTerm
+
+    /**
+      * ArgTree represents structure of user defined args.
+      * A TermArgTree is a premature ArgTree consisting of Terms, Which contains the topological information.
+      *
+      * This step build an TermArgTree by the order of user-defined args in source code,
+      * then turn it into a single macro-reify-ready Term.
+      */
+    val argTree = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
     //println(argTree.syntax)
 

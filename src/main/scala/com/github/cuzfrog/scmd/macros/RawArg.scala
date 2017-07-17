@@ -34,7 +34,7 @@ private object RawArg {
     }
   }
 
-  //todo: convert camel case to hyphen linked
+  //todo: convert camel case name to hyphen linked
   // ============== Helpers ================
   private def extract[T: ClassTag](params: Seq[Term.Arg], paramName: Term.Name): Option[T] = {
     val ParamName = paramName

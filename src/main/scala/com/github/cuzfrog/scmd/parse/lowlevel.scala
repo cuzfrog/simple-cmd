@@ -136,10 +136,11 @@ private object ParamOrCmd extends TypeAbbr with CateUtils {
     if (cmdNode.params.nonEmpty) {
       //there's still params to match:
       val paramNode = a.context.nextParamNode
+      ???
     } else {
       //there's no params before, a cmd should be matched:
       a.context.nodeAdvance(arg) match{
-        case Some(childCmdNode) =>
+        case Some(childCmdNode) => ???
         case None => ArgParseException(s"Unknown cmd: $arg", a.context)
       }
     }

@@ -24,4 +24,8 @@ package object parse {
       }
     }
   }
+
+  private[parse] trait Countable[A] {
+    def countMandatory(a: A): Int
+  }
 }

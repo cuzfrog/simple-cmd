@@ -37,7 +37,7 @@ private object StateMachine extends TypeAbbr {
     arg match {
       case SingleOptExtractor(sOpt) => SingleOpts(sOpt, context).parsed
       case LongOptExtractor(lOpt) => LongOpt(lOpt, context).parsed
-      case paramOrCmd => ???
+      case paramOrCmd => ParamOrCmd(paramOrCmd, context).parsed
     }
   }
 

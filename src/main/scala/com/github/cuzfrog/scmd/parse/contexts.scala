@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{ArgTree, CmdNode, ParamNode, ValueNode}
+import com.github.cuzfrog.scmd._
 
 import scala.collection.mutable
 import scala.collection.immutable
@@ -15,6 +15,7 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
 
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
   private[this] val paramCursors: mutable.Map[CmdNode, Int] = mutable.Map(currentCmdNode -> 0)
+  private[this] val consumedOpts: mutable.Map[OptNode[_], String] = mutable.Map.empty
 
   private[this] val args = initArgs map identity //copy args
   private[this] var argCursor: Int = 0
@@ -76,6 +77,17 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
   }
 
   def restore(snapshot: ContextSnapshot): Unit = ???
+
+  def mandatoryArgsLeftCnt: Int = {
+    val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
+    val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
+    val optCnt =
+    ???
+  }
+
+  def isComplete: Boolean = {
+    ???
+  }
 }
 
 private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)

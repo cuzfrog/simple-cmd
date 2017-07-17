@@ -5,7 +5,7 @@ import scala.reflect.ClassTag
 /**
   * Created by cuz on 17-7-16.
   */
-package object parse {
+package object parse extends ArgTreeUtils {
   private[parse] trait Parser[A, R] {
     def parse(a: A): R
   }
@@ -26,6 +26,21 @@ package object parse {
   }
 
   private[parse] trait Countable[A] {
-    def countMandatory(a: A): Int
+    def count(a: A): Int
+  }
+
+  private[parse] implicit class CountOps[A: Countable](a: A) {
+    private val countable = implicitly[Countable[A]]
+    def count: Int = countable.count(a)
+  }
+
+  private[parse] trait Collectible[A] {
+    def collect[R: ClassTag](a: A): Seq[R]
+  }
+
+  private[parse] implicit class CollectOps[A: Collectible](a: A) {
+    private val collectible = implicitly[Collectible[A]]
+    /** Given a type R, try to collect all reference to R in an A. */
+    def collect[R: ClassTag]: Seq[R] = collectible.collect(a)
   }
 }

@@ -17,7 +17,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
   private val ValueFolding = """\w([^\=]{1}.*)""".r
 
   implicit val parser: Parser[SingleOpts, AnchorEither] = (a: SingleOpts) => {
-    val cmdNode = a.context.getCurrentNode
+    val cmdNode = a.context.getCurrentCmdNode
     val arg = a.arg
 
     val matchOpt = cmdNode.opts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
@@ -85,8 +85,9 @@ private object LongOpt extends TypeAbbr with CateUtils {
   private val EqualLiteral = """-([\-\w\d]+)(=.*)?""".r
 
   implicit val parser: Parser[LongOpt, AnchorEither] = (a: LongOpt) => {
-    val cmdNode = a.context.getCurrentNode
+    val cmdNode = a.context.getCurrentCmdNode
     val arg = a.arg
+
     arg match {
       case EqualLiteral(name, e_Value) =>
         val valueOpt = Option(e_Value).map(_.drop(1))
@@ -124,6 +125,19 @@ private object LongOpt extends TypeAbbr with CateUtils {
         }
       case bad => ArgParseException(s"Malformed option: $bad", a.context)
     }
+  }
+}
+
+private object ParamOrCmd extends TypeAbbr with CateUtils{
+  implicit val parser: Parser[ParamOrCmd, AnchorEither] = (a: ParamOrCmd) => {
+    val cmdNode = a.context.getCurrentCmdNode
+    val arg = a.arg
+
+    if(cmdNode.entity.name == arg){
+
+    }else if(cmdNode.params.find){
+
+    }else
   }
 }
 

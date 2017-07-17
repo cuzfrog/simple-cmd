@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{ArgTree, CmdNode, ValueNode}
+import com.github.cuzfrog.scmd.{ArgTree, CmdNode, ParamNode, ValueNode}
 
 import scala.collection.mutable
 import scala.collection.immutable
@@ -14,12 +14,16 @@ import scala.collection.immutable
 private class Context(argTree: ArgTree, initArgs: Array[String]) {
 
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
+  private[this] val paramCursors: mutable.Map[CmdNode, Int] = mutable.Map(currentCmdNode -> 0)
+
   private[this] val args = initArgs map identity //copy args
-  private[this] var cursor: Int = 0
+  private[this] var argCursor: Int = 0
 
   /** Try to regress to parent cmd node and return it. */
   def nodeRegress: Option[CmdNode] = this.synchronized {
-    currentCmdNode.parent.map { p => this.currentCmdNode = p; p }
+    currentCmdNode.parent.map { p =>
+      this.currentCmdNode = p; p
+    }
   }
 
   /** Try to advance to a child cmd node and return it. */
@@ -27,31 +31,52 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
     currentCmdNode.children.find(_.entity.name == cmdName)
   }
 
-  def getCurrentNode: CmdNode = this.currentCmdNode //return immutable object.
+  def getCurrentCmdNode: CmdNode = this.currentCmdNode //return immutable object.
+
+  /** Return current pointed ParamNode of current CmdNode. */
+  def nextParamNode: Option[ParamNode[_]] = this.synchronized {
+    val cursor = paramCursors.getOrElse(currentCmdNode, 0)
+    val params = currentCmdNode.params
+    if (params.length <= cursor) None else {
+      val result = params(cursor)
+      paramCursors.put(currentCmdNode, cursor + 1)
+      Option(result)
+    }
+  }
+
+  /** Return previous pointed ParamNode of current CmdNode. */
+  def lastParamNode: Option[ParamNode[_]] = this.synchronized {
+    val cursor = paramCursors.getOrElse(currentCmdNode, 0)
+    if (cursor <= 0) None else {
+      val lastIdx = cursor - 1
+      paramCursors.put(currentCmdNode, lastIdx)
+      Option(currentCmdNode.params(lastIdx))
+    }
+  }
 
   /** Return current concerned arg, and set cursor to next. */
   def nextArg: Option[String] = this.synchronized {
-    if (args.length <= cursor) None else {
-      val result = args(cursor)
-      cursor += 1
+    if (args.length <= argCursor) None else {
+      val result = args(argCursor)
+      argCursor += 1
       Option(result)
     }
   }
 
   /** Return previously concerned arg, and set cursor back */
   def lastArg: Option[String] = this.synchronized {
-    if (cursor <= 0) None else {
-      cursor -= 1
-      Option(args(cursor))
+    if (argCursor <= 0) None else {
+      argCursor -= 1
+      Option(args(argCursor))
     }
   }
 
   def takeSnapshot: ContextSnapshot = this.synchronized {
-    ContextSnapshot(currentCmdNode, cursor)
+    ContextSnapshot(currentCmdNode, argCursor, paramCursors.getOrElse(currentCmdNode, 0))
   }
 }
 
-private case class ContextSnapshot(cmdNode: CmdNode, cursor: Int)
+private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)
 private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
 }

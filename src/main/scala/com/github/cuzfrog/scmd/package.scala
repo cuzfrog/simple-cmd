@@ -4,7 +4,7 @@ package object scmd {
 
   def cmdDef(description: String = ""): Command = DummyCommand
 
-  def paraDef[T](description: String = "",
+  def paramDef[T](description: String = "",
                  isMandatory: Boolean = false,
                  default: => T = Empty): Parameter[Nothing] = DummyParameter
 

@@ -74,6 +74,8 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
   def takeSnapshot: ContextSnapshot = this.synchronized {
     ContextSnapshot(currentCmdNode, argCursor, paramCursors.getOrElse(currentCmdNode, 0))
   }
+
+  def restore(snapshot: ContextSnapshot): Unit = ???
 }
 
 private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)

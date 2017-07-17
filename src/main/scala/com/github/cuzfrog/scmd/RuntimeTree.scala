@@ -2,11 +2,8 @@ package com.github.cuzfrog.scmd
 
 import scala.reflect.ClassTag
 
-trait Node[+A <: Argument[T], +T] {
-  def entity: A
-}
-
-trait CmdNode extends Node[Command, Nothing] {
+trait CmdNode {
+  def entity: Command
   def params: Seq[ParamNode[_]]
   def opts: Seq[OptNode[_]]
 
@@ -24,12 +21,12 @@ trait ValueNode {
 case class ParamNode[+T](entity: Parameter[T],
                         tpe: ClassTag[_],
                         value: Option[String])
-  extends Node[Parameter[T], T] with ValueNode with NodeTag[ParamNode[T]]
+  extends ValueNode with NodeTag[ParamNode[T]]
 
 case class OptNode[+T](entity: OptionArg[T],
                       tpe: ClassTag[_],
                       value: Option[String])
-  extends Node[OptionArg[T], T] with ValueNode with NodeTag[OptNode[T]]
+  extends ValueNode with NodeTag[OptNode[T]]
 
 final case class ArgTree(commands: Seq[CmdNode],
                          topParams: Seq[ParamNode[_]],

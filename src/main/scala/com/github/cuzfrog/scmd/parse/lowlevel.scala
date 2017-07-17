@@ -128,16 +128,21 @@ private object LongOpt extends TypeAbbr with CateUtils {
   }
 }
 
-private object ParamOrCmd extends TypeAbbr with CateUtils{
+private object ParamOrCmd extends TypeAbbr with CateUtils {
   implicit val parser: Parser[ParamOrCmd, AnchorEither] = (a: ParamOrCmd) => {
     val cmdNode = a.context.getCurrentCmdNode
     val arg = a.arg
 
-    if(cmdNode.entity.name == arg){
-
-    }else if(cmdNode.params.find){
-
-    }else
+    if (cmdNode.params.nonEmpty) {
+      //there's still params to match:
+      val paramNode = a.context.nextParamNode
+    } else {
+      //there's no params before, a cmd should be matched:
+      a.context.nodeAdvance(arg) match{
+        case Some(childCmdNode) =>
+        case None => ArgParseException(s"Unknown cmd: $arg", a.context)
+      }
+    }
   }
 }
 

@@ -5,30 +5,25 @@ import com.github.cuzfrog.scmd.ArgTree
 private object ArgParser {
   def parse(argTree: ArgTree, args: Array[String]) = {
 
-    var cursor: Int = 0
-
-    while (cursor <= args.length) {
-
-    }
+    new StateMachine(argTree, args)
   }
-
-
 }
 
 
 private final class StateMachine(argTree: ArgTree, args: Array[String]) {
 
+  import StateMachine._
   import scala.collection.mutable
 
   private[this] val context: Context = new Context(argTree, args)
   private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
 
 
-  /** Not threadsafe, with side-effect. */
-  def consume(args: Seq[String]): Seq[String] = {
-
-
-    args.drop(1)
+  def parsed = {
+    context.nextArg match {
+      case Some(firstArg) => consume(firstArg, context)
+      case None => throw ArgParseException("No arg found.", context)
+    }
   }
 }
 
@@ -37,15 +32,13 @@ private object StateMachine extends TypeAbbr {
   private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
 
 
-  private def consumeOneArg(arg: String,
-                            context: Context): AnchorEither = {
+  private def consume(arg: String,
+                      context: Context): AnchorEither = {
     arg match {
       case SingleOptExtractor(sOpt) => SingleOpts(sOpt, context).parsed
-      case LongOptExtractor(lOpt) =>
-      case paramOrCmd =>
+      case LongOptExtractor(lOpt) => LongOpt(lOpt, context).parsed
+      case paramOrCmd => ???
     }
-
-    ???
   }
 
 }

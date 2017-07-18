@@ -20,7 +20,7 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   /**
     * Not yet consumed opts accumulated upstream.
     * OptNode's equality depends on OptionArg's.
-    * Opts are out-of-ordered.
+    * Opts are out-of-ordered and can be put at tail.
     */
   @volatile private[this] val optsUpstreamLeft = mutable.ArrayBuffer(currentCmdNode.opts: _*)
   private[this] var argCursor: Int = 0
@@ -48,12 +48,16 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   }
 
   /** Consume a Node and produce an Anchor. */
-  def anchor[N <: Node](ns: N*): Seq[Anchor[N]] = this.synchronized {
-    ns foreach {
+  @inline
+  def anchors[N <: Node](ns: N*): Seq[Anchor[N]] = this.synchronized {ns.map(anchor)}
+
+  @inline
+  def anchor[N <: Node](n: N): Anchor[N] = this.synchronized {
+    n match {
       case optNode: OptNode[_] => optsUpstreamLeft -= optNode //register consumed
       case _ => //nothing needed to do.
     }
-    ns.map(n => new Anchor(n, this))
+    Anchor(n, this)
   }
 
   /** Return current pointed ParamNode of current CmdNode. */
@@ -115,15 +119,20 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   def restore(snapshot: ContextSnapshot): Unit = ???
 
-  /** Count mandatory args downstream. */
-  def mandatoryLeftDownstreamCnt: Int = this.synchronized {
-    val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
-    val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
-    paramCnt + currentCmdNode.subCmdEntry.mandatoryDownstreamCnt
+  @inline
+  def mandatoryLeftCnt:Int = this.synchronized{
+    val paramCnt = {
+      val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
+      currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
+    }
+    val optCnt = optsUpstreamLeft.count(_.entity.isMandatory)
+    val subCmdCnt = currentCmdNode.subCmdEntry.mandatoryDownstreamCnt
+    paramCnt + optCnt + subCmdCnt
   }
 
+  @inline
   def isComplete: Boolean = this.synchronized {
-    mandatoryLeftDownstreamCnt == 0 && noArgLeft
+    mandatoryLeftCnt == 0 && noArgLeft
   }
   def noArgLeft: Boolean = this.synchronized {
     args.length <= argCursor
@@ -137,7 +146,7 @@ private object ContextSnapshot {
 
 private case class TypedArg[+A <: CateArg](typedArg: A, rude: String)
 
-private[parse] final class Anchor[+N <: Node : ClassTag](node: N,
+private[parse] case class Anchor[+N <: Node : ClassTag](node: N,
                                                          contextSnapshot: ContextSnapshot,
                                                          parent: Option[Anchor[_]] = None,
                                                          forks: Seq[Anchor[_]] = Nil)

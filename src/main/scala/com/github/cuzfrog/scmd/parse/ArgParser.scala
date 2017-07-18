@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd.parse
 
-import scala.reflect.ClassTag
-
 
 private object ArgParser {
   def parse(argTree: ArgTree, args: Array[String]) = {
@@ -16,7 +14,7 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
   import scala.collection.mutable
 
   private[this] implicit val c: Context = new Context(argTree, args.map(categorize).toSeq)
-  private[this] var paths: Anchor[CmdNode] = ???
+  private[this] var paths: Anchor[_] = c.anchor(c.getCurrentCmdNode)
 
   /**
     * Parse args against client defined argTree,
@@ -24,16 +22,26 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
     */
   def parsed: ArgTree = ???
 
-  private def consume = {
+
+  private def consume: Anchor[_] = {
     proceed match {
-      case Some(ae)=>
-      case None =>
+      case Some(ae) =>
+        ae match {
+          case Right(anchors) =>
+            val current = anchors.lastOption
+              .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
+            val parent = paths.copy(forks = anchors)
+            paths = current.copy(parent = Some(parent))
+            consume
+          case Left(e) => ???
+        }
+      case None => paths
     }
   }
 
   private def proceed: Option[AnchorEither] = {
     if (c.isComplete) None
-    else if (c.mandatoryLeftDownstreamCnt > 0 && c.noArgLeft) {
+    else if (c.mandatoryLeftCnt > 0 && c.noArgLeft) {
       Some(ArgParseException("More args required", c))
     } else {
       c.nextCateArg.map(_.parsed)

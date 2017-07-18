@@ -45,7 +45,7 @@ private object SingleOpts extends CateUtils {
               //arg=literal
               case EqualLitertal(bool) =>
                 parseBoolStr(bool) match {
-                  case Some(b) => c.anchor(optNode1.copy(value = Seq(b)))
+                  case Some(b) => c.anchors(optNode1.copy(value = Seq(b)))
                   case None => ArgParseException(s"Unknown bool literal: $bool", c)
                 }
 
@@ -66,7 +66,7 @@ private object SingleOpts extends CateUtils {
                 else {
                   val optNodesWithValue = boolNodes.flatMap { n =>
                     val boolValue = n.entity.default.getOrElse(false).unary_!
-                    c.anchor(n.copy(value = Seq(boolValue)))
+                    c.anchors(n.copy(value = Seq(boolValue)))
                   }
                   optNodesWithValue
                 }
@@ -86,7 +86,7 @@ private object SingleOpts extends CateUtils {
                     s"No value found for opt[$arg] with type[${otherTpe.name}].", c))
                 case bad => throw ArgParseException(s"Malformed opt[$bad]", c)
               }
-              c.anchor(optNode1.copy(value = Seq(value)))
+              c.anchors(optNode1.copy(value = Seq(value)))
             } catch {
               case e: ArgParseException => e
             }
@@ -116,7 +116,7 @@ private object LongOpt extends CateUtils {
               case ClassTag.Boolean =>
                 valueOpt match {
                   case Some(boolStr) => parseBoolStr(boolStr) match {
-                    case Some(b) => c.anchor(optNode.copy(value = Seq(b)))
+                    case Some(b) => c.anchors(optNode.copy(value = Seq(b)))
                     case None => ArgParseException(s"Unknown bool literal: $arg", c)
                   }
                   case None =>
@@ -125,7 +125,7 @@ private object LongOpt extends CateUtils {
                       case Some(b: Boolean) => b
                       case _ => false //type boolean checked by ClassTag
                     }
-                    c.anchor(optNode.copy(value = Seq(defaultB.unary_!)))
+                    c.anchors(optNode.copy(value = Seq(defaultB.unary_!)))
                 }
 
               //arg def of other type
@@ -135,7 +135,7 @@ private object LongOpt extends CateUtils {
                   case None => c.nextArg
                 }
                 vOpt match {
-                  case Some(v) => c.anchor(optNode.copy(value = Seq(v)))
+                  case Some(v) => c.anchors(optNode.copy(value = Seq(v)))
                   case None =>
                     ArgParseException(
                       s"No value found for opt[$name] with type[${otherTpe.name}].", c)
@@ -169,18 +169,18 @@ private object ParamOrCmd extends CateUtils {
                 c.nextArgWithType[ParamOrCmd] match {
                   case Some(v) =>
                     val accValues = values :+ v
-                    val newAnchor = c.anchor(paramNode.copy(value = accValues))
+                    val newAnchor = c.anchors(paramNode.copy(value = accValues))
                     recFork(acc ++ newAnchor, accValues)
                   case None => acc
                 }
               }
 
-              val firstAnchor = c.anchor(paramNode.copy(value = Seq(arg)))
-              recFork(firstAnchor, Seq(arg))
+              val firstAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
+              recFork(firstAnchor, Seq(arg)) //current context state should point to last anchors.
 
             //single arg:
             case _ =>
-              c.anchor(paramNode.copy(value = Seq(arg)))
+              c.anchors(paramNode.copy(value = Seq(arg)))
           }
 
           val possibleCmdAnchor = if (!paramNode.entity.isMandatory) {
@@ -196,7 +196,7 @@ private object ParamOrCmd extends CateUtils {
     /** Consume an arg as a cmd. */
     private def consumeCmd(arg: String, c: Context): AnchorEither = {
       c.nodeAdvance(arg) match {
-        case Some(childCmdNode) => c.anchor(childCmdNode)
+        case Some(childCmdNode) => c.anchors(childCmdNode)
         case None => ArgParseException(s"Unknown cmd: $arg", c)
       }
     }

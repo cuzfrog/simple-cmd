@@ -24,16 +24,16 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
     */
   def parsed: ArgTree = ???
 
-  private def consume(implicit c: Context) = {
-    if(c.isComplete) paths
-    else {
-
+  private def consume = {
+    proceed match {
+      case Some(ae)=>
+      case None =>
     }
   }
 
   private def proceed: Option[AnchorEither] = {
     if (c.isComplete) None
-    else if (c.mandatoryArgDefsLeftCnt > 0 && c.noArgLeft) {
+    else if (c.mandatoryLeftDownstreamCnt > 0 && c.noArgLeft) {
       Some(ArgParseException("More args required", c))
     } else {
       c.nextCateArg.map(_.parsed)

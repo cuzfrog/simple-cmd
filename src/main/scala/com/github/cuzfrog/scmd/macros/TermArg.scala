@@ -33,6 +33,7 @@ private object TermArg {
                                      $TERM_IS_MANDATORY = $isMandatory)"""
         TermParam(term, rawArg.idx, rawArg.tpe)
       case opt: OptionArg[_] =>
+        val isMandatory = Lit.Boolean(opt.isMandatory)
         val abbr = opt.abbr match {
           case Some(s) => q"Option(${Lit.String(s)})"
           case None => q"None"
@@ -40,10 +41,11 @@ private object TermArg {
         val term =
           q"""OptionArg[${rawArg.tpe}]($TERM_NAME = $name,
                                        $TERM_ABBREVIATION = $abbr
-                                       $TERM_DESCRIPTION = $description)"""
+                                       $TERM_DESCRIPTION = $description,
+                                       $TERM_IS_MANDATORY = $isMandatory)"""
         TermOpt(term, rawArg.idx, rawArg.tpe)
 
-      case cmdEntry: CommandEntry =>
+      case _: CommandEntry =>
         throw new AssertionError("CommandEntry will not be in a RawArg.")
     }
   }

@@ -2,11 +2,11 @@ package com.github.cuzfrog.scmd
 
 import scala.reflect.ClassTag
 
-package object parse {
+package object parse extends ArgTreeUtils{
   type AnchorEither = Either[ArgParseException, Seq[Anchor[_]]]
 
   private[parse] trait Parser[A, R] {
-    def parse(a: A)(implicit context: Context): R
+    def parse(a: A)(implicit c: Context): R
   }
 
   private[parse] implicit class ParseOps[A, R](a: A)

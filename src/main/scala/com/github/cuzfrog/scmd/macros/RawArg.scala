@@ -27,9 +27,12 @@ private object RawArg {
 
       case (q"val $opt = optDef[$tpe](..$params)", idx) =>
         val description = extract[String](params, TERM_DESCRIPTION)
+        val isMandatory =
+          extract[Boolean](params, TERM_IS_MANDATORY).getOrElse(Defaults.isMandatory)
         val abbr = extract[String](params, TERM_ABBREVIATION)
         RawArg(
-          OptionArg(name = opt.syntax, abbr = abbr, description = description), idx, tpe
+          OptionArg(name = opt.syntax, abbr = abbr,
+            description = description, isMandatory = isMandatory), idx, tpe
         )
     }
   }

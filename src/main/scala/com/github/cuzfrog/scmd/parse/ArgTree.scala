@@ -16,7 +16,9 @@ final case class ArgTree(topParams: Seq[ParamNode[_]],
   }
 }
 
-trait CmdNode {
+sealed trait Node
+
+trait CmdNode extends Node {
   def entity: Command
   def params: Seq[ParamNode[_]]
   def opts: Seq[OptNode[_]]
@@ -25,15 +27,15 @@ trait CmdNode {
   def subCmdEntry: CmdEntryNode
 }
 
-trait CmdEntryNode {
+trait CmdEntryNode extends Node {
   val entity: CommandEntry
   val children: Seq[CmdNode]
-  lazy val mandatoryCnt:Int = ArgTreeUtils.countMandatory(this)
+  lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
 trait NodeTag[+N <: NodeTag[N]]
 
-trait ValueNode {
+trait ValueNode extends Node {
   def value: Seq[String]
   def tpe: ClassTag[_]
 }
@@ -46,6 +48,19 @@ case class ParamNode[+T](entity: Parameter[T],
 case class OptNode[+T](entity: OptionArg[T],
                        tpe: ClassTag[_],
                        value: Seq[String])
-  extends ValueNode with NodeTag[OptNode[T]]
+  extends ValueNode with NodeTag[OptNode[T]] {
+
+  //OptNode's equality depends on its entity's. Value is stripped off for parsing quick comparing.
+  override def hashCode(): Int = entity.hashCode * 3 + 17
+  override def equals(obj: scala.Any): Boolean = {
+    if (!this.canEqual(obj)) return false
+    obj.asInstanceOf[OptNode].entity == this.entity
+  }
+  override def canEqual(that: Any): Boolean = that match {
+    case _: OptNode[_] => true
+    case _ => false
+  }
+  //todo: check if equals' overriding is correct.
+}
 
 //todo: find out is it able to new private class.

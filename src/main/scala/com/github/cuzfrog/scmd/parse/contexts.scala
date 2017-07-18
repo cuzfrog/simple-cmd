@@ -4,6 +4,7 @@ import com.github.cuzfrog.scmd._
 
 import scala.collection.mutable
 import scala.collection.immutable
+import scala.reflect.ClassTag
 
 /**
   * Stateful OOP object representing parsing process.
@@ -64,6 +65,17 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
     }
   }
 
+  /** Return current concerned arg of given type, if successful, set cursor to next. */
+  def nextArgWithType[T <: ArgCate : ClassTag]: Option[String] = this.synchronized {
+    if (args.length <= argCursor) None else {
+      val result = args(argCursor)
+      if (ArgParser.typeOfArg(result) == implicitly[ClassTag[T]]) {
+        argCursor += 1
+        Option(result)
+      } else None
+    }
+  }
+
   /** Return previously concerned arg, and set cursor back */
   def lastArg: Option[String] = this.synchronized {
     if (argCursor <= 0) None else {
@@ -78,17 +90,14 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
 
   def restore(snapshot: ContextSnapshot): Unit = ???
 
+  /** Count mandatory args downstream. */
   def mandatoryArgsLeftCnt: Int = {
     val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
     val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
-
-    currentCmdNode.subCmdEntry
-    ???
+    paramCnt + currentCmdNode.subCmdEntry.mandatoryCnt
   }
 
-  def isComplete: Boolean = {
-    ???
-  }
+  def isComplete: Boolean = mandatoryArgsLeftCnt == 0 && lastArg.isEmpty
 }
 
 private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)
@@ -96,4 +105,7 @@ private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
 }
 
-private case class ValueAnchor(valueNode: ValueNode, contextSnapshot: ContextSnapshot)
+private case class ValueAnchor(valueNode: ValueNode,
+                               contextSnapshot: ContextSnapshot,
+                               parent: Option[ValueAnchor] = None,
+                               forks: Seq[ValueAnchor] = Nil)

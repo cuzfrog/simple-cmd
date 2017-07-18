@@ -22,18 +22,18 @@ trait CmdEntryNode {
 trait NodeTag[+N <: NodeTag[N]]
 
 trait ValueNode {
-  def value: Option[String]
+  def value: Seq[String]
   def tpe: ClassTag[_]
 }
 
 case class ParamNode[+T](entity: Parameter[T],
                          tpe: ClassTag[_],
-                         value: Option[String])
+                         value: Seq[String])
   extends ValueNode with NodeTag[ParamNode[T]]
 
 case class OptNode[+T](entity: OptionArg[T],
                        tpe: ClassTag[_],
-                       value: Option[String])
+                       value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]]
 
 final case class ArgTree(topParams: Seq[ParamNode[_]],

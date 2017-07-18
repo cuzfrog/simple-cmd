@@ -2,19 +2,20 @@ package com.github.cuzfrog.scmd.parse
 
 import com.github.cuzfrog.scmd.OptionArg
 
+import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 /*
  * The three categories of args provide low level parsing.
  */
 
-
+private sealed trait ArgCate
 /** Opt(s) with single letter. "-" has been stripped off. */
-private case class SingleOpts(arg: String, context: Context)
+private case class SingleOpts(arg: String, context: Context) extends ArgCate
 /** Opt with full name. One "-" of the "--" has been stripped off. */
-private case class LongOpt(arg: String, context: Context)
+private case class LongOpt(arg: String, context: Context) extends ArgCate
 /** Param or Cmd with no prefix "-". */
-private case class ParamOrCmd(arg: String, context: Context)
+private case class ParamOrCmd(arg: String, context: Context) extends ArgCate
 
 
 private object SingleOpts extends TypeAbbr with CateUtils {
@@ -34,7 +35,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
             //arg=literal
             case EqualLitertal(bool) =>
               parseBoolStr(bool) match {
-                case Some(b) => Seq(ValueAnchor(optNode1.copy(value = Some(b.toString)), a.context))
+                case Some(b) => Seq(ValueAnchor(optNode1.copy(value = Seq(b.toString)), a.context))
                 case None => ArgParseException(s"Unknown bool literal: $bool", a.context)
               }
 
@@ -55,7 +56,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
               else {
                 val optNodesWithValue = boolNodes.map { n =>
                   val boolValue = n.entity.default.getOrElse(false).unary_!.toString
-                  ValueAnchor(n.copy(value = Some(boolValue)), a.context)
+                  ValueAnchor(n.copy(value = Seq(boolValue)), a.context)
                 }
                 optNodesWithValue
               }
@@ -75,7 +76,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
                   s"No value found for opt[$arg] with type[${otherTpe.name}].", a.context))
               case bad => throw ArgParseException(s"Malformed opt[$bad]", a.context)
             }
-            Seq(ValueAnchor(optNode1.copy(value = Some(value)), a.context))
+            Seq(ValueAnchor(optNode1.copy(value = Seq(value)), a.context))
           } catch {
             case e: ArgParseException => e
           }
@@ -110,7 +111,7 @@ private object LongOpt extends TypeAbbr with CateUtils {
                 case None =>
                   optNode.entity.asInstanceOf[OptionArg[Boolean]].default.getOrElse(false).unary_!
               }
-              Seq(ValueAnchor(optNode.copy(value = Some(boolValue.toString)), a.context))
+              Seq(ValueAnchor(optNode.copy(value = Seq(boolValue.toString)), a.context))
 
             //arg def of other type
             case otherTpe =>
@@ -119,7 +120,7 @@ private object LongOpt extends TypeAbbr with CateUtils {
                 case None => a.context.nextArg
               }
               vOpt match {
-                case Some(v) => Seq(ValueAnchor(optNode.copy(value = Some(v)), a.context))
+                case Some(v) => Seq(ValueAnchor(optNode.copy(value = Seq(v)), a.context))
                 case None =>
                   ArgParseException(
                     s"No value found for opt[$name] with type[${otherTpe.name}].", a.context)
@@ -138,16 +139,49 @@ private object ParamOrCmd extends TypeAbbr with CateUtils {
     val cmdNode = a.context.getCurrentCmdNode
     val arg = a.arg
 
-    if (cmdNode.params.nonEmpty) {
+    a.context.nextParamNode match {
       //there's still params to match:
-      val paramNode = a.context.nextParamNode
-      ???
-    } else {
+      case Some(paramNode) =>
+
+        val anchorsWithValue = paramNode.tpe match {
+          //variable/multiple args:
+          case _@(_: ClassTag[Seq[_]] | _: ClassTag[List[_]]) =>
+
+            /** Pop args from context and create anchors along the way. */
+            @tailrec
+            def recFork(acc: Seq[ValueAnchor], values: Seq[String]): Seq[ValueAnchor] = {
+              a.context.nextArgWithType[ParamOrCmd] match {
+                case Some(v) =>
+                  val accValues = values :+ v
+                  val newAnchor = ValueAnchor(paramNode.copy(value = accValues), a.context)
+                  recFork(acc :+ newAnchor, accValues)
+                case None => acc
+              }
+            }
+
+            val firstAnchor = ValueAnchor(paramNode.copy(value = Seq(arg)), a.context)
+            recFork(Seq(firstAnchor), Seq(arg))
+
+          //single arg:
+          case _ =>
+            Seq(ValueAnchor(paramNode.copy(value = Seq(arg)), a.context))
+
+        }
+
+        if (!paramNode.entity.isMandatory) {
+          this.consumeCmd(arg, a.context).right.map(_ ++ anchorsWithValue)
+        } else anchorsWithValue
+
       //there's no params before, a cmd should be matched:
-      a.context.nodeAdvance(arg) match{
-        case Some(childCmdNode) => ???
-        case None => ArgParseException(s"Unknown cmd: $arg", a.context)
-      }
+      case None => this.consumeCmd(arg, a.context)
+    }
+  }
+
+  /** Consume an arg as a cmd. */
+  private def consumeCmd(arg: String, context: Context): AnchorEither = {
+    context.nodeAdvance(arg) match {
+      case Some(childCmdNode) => ???
+      case None => ArgParseException(s"Unknown cmd: $arg", context)
     }
   }
 }

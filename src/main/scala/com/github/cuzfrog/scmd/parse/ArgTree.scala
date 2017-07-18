@@ -4,6 +4,18 @@ import com.github.cuzfrog.scmd.{Command, CommandEntry, OptionArg, Parameter}
 
 import scala.reflect.ClassTag
 
+final case class ArgTree(topParams: Seq[ParamNode[_]],
+                         topOpts: Seq[OptNode[_]],
+                         cmdEntry: CmdEntryNode) {
+  def toTopNode: CmdNode = new CmdNode {
+    override val parent: Option[CmdNode] = None
+    override def params: Seq[ParamNode[_]] = topParams
+    override def opts: Seq[OptNode[_]] = topOpts
+    override def subCmdEntry: CmdEntryNode = cmdEntry
+    override def entity: Command = Command("AppName", None) //todo: replace AppName
+  }
+}
+
 trait CmdNode {
   def entity: Command
   def params: Seq[ParamNode[_]]
@@ -35,17 +47,5 @@ case class OptNode[+T](entity: OptionArg[T],
                        tpe: ClassTag[_],
                        value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]]
-
-final case class ArgTree(topParams: Seq[ParamNode[_]],
-                         topOpts: Seq[OptNode[_]],
-                         cmdEntry: CmdEntryNode) {
-  def toTopNode: CmdNode = new CmdNode {
-    override val parent: Option[CmdNode] = None
-    override def params: Seq[ParamNode[_]] = topParams
-    override def opts: Seq[OptNode[_]] = topOpts
-    override def subCmdEntry: CmdEntryNode = cmdEntry
-    override def entity: Command = Command("AppName", None) //todo: replace AppName
-  }
-}
 
 //todo: find out is it able to new private class.

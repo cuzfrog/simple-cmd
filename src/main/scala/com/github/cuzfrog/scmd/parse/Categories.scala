@@ -1,7 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd
-import com.github.cuzfrog.scmd.{OptionArg, parse}
+import com.github.cuzfrog.scmd.OptionArg
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
@@ -11,6 +10,16 @@ import scala.reflect.ClassTag
  */
 
 private sealed trait CateArg {def arg: String}
+private object CateArg {
+  implicit val parser: Parser[CateArg, AnchorEither] = new Parser[CateArg, AnchorEither] {
+    override def parse(a: CateArg)(implicit context: Context): AnchorEither = a match {
+      case s: SingleOpts => s.parsed
+      case l: LongOpt => l.parsed
+      case pm: ParamOrCmd => pm.parsed
+    }
+  }
+}
+
 /** Opt(s) with single letter. "-" has been stripped off. */
 private case class SingleOpts(arg: String) extends CateArg
 /** Opt with full name. One "-" of the "--" has been stripped off. */
@@ -19,7 +28,7 @@ private case class LongOpt(arg: String) extends CateArg
 private case class ParamOrCmd(arg: String) extends CateArg
 
 
-private object SingleOpts extends TypeAbbr with CateUtils {
+private object SingleOpts extends CateUtils {
   private val EqualLitertal = """\w=(\w+)""".r
   private val ValueFolding = """\w([^\=]{1}.*)""".r
 
@@ -91,11 +100,11 @@ private object SingleOpts extends TypeAbbr with CateUtils {
   }
 }
 
-private object LongOpt extends TypeAbbr with CateUtils {
+private object LongOpt extends CateUtils {
   private val EqualLiteral = """-([\-\w\d]+)(=.*)?""".r
 
   implicit val parser: Parser[LongOpt, AnchorEither] = new Parser[LongOpt, AnchorEither] {
-    override def parse(a: LongOpt)(implicit context: Context): parse.LongOpt.AnchorEither = {
+    override def parse(a: LongOpt)(implicit context: Context): AnchorEither = {
       val cmdNode = context.getCurrentCmdNode
       val arg = a.arg
 
@@ -107,17 +116,18 @@ private object LongOpt extends TypeAbbr with CateUtils {
             case Some(optNode) => optNode.tpe match {
               //arg def of type Boolean
               case ClassTag.Boolean =>
-                val boolValueOpt = valueOpt match {
-                  case Some(boolStr) => parseBoolStr(boolStr)
+                valueOpt match {
+                  case Some(boolStr) => parseBoolStr(boolStr) match {
+                    case Some(b) => Seq(Anchor(optNode.copy(value = Seq(b)), context))
+                    case None => ArgParseException(s"Unknown bool literal: $arg", context)
+                  }
                   case None =>
-                    val vOpt = Option(optNode.entity).map {
-                      case n: OptionArg[Boolean] => n.default.getOrElse(false).unary_!
-                    } //use map instead of collect to produce an impossible error.
-                    vOpt
-                }
-                boolValueOpt match {
-                  case Some(b) => Seq(Anchor(optNode.copy(value = Seq(b)), context))
-                  case None => ArgParseException(s"Unknown bool literal: $arg", context)
+                    //logic not default boolean value
+                    val defaultB = optNode.entity.default match {
+                      case Some(b: Boolean) => b
+                      case _ => false //type boolean checked by ClassTag
+                    }
+                    Seq(Anchor(optNode.copy(value = Seq(defaultB.unary_!)), context))
                 }
 
               //arg def of other type
@@ -142,10 +152,10 @@ private object LongOpt extends TypeAbbr with CateUtils {
   }
 }
 
-private object ParamOrCmd extends TypeAbbr with CateUtils {
+private object ParamOrCmd extends CateUtils {
   implicit val parser: Parser[ParamOrCmd, AnchorEither] = new Parser[ParamOrCmd, AnchorEither] {
     override def parse(a: ParamOrCmd)
-                      (implicit context: Context): scmd.parse.ParamOrCmd.AnchorEither = {
+                      (implicit context: Context): AnchorEither = {
       val arg = a.arg
 
       context.nextParamNode match {

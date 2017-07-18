@@ -2,10 +2,9 @@ package com.github.cuzfrog.scmd
 
 import scala.reflect.ClassTag
 
-/**
-  * Created by cuz on 17-7-16.
-  */
 package object parse {
+  type AnchorEither = Either[ArgParseException, Seq[Anchor[_]]]
+
   private[parse] trait Parser[A, R] {
     def parse(a: A)(implicit context: Context): R
   }

@@ -3,12 +3,10 @@ package com.github.cuzfrog.scmd.parse
 import scala.reflect.ClassTag
 
 
-private object ArgParser extends TypeAbbr {
+private object ArgParser {
   def parse(argTree: ArgTree, args: Array[String]) = {
-    new BacktrackingParser(argTree, args)
+    val parsedTree = new BacktrackingParser(argTree, args).parsed
   }
-
-
 }
 
 
@@ -17,37 +15,44 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
   import BacktrackingParser._
   import scala.collection.mutable
 
-  private[this] val context: Context = new Context(argTree, args)
-  //private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
+  private[this] implicit val c: Context = new Context(argTree, args.map(categorize).toSeq)
+  private[this] var paths: Anchor[CmdNode] = ???
 
+  /**
+    * Parse args against client defined argTree,
+    * return a new tree only containing a path of parsed args.
+    */
+  def parsed: ArgTree = ???
 
-  def parsed = {
-    context.nextArg match {
-      case Some(firstArg) => consume(firstArg, context)
-      case None => throw ArgParseException("No arg found.", context)
+  private def consume(implicit c: Context) = {
+    if(c.isComplete) paths
+    else {
+
+    }
+  }
+
+  private def proceed: Option[AnchorEither] = {
+    if (c.isComplete) None
+    else if (c.mandatoryArgDefsLeftCnt > 0 && c.noArgLeft) {
+      Some(ArgParseException("More args required", c))
+    } else {
+      c.nextCateArg.map(_.parsed)
     }
   }
 }
 
-private object BacktrackingParser extends TypeAbbr {
+private object BacktrackingParser {
   private val SingleOptExtractor = """-(\w{1}.*)""".r
   private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
 
-  def consume(arg: String,
-              context: Context): AnchorEither = {
-    arg match {
-      case SingleOptExtractor(sOpt) => SingleOpts(sOpt, context).parsed
-      case LongOptExtractor(lOpt) => LongOpt(lOpt, context).parsed
-      case paramOrCmd => ParamOrCmd(paramOrCmd, context).parsed
+  def categorize(arg: String): TypedArg[CateArg] = {
+    val cateArg: CateArg = arg match {
+      case SingleOptExtractor(sOpt) => SingleOpts(sOpt)
+      case LongOptExtractor(lOpt) => LongOpt(lOpt)
+      case paramOrCmd => ParamOrCmd(paramOrCmd)
     }
+    TypedArg(cateArg, arg)
   }
-
-  def categorize(arg: String): TypedArg[_] = arg match {
-    case SingleOptExtractor(sOpt) => SingleOpts(sOpt,)
-    case LongOptExtractor(lOpt) => ClassTag(classOf[LongOpt])
-    case paramOrCmd => ClassTag(classOf[ParamOrCmd])
-  }
-
 }
 
 

@@ -1,15 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{ArgTree, CmdNode}
-
-/**
-  * Created by cuz on 17-7-17.
-  */
-private[parse] trait ArgTreeUtils {
-
-  implicit class CmdNodeOps(a: CmdNode) {
-
-  }
+private[scmd] object ArgTreeUtils {
 
   implicit class ArgTreeOps(a: ArgTree) {
     /** Convert this immutable ArgTree to a stateful tree for further operation. */
@@ -28,7 +19,13 @@ private[parse] trait ArgTreeUtils {
     }
   }
 
-  implicit class StateCmdNodeOps(a: StateCmdNode){
-    
+  def countMandatory(cmdNode: CmdNode): Int = {
+    val paramCnt = cmdNode.params.count(_.entity.isMandatory)
+    paramCnt + countMandatory(cmdNode.subCmdEntry)
+  }
+
+  def countMandatory(cmdEntryNode: CmdEntryNode): Int = {
+    if(!cmdEntryNode.entity.isMandatory) 0
+    else cmdEntryNode.children.map(countMandatory).sum
   }
 }

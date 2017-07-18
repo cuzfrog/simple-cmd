@@ -1,6 +1,5 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.ArgTree
 
 private object ArgParser {
   def parse(argTree: ArgTree, args: Array[String]) = {

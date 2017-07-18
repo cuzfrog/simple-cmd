@@ -23,7 +23,7 @@ private object TermCmdNode {
     val opts = q"val opts = $TERM_immutable.Seq(..${a.opts.map(_.defnTerm)})"
     val subCmdEntry = q"val subCmdEntry = ${a.subCmdEntry.defnTerm}"
 
-    q"""new com.github.cuzfrog.scmd.CmdNode{
+    q"""new com.github.cuzfrog.scmd.parse.CmdNode{
           $entity
           $params
           $opts
@@ -37,7 +37,7 @@ private object TermArgTree {
     val topParams = a.topParams.map(_.defnTerm)
     val topOpts = a.topOpts.map(_.defnTerm)
     val cmdEntry = a.cmdEntry.defnTerm
-    q"""com.github.cuzfrog.scmd.ArgTree(
+    q"""com.github.cuzfrog.scmd.parse.ArgTree(
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
           cmdEntry = $cmdEntry

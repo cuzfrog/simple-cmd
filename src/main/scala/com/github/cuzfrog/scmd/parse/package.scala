@@ -5,7 +5,7 @@ import scala.reflect.ClassTag
 /**
   * Created by cuz on 17-7-16.
   */
-package object parse extends ArgTreeUtils {
+package object parse {
   private[parse] trait Parser[A, R] {
     def parse(a: A): R
   }

@@ -60,7 +60,7 @@ private final case class TermCommandEntry(term: Term,
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    q"""new com.github.cuzfrog.scmd.ParamNode[${a.tpe}]{
+    q"""new com.github.cuzfrog.scmd.parse.ParamNode[${a.tpe}]{
             val entity:Parameter[${a.tpe}] = ${a.term}
             val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
         }"""
@@ -69,7 +69,7 @@ private object TermParam {
 
 private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
-    q"""new com.github.cuzfrog.scmd.OptNode[${a.tpe}]{
+    q"""new com.github.cuzfrog.scmd.parse.OptNode[${a.tpe}]{
             val entity:Parameter[${a.tpe}] = ${a.term}
             val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
         }"""
@@ -82,7 +82,7 @@ private object TermCommandEntry {
       case Nil => q"$TERM_immutable.Seq.empty[CmdNode]"
       case cdren => q"$TERM_immutable.Seq(..${cdren.map(_.defnTerm)})"
     }
-    q"""new com.github.cuzfrog.scmd.CommandEntryNode{
+    q"""new com.github.cuzfrog.scmd.parse.CmdEntryNode{
           val entity = ${a.term}
           val children = $children
         }"""

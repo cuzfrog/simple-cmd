@@ -1,8 +1,13 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{OptNode, OptionArg}
+import com.github.cuzfrog.scmd.OptionArg
 
 import scala.reflect.ClassTag
+
+/*
+ * The three categories of args provide low level parsing.
+ */
+
 
 /** Opt(s) with single letter. "-" has been stripped off. */
 private case class SingleOpts(arg: String, context: Context)

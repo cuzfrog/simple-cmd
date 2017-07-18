@@ -1,6 +1,8 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{CmdNode, CommandEntryNode, OptNode, ParamNode}
+/*
+ * StateArgTree is Not thread-safe. It should be only manipulated inside a Context.
+ */
 
 private case class StateCmdNode(ref: CmdNode,
                                 params: Seq[StateParamNode],
@@ -21,4 +23,11 @@ private trait StateValueNode[T <: StateValueNode[T]] extends StringUtils {
 
 private case class StateParamNode(ref: ParamNode[_]) extends StateValueNode[ParamNode[_]]
 private case class StateOptNode(ref: OptNode[_]) extends StateValueNode[OptNode[_]]
-private case class StateCmdEntryNode(ref: CommandEntryNode, children: Seq[StateCmdNode])
+private case class StateCmdEntryNode(ref: CmdEntryNode, children: Seq[StateCmdNode]) {
+  private[this] var enteredCmd: Option[StateCmdNode] = None
+
+  def enterCmd(cmd: String): Option[StateCmdNode] = {
+    enteredCmd = children.find(_.ref.entity.name == cmd)
+    enteredCmd
+  }
+}

@@ -1,4 +1,6 @@
-package com.github.cuzfrog.scmd
+package com.github.cuzfrog.scmd.parse
+
+import com.github.cuzfrog.scmd.{Command, CommandEntry, OptionArg, Parameter}
 
 import scala.reflect.ClassTag
 
@@ -8,12 +10,13 @@ trait CmdNode {
   def opts: Seq[OptNode[_]]
 
   def parent: Option[CmdNode]
-  def subCmdEntry: CommandEntryNode
+  def subCmdEntry: CmdEntryNode
 }
 
-trait CommandEntryNode {
+trait CmdEntryNode {
   val entity: CommandEntry
   val children: Seq[CmdNode]
+  lazy val mandatoryCnt:Int = ArgTreeUtils.countMandatory(this)
 }
 
 trait NodeTag[+N <: NodeTag[N]]
@@ -35,12 +38,12 @@ case class OptNode[+T](entity: OptionArg[T],
 
 final case class ArgTree(topParams: Seq[ParamNode[_]],
                          topOpts: Seq[OptNode[_]],
-                         cmdEntry: CommandEntryNode) {
+                         cmdEntry: CmdEntryNode) {
   def toTopNode: CmdNode = new CmdNode {
     override val parent: Option[CmdNode] = None
     override def params: Seq[ParamNode[_]] = topParams
     override def opts: Seq[OptNode[_]] = topOpts
-    override def subCmdEntry: CommandEntryNode = cmdEntry
+    override def subCmdEntry: CmdEntryNode = cmdEntry
     override def entity: Command = Command("AppName", None) //todo: replace AppName
   }
 }

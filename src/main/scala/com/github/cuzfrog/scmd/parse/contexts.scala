@@ -81,7 +81,8 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
   def mandatoryArgsLeftCnt: Int = {
     val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
     val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
-    //val optCnt =
+
+    currentCmdNode.subCmdEntry
     ???
   }
 

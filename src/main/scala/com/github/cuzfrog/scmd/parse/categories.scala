@@ -35,7 +35,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
             //arg=literal
             case EqualLitertal(bool) =>
               parseBoolStr(bool) match {
-                case Some(b) => Seq(ValueAnchor(optNode1.copy(value = Seq(b.toString)), a.context))
+                case Some(b) => Seq(Anchor(optNode1.copy(value = Seq(b.toString)), a.context))
                 case None => ArgParseException(s"Unknown bool literal: $bool", a.context)
               }
 
@@ -56,7 +56,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
               else {
                 val optNodesWithValue = boolNodes.map { n =>
                   val boolValue = n.entity.default.getOrElse(false).unary_!.toString
-                  ValueAnchor(n.copy(value = Seq(boolValue)), a.context)
+                  Anchor(n.copy(value = Seq(boolValue)), a.context)
                 }
                 optNodesWithValue
               }
@@ -76,7 +76,7 @@ private object SingleOpts extends TypeAbbr with CateUtils {
                   s"No value found for opt[$arg] with type[${otherTpe.name}].", a.context))
               case bad => throw ArgParseException(s"Malformed opt[$bad]", a.context)
             }
-            Seq(ValueAnchor(optNode1.copy(value = Seq(value)), a.context))
+            Seq(Anchor(optNode1.copy(value = Seq(value)), a.context))
           } catch {
             case e: ArgParseException => e
           }
@@ -111,7 +111,7 @@ private object LongOpt extends TypeAbbr with CateUtils {
                 case None =>
                   optNode.entity.asInstanceOf[OptionArg[Boolean]].default.getOrElse(false).unary_!
               }
-              Seq(ValueAnchor(optNode.copy(value = Seq(boolValue.toString)), a.context))
+              Seq(Anchor(optNode.copy(value = Seq(boolValue.toString)), a.context))
 
             //arg def of other type
             case otherTpe =>
@@ -120,7 +120,7 @@ private object LongOpt extends TypeAbbr with CateUtils {
                 case None => a.context.nextArg
               }
               vOpt match {
-                case Some(v) => Seq(ValueAnchor(optNode.copy(value = Seq(v)), a.context))
+                case Some(v) => Seq(Anchor(optNode.copy(value = Seq(v)), a.context))
                 case None =>
                   ArgParseException(
                     s"No value found for opt[$name] with type[${otherTpe.name}].", a.context)
@@ -142,36 +142,35 @@ private object ParamOrCmd extends TypeAbbr with CateUtils {
     a.context.nextParamNode match {
       //there's still params to match:
       case Some(paramNode) =>
-
-        val anchorsWithValue = paramNode.tpe match {
+        val anchorsWithValue = paramNode.tpe.runtimeClass match {
           //variable/multiple args:
-          case _@(_: ClassTag[Seq[_]] | _: ClassTag[List[_]]) =>
+          case rc if rc == classOf[Seq[_]] || rc == classOf[List[_]] =>
 
             /** Pop args from context and create anchors along the way. */
             @tailrec
-            def recFork(acc: Seq[ValueAnchor], values: Seq[String]): Seq[ValueAnchor] = {
+            def recFork(acc: Seq[Anchor[_]], values: Seq[String]): Seq[Anchor[_]] = {
               a.context.nextArgWithType[ParamOrCmd] match {
                 case Some(v) =>
                   val accValues = values :+ v
-                  val newAnchor = ValueAnchor(paramNode.copy(value = accValues), a.context)
+                  val newAnchor = Anchor(paramNode.copy(value = accValues), a.context)
                   recFork(acc :+ newAnchor, accValues)
                 case None => acc
               }
             }
 
-            val firstAnchor = ValueAnchor(paramNode.copy(value = Seq(arg)), a.context)
+            val firstAnchor = Anchor(paramNode.copy(value = Seq(arg)), a.context)
             recFork(Seq(firstAnchor), Seq(arg))
 
           //single arg:
           case _ =>
-            Seq(ValueAnchor(paramNode.copy(value = Seq(arg)), a.context))
-
+            Seq(Anchor(paramNode.copy(value = Seq(arg)), a.context))
         }
 
-        if (!paramNode.entity.isMandatory) {
-          this.consumeCmd(arg, a.context).right.map(_ ++ anchorsWithValue)
-        } else anchorsWithValue
+        val possibleCmdAnchor = if (!paramNode.entity.isMandatory) {
+          this.consumeCmd(arg, a.context).right.toSeq.flatten
+        } else Seq.empty
 
+        anchorsWithValue ++ possibleCmdAnchor
       //there's no params before, a cmd should be matched:
       case None => this.consumeCmd(arg, a.context)
     }
@@ -180,7 +179,7 @@ private object ParamOrCmd extends TypeAbbr with CateUtils {
   /** Consume an arg as a cmd. */
   private def consumeCmd(arg: String, context: Context): AnchorEither = {
     context.nodeAdvance(arg) match {
-      case Some(childCmdNode) => ???
+      case Some(childCmdNode) => Seq(Anchor(childCmdNode, context))
       case None => ArgParseException(s"Unknown cmd: $arg", context)
     }
   }
@@ -188,7 +187,7 @@ private object ParamOrCmd extends TypeAbbr with CateUtils {
 
 private sealed trait CateUtils {
   protected implicit
-  def seqValue2Right[L](in: Seq[ValueAnchor]): Either[L, Seq[ValueAnchor]] = Right(in)
+  def seqValue2Right[L](in: Seq[Anchor[_]]): Either[L, Seq[Anchor[_]]] = Right(in)
 
   /** Parse boolean string literal. */
   protected def parseBoolStr(in: String): Option[Boolean] = in.toLowerCase match {

@@ -105,7 +105,7 @@ private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
 }
 
-private case class ValueAnchor(valueNode: ValueNode,
-                               contextSnapshot: ContextSnapshot,
-                               parent: Option[ValueAnchor] = None,
-                               forks: Seq[ValueAnchor] = Nil)
+private case class Anchor[+N: ClassTag](node: N,
+                                            contextSnapshot: ContextSnapshot,
+                                            parent: Option[Anchor[_]] = None,
+                                            forks: Seq[Anchor[_]] = Nil)

@@ -36,7 +36,7 @@ private final class StateMachine(argTree: ArgTree, args: Array[String]) {
   import scala.collection.mutable
 
   private[this] val context: Context = new Context(argTree, args)
-  private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
+  //private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
 
 
   def parsed = {

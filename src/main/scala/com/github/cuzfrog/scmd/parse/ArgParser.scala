@@ -5,11 +5,31 @@ import scala.reflect.ClassTag
 
 private object ArgParser extends TypeAbbr {
   def parse(argTree: ArgTree, args: Array[String]) = {
-
-    new StateMachine(argTree, args)
+    new BacktrackingParser(argTree, args)
   }
 
 
+}
+
+
+private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
+
+  import BacktrackingParser._
+  import scala.collection.mutable
+
+  private[this] val context: Context = new Context(argTree, args)
+  //private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
+
+
+  def parsed = {
+    context.nextArg match {
+      case Some(firstArg) => consume(firstArg, context)
+      case None => throw ArgParseException("No arg found.", context)
+    }
+  }
+}
+
+private object BacktrackingParser extends TypeAbbr {
   private val SingleOptExtractor = """-(\w{1}.*)""".r
   private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
 
@@ -22,33 +42,11 @@ private object ArgParser extends TypeAbbr {
     }
   }
 
-  def typeOfArg(arg: String): ClassTag[_] = arg match {
-    case SingleOptExtractor(sOpt) => ClassTag(classOf[SingleOpts])
+  def categorize(arg: String): TypedArg[_] = arg match {
+    case SingleOptExtractor(sOpt) => SingleOpts(sOpt,)
     case LongOptExtractor(lOpt) => ClassTag(classOf[LongOpt])
     case paramOrCmd => ClassTag(classOf[ParamOrCmd])
   }
-}
-
-
-private final class StateMachine(argTree: ArgTree, args: Array[String]) {
-
-  import StateMachine._
-  import scala.collection.mutable
-
-  private[this] val context: Context = new Context(argTree, args)
-  //private[this] var combinations: mutable.Seq[ValueAnchor] = mutable.Seq.empty[ValueAnchor]
-
-
-  def parsed = {
-    context.nextArg match {
-      case Some(firstArg) => ArgParser.consume(firstArg, context)
-      case None => throw ArgParseException("No arg found.", context)
-    }
-  }
-}
-
-private object StateMachine extends TypeAbbr {
-
 
 }
 

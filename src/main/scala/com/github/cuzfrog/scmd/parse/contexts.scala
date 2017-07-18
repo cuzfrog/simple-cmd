@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd._
-
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.reflect.ClassTag
@@ -12,13 +10,12 @@ import scala.reflect.ClassTag
   * Design to be thread-safe by synchronizing actions.
   * ArgTree needs to be immutable.
   */
-private class Context(argTree: ArgTree, initArgs: Array[String]) {
+private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
   private[this] val paramCursors: mutable.Map[CmdNode, Int] = mutable.Map(currentCmdNode -> 0)
-  private[this] val consumedOpts: mutable.Map[OptNode[_], String] = mutable.Map.empty
+  //private[this] val consumedOpts: mutable.Map[OptNode[_], String] = mutable.Map.empty
 
-  private[this] val args = initArgs map identity //copy args
   private[this] var argCursor: Int = 0
 
   /** Try to regress to parent cmd node and return it. */
@@ -61,18 +58,18 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
     if (args.length <= argCursor) None else {
       val result = args(argCursor)
       argCursor += 1
-      Option(result)
+      Option(result.typedArg.arg)
     }
   }
 
   /** Return current concerned arg of given type, if successful, set cursor to next. */
-  def nextArgWithType[T <: ArgCate : ClassTag]: Option[String] = this.synchronized {
+  def nextArgWithType[T <: CateArg]: Option[String] = this.synchronized {
     if (args.length <= argCursor) None else {
-      val result = args(argCursor)
-      if (ArgParser.typeOfArg(result) == implicitly[ClassTag[T]]) {
+      val result = args(argCursor).typedArg
+      Option(result).collect { case catArg: T =>
         argCursor += 1
-        Option(result)
-      } else None
+        catArg.arg
+      }
     }
   }
 
@@ -80,7 +77,7 @@ private class Context(argTree: ArgTree, initArgs: Array[String]) {
   def lastArg: Option[String] = this.synchronized {
     if (argCursor <= 0) None else {
       argCursor -= 1
-      Option(args(argCursor))
+      Option(args(argCursor).typedArg.arg)
     }
   }
 
@@ -105,7 +102,9 @@ private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
 }
 
+private case class TypedArg[+A <: CateArg](typedArg: A, rude: String)
+
 private case class Anchor[+N: ClassTag](node: N,
-                                            contextSnapshot: ContextSnapshot,
-                                            parent: Option[Anchor[_]] = None,
-                                            forks: Seq[Anchor[_]] = Nil)
+                                        contextSnapshot: ContextSnapshot,
+                                        parent: Option[Anchor[_]] = None,
+                                        forks: Seq[Anchor[_]] = Nil)

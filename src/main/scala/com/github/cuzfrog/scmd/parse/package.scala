@@ -7,10 +7,11 @@ import scala.reflect.ClassTag
   */
 package object parse {
   private[parse] trait Parser[A, R] {
-    def parse(a: A): R
+    def parse(a: A)(implicit context: Context): R
   }
 
-  private[parse] implicit class ParseOps[A, R](a: A)(implicit ev: Parser[A, R]) {
+  private[parse] implicit class ParseOps[A, R](a: A)
+                                              (implicit ev: Parser[A, R], context: Context) {
     private val parser = implicitly[Parser[A, R]]
     def parsed: R = parser.parse(a)
   }

@@ -41,7 +41,7 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
         ae match {
           //if return possible anchors:
           case Right(anchors) =>
-            val forks = anchors.map(Path).map(pathCursor.pipeAddFork)
+            val forks = anchors.map(Path.apply).map(pathCursor.pipeAddFork)
             pathCursor = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
             recProceed()

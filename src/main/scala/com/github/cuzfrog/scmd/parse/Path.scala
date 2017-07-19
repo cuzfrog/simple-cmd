@@ -7,14 +7,14 @@ import scala.reflect.ClassTag
 /**
   * Anchors represent every successful/possible parsing result. They form paths of parsing.
   */
-private[parse] case class Anchor[+N <: Node : ClassTag](node: N, contextSnapshot: ContextSnapshot)
+private[parse] case class Anchor(node: Node, contextSnapshot: ContextSnapshot)
 
 /**
   * Paths represent a tree of any possible parsing trail.
   *
   * Not thread-safe. It should be only accessed inside ArgParser.
   */
-private final case class Path(anchor: Anchor[_]) {
+private final case class Path(anchor: Anchor) {
   private[this] var parentOpt: Option[Path] = None
   private val forks: mutable.ArrayBuffer[Path] = mutable.ArrayBuffer.empty
 

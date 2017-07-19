@@ -54,7 +54,7 @@ case class OptNode[+T](entity: OptionArg[T],
   override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false
-    obj.asInstanceOf[OptNode].entity == this.entity
+    obj.asInstanceOf[OptNode[_]].entity == this.entity
   }
   override def canEqual(that: Any): Boolean = that match {
     case _: OptNode[_] => true

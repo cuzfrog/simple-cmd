@@ -165,7 +165,7 @@ private object ParamOrCmd extends CateUtils {
 
               /** Pop args from context and create anchors along the way. */
               @tailrec
-              def recFork(acc: Seq[Anchor[_]], values: Seq[String]): Seq[Anchor[_]] = {
+              def recFork(acc: Seq[Anchor], values: Seq[String]): Seq[Anchor] = {
                 c.nextArgWithType[ParamOrCmd] match {
                   case Some(v) =>
                     val accValues = values :+ v
@@ -205,7 +205,7 @@ private object ParamOrCmd extends CateUtils {
 
 private sealed trait CateUtils {
   protected implicit
-  def seqValue2Right[L](in: Seq[Anchor[_]]): Either[L, Seq[Anchor[_]]] = Right(in)
+  def seqValue2Right[L](in: Seq[Anchor]): Either[L, Seq[Anchor]] = Right(in)
 
   /** Parse boolean string literal. */
   protected def parseBoolStr(in: String): Option[Boolean] = in.toLowerCase match {

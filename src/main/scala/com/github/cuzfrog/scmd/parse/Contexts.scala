@@ -22,7 +22,8 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     * OptNode's equality depends on OptionArg's.
     * Opts are out-of-ordered and can be put at tail.
     */
-  @volatile private[this] val optsUpstreamLeft = mutable.ArrayBuffer(currentCmdNode.opts: _*)
+  private[this] val optsUpstreamLeft: mutable.ArrayBuffer[OptNode[_]] =
+    mutable.ArrayBuffer(currentCmdNode.opts: _*)
   private[this] var argCursor: Int = 0
 
 
@@ -49,10 +50,10 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   /** Consume a Node and produce an Anchor. */
   @inline
-  def anchors[N <: Node](ns: N*): Seq[Anchor[N]] = this.synchronized {ns.map(anchor)}
+  def anchors(ns: Node*): Seq[Anchor] = this.synchronized {ns.map(anchor)}
 
   @inline
-  def anchor[N <: Node](n: N): Anchor[N] = this.synchronized {
+  def anchor(n: Node): Anchor = this.synchronized {
     n match {
       case optNode: OptNode[_] => optsUpstreamLeft -= optNode //register consumed
       case _ => //nothing needed to do.

@@ -33,9 +33,9 @@ trait CmdEntryNode extends Node {
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
-trait NodeTag[+N <: NodeTag[N]]
+sealed trait NodeTag[+N <: NodeTag[N]]
 
-trait ValueNode extends Node {
+sealed trait ValueNode extends Node {
   def value: Seq[String]
   def tpe: ClassTag[_]
 }

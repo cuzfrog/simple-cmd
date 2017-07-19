@@ -2,7 +2,6 @@ package com.github.cuzfrog.scmd.parse
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.reflect.ClassTag
 
 /**
   * Anchors represent every successful/possible parsing result. They form paths of parsing.
@@ -15,7 +14,7 @@ private[parse] case class Anchor(node: Node, contextSnapshot: ContextSnapshot)
   * Not thread-safe. It should be only accessed inside ArgParser.
   */
 private final case class Path(anchor: Anchor) {
-  private[this] var parentOpt: Option[Path] = None
+  private var parentOpt: Option[Path] = None
   private val forks: mutable.ArrayBuffer[Path] = mutable.ArrayBuffer.empty
 
   private def setParent(path: Path): this.type = {
@@ -50,5 +49,37 @@ private final case class Path(anchor: Anchor) {
       case None => None
     }
   }
+}
 
+private object Path {
+  implicit val convert2argTree: Convertible[Path, ArgTree] = (a: Path) => {
+    ???
+  }
+
+  implicit val canFormPrettyString: CanFormPrettyString[Path] = (a: Path) => {
+    val top = getTop(a)
+
+    def recMkPrettyString(p: Path): String = {
+      if (p.forks.isEmpty) {
+        p.anchor.node match {
+          case cmdNode: CmdNode => s"cmd  [${cmdNode.entity.name}]"
+          case paramNode: ParamNode[_] => s"param[${paramNode.entity.name}] - ${paramNode.value}"
+          case optNode: OptNode[_] => s"opt  [${optNode.entity.name}] - ${optNode.value}"
+          case cmdEntry: CmdEntryNode =>
+            throw new AssertionError(s"CmdEntry should not be in path:${cmdEntry.entity}")
+        }
+      } else p.forks.map(recMkPrettyString).mkString(System.lineSeparator)
+    }
+
+    recMkPrettyString(top)
+  }
+
+  /** Get top Path from any given Path. */
+  @tailrec
+  private def getTop(a: Path): Path = {
+    a.parentOpt match {
+      case Some(parent) => getTop(parent)
+      case None => a
+    }
+  }
 }

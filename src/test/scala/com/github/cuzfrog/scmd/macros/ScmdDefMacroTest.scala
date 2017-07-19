@@ -6,6 +6,6 @@ import scala.meta._
 /**
   * Created by cuz on 7/19/17.
   */
-private[scmd] object ScmdDefMacroTest extends ScmdDefMacro{
+private[scmd] class ScmdDefMacroTest extends ScmdDefMacro {
   override protected val isTestMode = true
 }

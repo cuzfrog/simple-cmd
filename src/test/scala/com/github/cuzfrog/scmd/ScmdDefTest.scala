@@ -1,14 +1,12 @@
 package com.github.cuzfrog.scmd
 
+import com.github.cuzfrog.scmd.macros.ScmdDefMacroTest
+
+import scala.annotation.StaticAnnotation
 import scala.meta._
 
-final class ScmdDefTest extends scala.annotation.StaticAnnotation {
+final class ScmdDefTest extends StaticAnnotation{
   inline def apply(defn: Any): Any = meta {
-    defn match {
-      case q"..$mods class $name { ..$stats }" =>
-        macros.ScmdDefMacroTest.expand(name, stats)
-      case _ =>
-        abort("@ScmdDef must annotate an object.")
-    }
+    MacroUtil(new ScmdDefMacroTest, defn)
   }
 }

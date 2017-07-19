@@ -4,7 +4,7 @@ import scala.meta._
 import scala.collection.immutable
 
 
-private[scmd] class ScmdDefMacro {
+private[scmd] class ScmdDefMacro extends ScmdMacro {
 
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
@@ -30,7 +30,7 @@ private[scmd] class ScmdDefMacro {
     val argTree = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
     /** For testing. */
-    val privateMod = if(isTestMode) mod"private[scmd]" else mod"private[this]"
+    val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
     val headers = List(
       q"import com.github.cuzfrog.scmd._"
@@ -49,3 +49,6 @@ private[scmd] class ScmdDefMacro {
   }
 }
 
+
+////    require(Option(appName).nonEmpty, "appName cannot be null.") //guards
+////    require(appName != "", "appName cannot be empty. You could leave as default, which is: App")

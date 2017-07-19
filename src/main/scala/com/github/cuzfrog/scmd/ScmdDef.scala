@@ -1,15 +1,29 @@
 package com.github.cuzfrog.scmd
 
+import com.github.cuzfrog.scmd.macros.{ScmdDefMacro, ScmdMacro, ScmdValidMacro}
+
+import scala.annotation.StaticAnnotation
 import scala.meta._
 
-final class ScmdDef extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Any): Any = meta {
+//MacroUtil has to be in the same file.
+private object MacroUtil{
+  def apply(macroImpl: ScmdMacro, defn: Tree): Stat = {
     defn match {
-      case q"..$mods class $name { ..$stats }" =>
-        (new macros.ScmdDefMacro).expand(name, stats)
+      case q"..$mods class $name { ..$stats }" => macroImpl.expand(name, stats)
       case _ =>
-        abort("@ScmdDef must annotate an object.")
+        abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class.")
     }
   }
 }
 
+final class ScmdDef extends StaticAnnotation {
+  inline def apply(defn: Any): Any = meta {
+    MacroUtil(new ScmdDefMacro, defn)
+  }
+}
+
+final class ScmdValid extends StaticAnnotation {
+  inline def apply(defn: Any): Any = meta {
+    MacroUtil(new ScmdValidMacro, defn)
+  }
+}

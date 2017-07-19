@@ -20,7 +20,7 @@ object AppDefs {
     val port = optDef[Int](description = "Speicify listening port for contact.", abbr = "p")
 
     val push = cmdDef(description = "Pull a published file from push node.")
-    
+
 
   }
 }

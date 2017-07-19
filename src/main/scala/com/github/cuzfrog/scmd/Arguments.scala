@@ -11,7 +11,7 @@ case class Command(name: String,
                    description: Option[String]) extends Argument[Nothing]
 
 case class CommandEntry(name: String,
-                        description: Option[String],
+                        description: Option[String] = None,
                         //subCmds: immutable.Seq[Command],
                         isMandatory: Boolean = Defaults.isMandatory) extends Argument[Nothing]
 

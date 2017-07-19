@@ -5,15 +5,16 @@ import com.github.cuzfrog.scmd._
 
 object Tmp {
 
+  @ScmdDef
+  class CatArgDef {
+    //val badParam = paramDef[String](description = "throw exception")
+    val cat = cmdDef(description = "Concatenate contents of files.")
+    val files = paramDef[Seq[Path]](description = "Paths of files to concatenate.", isMandatory = true)
+    val newLine = optDef[Boolean](description = "Add new line end to every file",abbr = "f")
+  }
+
   def main(args: Array[String]): Unit = {
-    CatArgDef.parse(args)
+    (new CatArgDef).parse(args)
   }
 }
 
-@ScmdDef
-object CatArgDef {
-  //val badParam = paramDef[String](description = "throw exception")
-  val cat = cmdDef(description = "Concatenate contents of files.")
-  val files = paramDef[Seq[Path]](description = "Paths of files to concatenate.", isMandatory = true)
-  val newLine = optDef[Boolean](description = "Add new line end to every file",abbr = "f")
-}

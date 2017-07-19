@@ -19,7 +19,7 @@ private object ArgParser {
   *
   * Not thread-safe. It should only be accessed inside ArgParser.
   */
-private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
+private class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
 
   import BacktrackingParser._
   import scala.collection.mutable
@@ -33,10 +33,8 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
     */
   def parse: ArgTree = ???
 
-  protected def proceed(): Path = recProceed()
-
   @tailrec
-  private def recProceed(): Path = {
+  protected final def recProceed(): Path = {
     proceedOne() match {
       case Some(ae) =>
         ae match {

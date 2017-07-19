@@ -6,7 +6,7 @@ import scala.collection.immutable
 
 private[scmd] object ScmdDefMacro {
 
-  def expand(name: Term.Name, stats: immutable.Seq[Stat]): Defn.Object = {
+  def expand(name: Type.Name, stats: immutable.Seq[Stat]): Defn.Class = {
 
     /**
       * A RawArg is macro time instance of arg definition.
@@ -33,14 +33,14 @@ private[scmd] object ScmdDefMacro {
     )
     val addMethods = List(
       q"private[this] def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree",
-      q"def parse(args: Array[String]) = { args.foreach(println) }"
+      q"""def parse(args: Array[String]) = { args.foreach(println) }"""
     )
     val moreStats = headers ++ stats ++ addMethods
 
     //abort("dev...")
 
     q"""
-          object $name { ..$moreStats }
+          class $name { ..$moreStats }
         """
   }
 }

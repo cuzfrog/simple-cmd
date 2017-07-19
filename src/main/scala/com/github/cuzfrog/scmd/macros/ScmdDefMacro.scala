@@ -32,8 +32,8 @@ private[scmd] object ScmdDefMacro {
       q"import com.github.cuzfrog.scmd._"
     )
     val addMethods = List(
-      q"private val argTree: com.github.cuzfrog.scmd.ArgTree = $argTree",
-      q"def parse(args: Array[String]): Unit = { args.foreach(println) }"
+      q"private[this] def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree",
+      q"def parse(args: Array[String]) = { args.foreach(println) }"
     )
     val moreStats = headers ++ stats ++ addMethods
 

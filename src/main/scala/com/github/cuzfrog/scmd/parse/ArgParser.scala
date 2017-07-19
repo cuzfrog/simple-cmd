@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 
 private object ArgParser {
   def parse(argTree: ArgTree, args: Array[String]) = {
-    val parsedTree = new BacktrackingParser(argTree, args).parsed
+    val parsedTree = new BacktrackingParser(argTree, args).parse
   }
 }
 
@@ -31,8 +31,9 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
     * Parse args against client defined argTree,
     * return a new tree only containing a path of parsed args.
     */
-  def parsed: ArgTree = ???
+  def parse: ArgTree = ???
 
+  protected def proceed(): Path = recProceed()
 
   @tailrec
   private def recProceed(): Path = {
@@ -84,6 +85,8 @@ private object BacktrackingParser {
     }
     TypedArg(cateArg, arg)
   }
+
+
 }
 
 

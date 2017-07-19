@@ -9,6 +9,7 @@ private[macros] object Constants {
   val TERM_IS_MANDATORY = q"isMandatory"
   val TERM_SUBCMDS = q"subCmds"
   val TERM_immutable = q"_root_.scala.collection.immutable"
+  val TERM_pkg_scmd = q"com.github.cuzfrog.scmd"
 
   val TYPE_NOTHING = t"Nothing"
 }

@@ -40,7 +40,7 @@ private object TermArg {
         }
         val term =
           q"""OptionArg[${rawArg.tpe}]($TERM_NAME = $name,
-                                       $TERM_ABBREVIATION = $abbr
+                                       $TERM_ABBREVIATION = $abbr,
                                        $TERM_DESCRIPTION = $description,
                                        $TERM_IS_MANDATORY = $isMandatory)"""
         TermOpt(term, rawArg.idx, rawArg.tpe)
@@ -62,29 +62,31 @@ private final case class TermCommandEntry(term: Term,
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    q"""new com.github.cuzfrog.scmd.parse.ParamNode[${a.tpe}]{
-            val entity:Parameter[${a.tpe}] = ${a.term}
-            val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
-        }"""
+    q"""$TERM_pkg_scmd.parse.ParamNode[${a.tpe}](
+            entity = ${a.term},
+            tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}]),
+            value = Nil
+        )"""
   }
 }
 
 private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
-    q"""new com.github.cuzfrog.scmd.parse.OptNode[${a.tpe}]{
-            val entity:Parameter[${a.tpe}] = ${a.term}
-            val tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}])
-        }"""
+    q"""$TERM_pkg_scmd.parse.OptNode[${a.tpe}](
+            entity = ${a.term},
+            tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}]),
+            value = Nil
+        )"""
   }
 }
 
 private object TermCommandEntry {
   implicit val definable: Definable[TermCommandEntry] = (a: TermCommandEntry) => {
     val children = a.children match {
-      case Nil => q"$TERM_immutable.Seq.empty[CmdNode]"
+      case Nil => q"$TERM_immutable.Seq.empty[$TERM_pkg_scmd.parse.CmdNode]"
       case cdren => q"$TERM_immutable.Seq(..${cdren.map(_.defnTerm)})"
     }
-    q"""new com.github.cuzfrog.scmd.parse.CmdEntryNode{
+    q"""new $TERM_pkg_scmd.parse.CmdEntryNode{
           val entity = ${a.term}
           val children = $children
         }"""

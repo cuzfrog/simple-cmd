@@ -28,7 +28,8 @@ private object TreeBuilder {
       case Some(cmd1) =>
         val topLevelOpts = argDefs.filter(_.idx < cmd1.idx).collect {
           case opt: TermOpt => opt
-          case param: TermParam => abort("Parameters cannot be defined before first command.")
+          case param: TermParam =>
+            abort(s"Parameter[${param.term.syntax}] cannot be defined before first command.")
         }
         val tail = argDefs.filter(_.idx > cmd1.idx)
         val builder = NodeBuilder.newIdxTermBuilder(cmd1)
@@ -68,7 +69,8 @@ private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTerm
 
   //non-defensive
   private def build: TermCmdNode = {
-    TermCmdNode(cmd, params, opts, subCmdEntry = TermCommandEntry.default)
+    //these CmdNodes are flat at level1 (level0 is the top)
+    TermCmdNode(cmd, params, opts, parent = None, subCmdEntry = TermCommandEntry.default)
   }
 
   @inline

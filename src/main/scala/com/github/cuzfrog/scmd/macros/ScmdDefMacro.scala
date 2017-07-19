@@ -4,9 +4,12 @@ import scala.meta._
 import scala.collection.immutable
 
 
-private[scmd] object ScmdDefMacro {
+private[scmd] class ScmdDefMacro {
 
-  def expand(name: Type.Name, stats: immutable.Seq[Stat]): Defn.Class = {
+  /** Override this for testing. */
+  protected val isTestMode: Boolean = false
+
+  final def expand(name: Type.Name, stats: immutable.Seq[Stat]): Defn.Class = {
 
     /**
       * A RawArg is macro time instance of arg definition.
@@ -26,13 +29,14 @@ private[scmd] object ScmdDefMacro {
       */
     val argTree = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
-    //println(argTree.syntax)
+    /** For testing. */
+    val privateMod = if(isTestMode) mod"private[scmd]" else mod"private[this]"
 
     val headers = List(
       q"import com.github.cuzfrog.scmd._"
     )
     val addMethods = List(
-      q"private[this] def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree",
+      q"$privateMod def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree",
       q"""def parse(args: Array[String]) = { args.foreach(println) }"""
     )
     val moreStats = headers ++ stats ++ addMethods

@@ -7,7 +7,16 @@ private object ArgParser {
   }
 }
 
-
+/**
+  * Parser that has full duty of matching ArgTree and passed-in args.
+  * Entry of the whole parsing process.
+  *
+  * All instances should be created and forgotten only in this class.
+  * That means no reference of instances used during parsing should escape this class.
+  * After args have been parsed, all the instances created should be GCed.
+  *
+  * Not thread-safe. It should only be accessed inside ArgParser.
+  */
 private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
 
   import BacktrackingParser._
@@ -23,7 +32,7 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
   def parsed: ArgTree = ???
 
 
-  private def recProceed(): Anchor[_] = {
+  private def recProceed(): Path = {
     proceedOne() match {
       case Some(ae) =>
         ae match {
@@ -38,14 +47,13 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
           case Left(e) =>
             pathCursor.backtrack match {
               //found a unexplored fork:
-              case Some(path) => c.restore(path.anchor.contextSnapshot)
-
+              case Some(path) =>
+                pathCursor = path
+                c.restore(path.anchor.contextSnapshot)
+                recProceed()
               //cannot backtrack to parent, parsing failed:
               case None => throw e
             }
-
-
-            ???
         }
 
       //if complete:

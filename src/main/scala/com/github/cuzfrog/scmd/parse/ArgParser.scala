@@ -14,7 +14,7 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
   import scala.collection.mutable
 
   private[this] implicit val c: Context = new Context(argTree, args.map(categorize).toSeq)
-  private[this] var paths: Anchor[_] = c.anchor(c.getCurrentCmdNode)
+  private[this] var pathCursor: Path = Path(c.anchor(c.getCurrentCmdNode))
 
   /**
     * Parse args against client defined argTree,
@@ -23,23 +23,37 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
   def parsed: ArgTree = ???
 
 
-  private def consume: Anchor[_] = {
-    proceed match {
+  private def recProceed(): Anchor[_] = {
+    proceedOne() match {
       case Some(ae) =>
         ae match {
+          //if return possible anchors:
           case Right(anchors) =>
-            val current = anchors.lastOption
+            val forks = anchors.map(Path).map(pathCursor.pipeAddFork)
+            pathCursor = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
-            val parent = paths.copy(forks = anchors)
-            paths = current.copy(parent = Some(parent))
-            consume
-          case Left(e) => ???
+            recProceed()
+
+          //if this path is an end:
+          case Left(e) =>
+            pathCursor.backtrack match {
+              //found a unexplored fork:
+              case Some(path) => c.restore(path.anchor.contextSnapshot)
+
+              //cannot backtrack to parent, parsing failed:
+              case None => throw e
+            }
+
+
+            ???
         }
-      case None => paths
+
+      //if complete:
+      case None => pathCursor
     }
   }
 
-  private def proceed: Option[AnchorEither] = {
+  private def proceedOne(): Option[AnchorEither] = {
     if (c.isComplete) None
     else if (c.mandatoryLeftCnt > 0 && c.noArgLeft) {
       Some(ArgParseException("More args required", c))

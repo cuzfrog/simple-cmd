@@ -120,7 +120,7 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def restore(snapshot: ContextSnapshot): Unit = ???
 
   @inline
-  def mandatoryLeftCnt:Int = this.synchronized{
+  def mandatoryLeftCnt: Int = this.synchronized {
     val paramCnt = {
       val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
       currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
@@ -145,9 +145,4 @@ private object ContextSnapshot {
 }
 
 private case class TypedArg[+A <: CateArg](typedArg: A, rude: String)
-
-private[parse] case class Anchor[+N <: Node : ClassTag](node: N,
-                                                         contextSnapshot: ContextSnapshot,
-                                                         parent: Option[Anchor[_]] = None,
-                                                         forks: Seq[Anchor[_]] = Nil)
 

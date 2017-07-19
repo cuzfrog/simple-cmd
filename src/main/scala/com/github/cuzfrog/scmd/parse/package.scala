@@ -46,11 +46,4 @@ package object parse extends ArgTreeUtils {
   private[parse] implicit class ConversionOps[A](a: A) {
     def convertTo[R](implicit ev: Convertible[A, R]): R = ev.convertTo(a)
   }
-
-  private[parse] trait CanFormPrettyString[A] {
-    def mkPrettyString(a: A): String
-  }
-  private[parse] implicit class PrettyStringBuildOps[A: CanFormPrettyString](a: A) {
-    def prettyString: String = implicitly[CanFormPrettyString[A]].mkPrettyString(a)
-  }
 }

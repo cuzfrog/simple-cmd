@@ -39,4 +39,4 @@ val tests = project
     libraryDependencies ++= Seq(
 
     )
-  ).dependsOn(root)
+  ).dependsOn(root % "compile->test;test->test")

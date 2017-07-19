@@ -25,4 +25,12 @@ package object scmd {
     */
   private def Empty[T]: T =
     throw new IllegalArgumentException("Empty default value called. See scmd.Empty.")
+
+
+  private[scmd] trait CanFormPrettyString[A] {
+    def mkPrettyString(a: A): String
+  }
+  private[scmd] implicit class PrettyStringBuildOps[A: CanFormPrettyString](a: A) {
+    def prettyString: String = implicitly[CanFormPrettyString[A]].mkPrettyString(a)
+  }
 }

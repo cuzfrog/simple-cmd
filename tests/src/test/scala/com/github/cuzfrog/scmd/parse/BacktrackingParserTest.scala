@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.CommandEntry
+import com.github.cuzfrog.scmd._
 import org.junit._
 import org.junit.Assert._
 

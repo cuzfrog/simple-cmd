@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.parse
 
+import com.github.cuzfrog.scmd.CanFormPrettyString
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 

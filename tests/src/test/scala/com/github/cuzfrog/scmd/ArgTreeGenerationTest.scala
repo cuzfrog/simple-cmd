@@ -6,18 +6,19 @@ import org.junit._
 import org.junit.Assert._
 
 class ArgTreeGenerationTest {
-  
 
-  @ScmdDef
+  @ScmdDefTest
   class CpDef {
-    //val badParam = paramDef[String](description = "throw exception")
-    val cat = cmdDef(description = "Concatenate contents of files.")
-    val files = paramDef[Seq[Path]](description = "Paths of files to concatenate.", isMandatory = true)
-    val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
+    val src =
+      paramDef[Seq[Path]](description = "Paths of files/dirs to copy.", isMandatory = true)
+    val dst =
+      paramDef[Path](description = "Path (of dir) to copy to.", isMandatory = true)
+    val recursive = optDef[Boolean](description = "Copy dirs recursively", abbr = "R")
   }
 
   @Test
-  def test1(): Unit = {
-
+  def cpTest(): Unit = {
+    val cpDef = new CpDef
+    println(cpDef.argTree.prettyString)
   }
 }

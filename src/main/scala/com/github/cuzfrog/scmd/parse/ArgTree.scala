@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
-import com.github.cuzfrog.scmd.{Command, CommandEntry, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter}
 
 import scala.reflect.ClassTag
 
@@ -64,3 +64,25 @@ case class OptNode[+T](entity: OptionArg[T],
 }
 
 //todo: find out is it able to new private class.
+
+object ArgTree {
+  implicit val canFormPrettyString: CanFormPrettyString[ArgTree] = (a: ArgTree) => {
+    val NEW_LINE = System.lineSeparator
+    val cmdNode = a.toTopNode
+
+    def recMkPrettyString(cmdNode: CmdNode, indent: String = ""): String = {
+      val cmd = cmdNode.entity.name
+      val params =
+        cmdNode.params.map(n => s"$indent+-param[${n.entity.name}] = ${n.value}")
+      val opts =
+        cmdNode.opts.map(n => s"$indent+-opt  [${n.entity.name}] = ${n.value}")
+      val subCmds =
+        cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
+      val result: Seq[String] =
+        Seq(cmd) ++ params ++ opts ++ Seq(s"$indent +-cmdEntry") ++ subCmds
+      result.mkString(NEW_LINE)
+    }
+
+    recMkPrettyString(cmdNode)
+  }
+}

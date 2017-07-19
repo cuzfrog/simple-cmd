@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.parse
 
+import scala.annotation.tailrec
+
 
 private object ArgParser {
   def parse(argTree: ArgTree, args: Array[String]) = {
@@ -32,6 +34,7 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
   def parsed: ArgTree = ???
 
 
+  @tailrec
   private def recProceed(): Path = {
     proceedOne() match {
       case Some(ae) =>
@@ -42,11 +45,10 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
             pathCursor = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
             recProceed()
-
-          //if this path is an end:
+          //if this path is an end(exception occurred):
           case Left(e) =>
             pathCursor.backtrack match {
-              //found a unexplored fork:
+              //found an unexplored fork:
               case Some(path) =>
                 pathCursor = path
                 c.restore(path.anchor.contextSnapshot)
@@ -55,7 +57,6 @@ private final class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
               case None => throw e
             }
         }
-
       //if complete:
       case None => pathCursor
     }

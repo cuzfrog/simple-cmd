@@ -1,7 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
 import scala.collection.mutable
-import scala.collection.immutable
 import scala.reflect.ClassTag
 
 /**
@@ -10,13 +9,14 @@ import scala.reflect.ClassTag
   * Notice most methods have side-effects.
   *
   * Design to be thread-safe by synchronizing actions.
+  * So that later concurrent parsing may be achieved in some degree.
   * ArgTree needs to be immutable.
   */
 private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
   /** Parameter is ordered. */
-  private[this] val paramCursors = mutable.Map(currentCmdNode -> 0)
+  private[this] var paramCursor: Int = 0
   /**
     * Not yet consumed opts accumulated upstream.
     * OptNode's equality depends on OptionArg's.
@@ -61,23 +61,21 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   }
 
   /** Return current pointed ParamNode of current CmdNode. */
+  @inline
   def nextParamNode: Option[ParamNode[_]] = this.synchronized {
-    val cursor = paramCursors.getOrElse(currentCmdNode, 0)
     val params = currentCmdNode.params
-    if (params.length <= cursor) None else {
-      val result = params(cursor)
-      paramCursors.put(currentCmdNode, cursor + 1)
+    if (noMoreParamForThisCmd) None else {
+      val result = params(paramCursor)
+      paramCursor += 1
       Option(result)
     }
   }
 
   /** Return previous pointed ParamNode of current CmdNode. */
   def lastParamNode: Option[ParamNode[_]] = this.synchronized {
-    val cursor = paramCursors.getOrElse(currentCmdNode, 0)
-    if (cursor <= 0) None else {
-      val lastIdx = cursor - 1
-      paramCursors.put(currentCmdNode, lastIdx)
-      Option(currentCmdNode.params(lastIdx))
+    if (paramCursor <= 0) None else {
+      paramCursor -= 1
+      Option(currentCmdNode.params(paramCursor))
     }
   }
 
@@ -114,29 +112,31 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   }
 
   def takeSnapshot: ContextSnapshot = this.synchronized {
-    ContextSnapshot(currentCmdNode, argCursor, paramCursors.getOrElse(currentCmdNode, 0))
+    ContextSnapshot(currentCmdNode, argCursor, paramCursor)
   }
 
-  def restore(snapshot: ContextSnapshot): Unit = ???
+  /** Restore context to the state of a given snapshot. */
+  def restore(snapshot: ContextSnapshot): Unit = this.synchronized {
+    currentCmdNode = snapshot.cmdNode
+    argCursor = snapshot.argCursor
+    paramCursor = snapshot.paramCursor
+  }
 
   @inline
   def mandatoryLeftCnt: Int = this.synchronized {
-    val paramCnt = {
-      val paramCursor = paramCursors.getOrElse(currentCmdNode, 0)
-      currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
-    }
+    val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
     val optCnt = optsUpstreamLeft.count(_.entity.isMandatory)
     val subCmdCnt = currentCmdNode.subCmdEntry.mandatoryDownstreamCnt
     paramCnt + optCnt + subCmdCnt
   }
 
   @inline
-  def isComplete: Boolean = this.synchronized {
-    mandatoryLeftCnt == 0 && noArgLeft
-  }
-  def noArgLeft: Boolean = this.synchronized {
-    args.length <= argCursor
-  }
+  def isComplete: Boolean = this.synchronized {mandatoryLeftCnt == 0 && noArgLeft}
+
+  def noArgLeft: Boolean = this.synchronized(args.length <= argCursor)
+
+  private def noMoreParamForThisCmd: Boolean =
+    this.synchronized(currentCmdNode.params.length <= paramCursor)
 }
 
 private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)

@@ -2,7 +2,7 @@ package com.github.cuzfrog.scmd.parse
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.cuzfrog.scmd.{Command, CommandEntry, Defaults, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{AppInfo, Command, CommandEntry, Defaults, OptionArg, Parameter}
 
 import scala.reflect.ClassTag
 import scala.collection.mutable

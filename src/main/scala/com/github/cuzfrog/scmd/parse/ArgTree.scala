@@ -29,9 +29,9 @@ private case class CmdEntryNode(entity: CommandEntry,
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
-private sealed trait NodeTag[+N <: NodeTag[N]]
+private[parse] sealed trait NodeTag[+N <: NodeTag[N]]
 
-private sealed trait ValueNode extends Node {
+private[parse] sealed trait ValueNode extends Node {
   def value: Seq[String]
   def tpe: ClassTag[_]
 }

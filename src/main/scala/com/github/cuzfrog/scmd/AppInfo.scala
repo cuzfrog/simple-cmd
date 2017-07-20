@@ -1,4 +1,4 @@
-package com.github.cuzfrog.scmd.parse
+package com.github.cuzfrog.scmd
 
 private case class AppInfo(name: String,
                            shortDescription: Option[String] = None,

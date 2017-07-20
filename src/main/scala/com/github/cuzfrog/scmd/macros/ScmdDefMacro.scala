@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.RuntimeClassDefs
+
 import scala.meta._
 import scala.collection.immutable
 
@@ -9,7 +11,9 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
 
-  final def expand(name: Type.Name, stats: immutable.Seq[Stat]): Defn.Class = {
+  final def expand(name: Type.Name, stats: immutable.Seq[Stat], classDefs: RuntimeClassDefs.type): Stat = {
+
+    val appInfo = TermAppInfo.collectAppInfo(stats)
 
     /**
       * A RawArg is macro time instance of arg definition.
@@ -41,11 +45,28 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     )
     val moreStats = headers ++ stats ++ addMethods
 
-    //abort("dev...")
+    val className = Type.fresh("ScmdUtil")
 
-    q"""
-          class $name { ..$moreStats }
-        """
+    val classDef = classDefs.AppInfo
+
+    println(classDef.syntax)
+    val utilClass =
+      q"""private class $className {
+            private[this] val appInfo = ${appInfo.term}
+            def act = println(appInfo)
+          }
+          """
+    val helperStats = immutable.Seq(
+      q"private val helper = new ${Ctor.Ref.Name(className.value)}()",
+      q"def act = helper.act"
+    )
+
+    abort("dev...")
+    q"""object Scmd{
+          $classDef
+          $utilClass
+          ..$helperStats
+        }"""
   }
 }
 

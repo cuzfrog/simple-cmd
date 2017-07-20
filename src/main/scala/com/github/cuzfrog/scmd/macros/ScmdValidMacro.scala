@@ -6,6 +6,6 @@ import scala.meta.{Defn, Stat, Type}
 /**
   * Created by cuz on 7/19/17.
   */
-private[scmd] class ScmdValidMacro extends ScmdMacro {
-  override def expand(name: Type.Name, stats: immutable.Seq[Stat]): Defn.Class = ???
-}
+//private[scmd] class ScmdValidMacro extends ScmdMacro {
+//  override def expand(name: Type.Name, stats: immutable.Seq[Stat]): Stat = ???
+//}

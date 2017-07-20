@@ -9,14 +9,15 @@ import scala.reflect.ClassTag
 
 
 private final case class RawArg(arg: Argument[_], idx: Int, tpe: Type)
+
 private object RawArg {
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
     stats.zipWithIndex collect {
-      case (q"val $cmd: $_ = cmdDef(..$params)", idx) =>
+      case (q"val $cmd: $_ = cmdDef(..$params): $_", idx) =>
         val description = extract[String](params, TERM_DESCRIPTION)
         RawArg(Command(cmd.syntax, description), idx, TYPE_NOTHING)
 
-      case (q"val $para = paramDef[$tpe](..$params)", idx) =>
+      case (q"val $para: $_ = paramDef[$tpe](..$params): $_", idx) =>
         val description = extract[String](params, TERM_DESCRIPTION)
         val isMandatory =
           extract[Boolean](params, TERM_IS_MANDATORY).getOrElse(Defaults.isMandatory)
@@ -25,7 +26,7 @@ private object RawArg {
           , idx, tpe
         )
 
-      case (q"val $opt = optDef[$tpe](..$params)", idx) =>
+      case (q"val $opt: $_ = optDef[$tpe](..$params): $_", idx) =>
         val description = extract[String](params, TERM_DESCRIPTION)
         val isMandatory =
           extract[Boolean](params, TERM_IS_MANDATORY).getOrElse(Defaults.isMandatory)

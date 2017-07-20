@@ -7,6 +7,6 @@ import scala.meta._
 
 final class ScmdDefTest extends StaticAnnotation{
   inline def apply(defn: Any): Any = meta {
-    MacroUtil(new ScmdDefMacroTest, defn)
+    MacroUtil(new ScmdDefMacroTest, defn, RuntimeClassDefs)
   }
 }

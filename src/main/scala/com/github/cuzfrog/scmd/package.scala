@@ -13,19 +13,20 @@ package object scmd {
                 default: => T = Empty): OptionArg[T] = DummyOptionArg
 
   def appDef(name: String,
-             shortDescription: Option[String] = None,
-             fullDescription: Option[String] = None,
-             version: Option[String] = None,
-             license: Option[String] = None,
-             author: Option[String] = None,
-             custom: Map[String, String] = Map.empty): ProgramInfo = DummyProgramInfo
+             shortDescription: String = "",
+             fullDescription: String = "",
+             version: String = "",
+             license: String = "",
+             author: String = ""): Unit = ()
+
+  def appDefCustom(item: (String, String)*): Unit = ()
 
 
   private object DummyCommand extends Command("", None)
   //private object DefaultEntry extends CommandEntry("", None, true)
   private object DummyParameter extends Parameter[Nothing]("")
   private object DummyOptionArg extends OptionArg[Nothing]("")
-  private object DummyProgramInfo extends ProgramInfo("")
+  //private object DummyProgramInfo extends AppInfo("")
 
   //private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
 

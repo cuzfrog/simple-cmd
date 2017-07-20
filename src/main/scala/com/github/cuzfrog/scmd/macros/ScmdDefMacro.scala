@@ -12,6 +12,8 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
   protected val isTestMode: Boolean = false
 
   final def expand(name: Type.Name, stats: immutable.Seq[Stat], classDefs: RuntimeClassDefs.type): Stat = {
+    /** For testing. */
+    val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
     val appInfo = TermAppInfo.collectAppInfo(stats)
 
@@ -30,19 +32,19 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       *
       * This step build an TermArgTree by the order of user-defined args in source code,
       * then turn it into a single macro-reify-ready Term.
+      *
+      * This step needs a ScmdRuntime instance to execute.
+      * ScmdRuntime serves as a runtime agent to instantiate and encapsulate all needed scmd classes.
       */
     val argTreeBuild = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
-
-    /** For testing. */
-    val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
 
     println(argTreeBuild.syntax)
 
     val addMethods = List(
       q"$privateMod val scmdRuntime:ScmdRuntime = ScmdRuntime.create",
-      q"$privateMod def buildTree:ScmdRuntime = $argTreeBuild",
-      q"def argTreeString:String = buildTree.argTreeString",
+      q"$argTreeBuild", //execute scmdRuntime to build an argTree
+      q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parse(args: Array[String]) = { args.foreach(println) }"
     )
 

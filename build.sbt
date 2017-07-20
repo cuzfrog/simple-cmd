@@ -12,11 +12,11 @@ val macroAnnotationSettings = Seq(
 )
 
 val internalMacros = project
-  .settings(commonSettings)
+  .settings(commonSettings, macroAnnotationSettings)
   .settings(
-    name := "simple-cmd",
+    name := "simple-cmd-internal",
     libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
+      //"org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
     )
   )
 
@@ -29,7 +29,7 @@ val root = (project in file("."))
     libraryDependencies ++= Seq(
 
     )
-  )
+  ).dependsOn(internalMacros)
 
 
 val tests = project

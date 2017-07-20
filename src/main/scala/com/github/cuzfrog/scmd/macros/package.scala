@@ -20,7 +20,7 @@ package object macros {
     }
   }
 
-  implicit val definableCommand: Definable[Command] = (a: Command) => {
+  private[macros] implicit val definableCommand: Definable[Command] = (a: Command) => {
     val name = Lit.String(a.name)
     val description = description2term(a.description)
     q"Command($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"

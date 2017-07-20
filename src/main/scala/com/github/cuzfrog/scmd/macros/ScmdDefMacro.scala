@@ -36,36 +36,16 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
-    val headers = List(
-      q"import com.github.cuzfrog.scmd._"
-    )
+
+
     val addMethods = List(
       q"$privateMod def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree",
       q"""def parse(args: Array[String]) = { args.foreach(println) }"""
     )
-    val moreStats = headers ++ stats ++ addMethods
 
-    val className = Type.fresh("ScmdUtil")
-
-    val classDef = classDefs.AppInfo
-
-    println(classDef.syntax)
-    val utilClass =
-      q"""private class $className {
-            private[this] val appInfo = ${appInfo.term}
-            def act = println(appInfo)
-          }
-          """
-    val helperStats = immutable.Seq(
-      q"private val helper = new ${Ctor.Ref.Name(className.value)}()",
-      q"def act = helper.act"
-    )
-
-    abort("dev...")
+    //abort("dev...")
     q"""object Scmd{
-          $classDef
-          $utilClass
-          ..$helperStats
+          private def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree
         }"""
   }
 }

@@ -23,12 +23,13 @@ private object TermArg {
     }
     rawArg.arg match {
       case _: Command =>
-        val term = q"Command($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
+        val term =
+          q"scmdRuntime.buildCommand($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
         TermCmd(term, rawArg.idx)
       case param: Parameter[_] =>
         val isMandatory = Lit.Boolean(param.isMandatory)
         val term =
-          q"""Parameter[${rawArg.tpe}]($TERM_NAME = $name,
+          q"""scmdRuntime.buildParameter[${rawArg.tpe}]($TERM_NAME = $name,
                                      $TERM_DESCRIPTION = $description,
                                      $TERM_IS_MANDATORY = $isMandatory)"""
         TermParam(term, rawArg.idx, rawArg.tpe)
@@ -39,7 +40,7 @@ private object TermArg {
           case None => q"None"
         }
         val term =
-          q"""OptionArg[${rawArg.tpe}]($TERM_NAME = $name,
+          q"""scmdRuntime.buildOptionArg[${rawArg.tpe}]($TERM_NAME = $name,
                                        $TERM_ABBREVIATION = $abbr,
                                        $TERM_DESCRIPTION = $description,
                                        $TERM_IS_MANDATORY = $isMandatory)"""
@@ -62,7 +63,7 @@ private final case class TermCommandEntry(term: Term,
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    q"""$TERM_pkg_scmd.parse.ParamNode[${a.tpe}](
+    q"""scmdRuntime.buildParamNode[${a.tpe}](
             entity = ${a.term},
             tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}]),
             value = Nil
@@ -72,7 +73,7 @@ private object TermParam {
 
 private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
-    q"""$TERM_pkg_scmd.parse.OptNode[${a.tpe}](
+    q"""scmdRuntime.buildOptNode[${a.tpe}](
             entity = ${a.term},
             tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}]),
             value = Nil
@@ -86,15 +87,15 @@ private object TermCommandEntry {
       case Nil => q"$TERM_immutable.Seq.empty[$TERM_pkg_scmd.parse.CmdNode]"
       case cdren => q"$TERM_immutable.Seq(..${cdren.map(_.defnTerm)})"
     }
-    q"""new $TERM_pkg_scmd.parse.CmdEntryNode{
-          val entity = ${a.term}
-          val children = $children
-        }"""
+    q"""scmdRuntime.buildCmdEntryNode(
+          entity = ${a.term},
+          children = $children
+        )"""
   }
 
   val default: TermCommandEntry = {
     val term =
-      q"""CommandEntry("",None)"""
+      q"""scmdRuntime.defaultCommandEntry"""
     TermCommandEntry(term = term, children = immutable.Seq.empty)
   }
 

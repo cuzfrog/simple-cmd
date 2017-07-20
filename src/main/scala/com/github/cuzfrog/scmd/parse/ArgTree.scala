@@ -4,7 +4,7 @@ import com.github.cuzfrog.scmd.{CanFormPrettyString, Command, CommandEntry, Opti
 
 import scala.reflect.ClassTag
 
-final case class ArgTree(topParams: Seq[ParamNode[_]],
+private final case class ArgTree(topParams: Seq[ParamNode[_]],
                          topOpts: Seq[OptNode[_]],
                          cmdEntry: CmdEntryNode) {
   def toTopNode: CmdNode = new CmdNode {
@@ -16,9 +16,9 @@ final case class ArgTree(topParams: Seq[ParamNode[_]],
   }
 }
 
-sealed trait Node
+private sealed trait Node
 
-trait CmdNode extends Node {
+private trait CmdNode extends Node {
   def entity: Command
   def params: Seq[ParamNode[_]]
   def opts: Seq[OptNode[_]]
@@ -27,25 +27,25 @@ trait CmdNode extends Node {
   def subCmdEntry: CmdEntryNode
 }
 
-trait CmdEntryNode extends Node {
+private trait CmdEntryNode extends Node {
   val entity: CommandEntry
   val children: Seq[CmdNode]
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
-sealed trait NodeTag[+N <: NodeTag[N]]
+private sealed trait NodeTag[+N <: NodeTag[N]]
 
-sealed trait ValueNode extends Node {
+private sealed trait ValueNode extends Node {
   def value: Seq[String]
   def tpe: ClassTag[_]
 }
 
-case class ParamNode[+T](entity: Parameter[T],
+private case class ParamNode[+T](entity: Parameter[T],
                          tpe: ClassTag[_],
                          value: Seq[String])
   extends ValueNode with NodeTag[ParamNode[T]]
 
-case class OptNode[+T](entity: OptionArg[T],
+private case class OptNode[+T](entity: OptionArg[T],
                        tpe: ClassTag[_],
                        value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]] {
@@ -65,7 +65,7 @@ case class OptNode[+T](entity: OptionArg[T],
 
 //todo: find out is it able to new private class.
 
-object ArgTree {
+private object ArgTree {
   implicit val canFormPrettyString: CanFormPrettyString[ArgTree] = (a: ArgTree) => {
     val NEW_LINE = System.lineSeparator
     val cmdNode = a.toTopNode

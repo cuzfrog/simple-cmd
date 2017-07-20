@@ -2,15 +2,15 @@ package com.github.cuzfrog
 
 package object scmd {
 
-  def cmdDef(description: String = ""): Command = DummyCommand
+  def cmdDef(description: String = ""): String = ""
 
   def paramDef[T](description: String = "",
                   isMandatory: Boolean = false,
-                  default: => T = Empty): Parameter[T] = DummyParameter
+                  default: => T = Empty): Option[T] = None
 
   def optDef[T](abbr: String = "",
                 description: String = "",
-                default: => T = Empty): OptionArg[T] = DummyOptionArg
+                default: => T = Empty): Option[T] = None
 
   def appDef(name: String,
              shortDescription: String = "",
@@ -20,13 +20,6 @@ package object scmd {
              author: String = ""): Unit = ()
 
   def appDefCustom(item: (String, String)*): Unit = ()
-
-
-  private object DummyCommand extends Command("", None)
-  //private object DefaultEntry extends CommandEntry("", None, true)
-  private object DummyParameter extends Parameter[Nothing]("")
-  private object DummyOptionArg extends OptionArg[Nothing]("")
-  //private object DummyProgramInfo extends AppInfo("")
 
   //private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
 

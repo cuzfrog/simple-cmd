@@ -11,6 +11,6 @@ private object TermAppInfo {
       case q"appDefCustom(..$params)" =>
     }
 
-    TermAppInfo(q"AppInfo(name = ${Lit.String("dummy-app")})")
+    TermAppInfo(q"scmdRuntime.addAppInfo(name = ${Lit.String("dummy-app")})")
   }
 }

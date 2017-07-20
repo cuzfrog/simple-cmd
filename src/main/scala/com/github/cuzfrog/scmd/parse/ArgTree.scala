@@ -5,31 +5,27 @@ import com.github.cuzfrog.scmd.{CanFormPrettyString, Command, CommandEntry, Opti
 import scala.reflect.ClassTag
 
 private final case class ArgTree(topParams: Seq[ParamNode[_]],
-                         topOpts: Seq[OptNode[_]],
-                         cmdEntry: CmdEntryNode) {
-  def toTopNode: CmdNode = new CmdNode {
-    override val parent: Option[CmdNode] = None
-    override def params: Seq[ParamNode[_]] = topParams
-    override def opts: Seq[OptNode[_]] = topOpts
-    override def subCmdEntry: CmdEntryNode = cmdEntry
-    override def entity: Command = Command("AppName", None) //todo: replace AppName
-  }
+                                 topOpts: Seq[OptNode[_]],
+                                 cmdEntry: CmdEntryNode) {
+  def toTopNode: CmdNode = CmdNode(
+    parent = None,
+    params = topParams,
+    opts = topOpts,
+    subCmdEntry = cmdEntry,
+    entity = Command("AppName", None) //todo: replace AppName
+  )
 }
 
 private sealed trait Node
 
-private trait CmdNode extends Node {
-  def entity: Command
-  def params: Seq[ParamNode[_]]
-  def opts: Seq[OptNode[_]]
+private case class CmdNode(entity: Command,
+                           params: Seq[ParamNode[_]],
+                           opts: Seq[OptNode[_]],
+                           parent: Option[CmdNode],
+                           subCmdEntry: CmdEntryNode) extends Node
 
-  def parent: Option[CmdNode]
-  def subCmdEntry: CmdEntryNode
-}
-
-private trait CmdEntryNode extends Node {
-  val entity: CommandEntry
-  val children: Seq[CmdNode]
+private case class CmdEntryNode(entity: CommandEntry,
+                                children: Seq[CmdNode]) extends Node {
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
@@ -40,14 +36,14 @@ private sealed trait ValueNode extends Node {
   def tpe: ClassTag[_]
 }
 
-private case class ParamNode[+T](entity: Parameter[T],
-                         tpe: ClassTag[_],
-                         value: Seq[String])
+private case class ParamNode[+T](entity: Parameter[_],
+                                 tpe: ClassTag[_],
+                                 value: Seq[String])
   extends ValueNode with NodeTag[ParamNode[T]]
 
-private case class OptNode[+T](entity: OptionArg[T],
-                       tpe: ClassTag[_],
-                       value: Seq[String])
+private case class OptNode[+T](entity: OptionArg[_],
+                               tpe: ClassTag[_],
+                               value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]] {
 
   //OptNode's equality depends on its entity's. Value is stripped off for parsing quick comparing.

@@ -1,7 +1,8 @@
 package com.github.cuzfrog.scmd
 
-import scala.collection.immutable
-
+/**
+  * Exposed to macros for basic validation, so need to put in this package.
+  */
 private sealed trait Argument[+A] {
   def name: String
   def description: Option[String]

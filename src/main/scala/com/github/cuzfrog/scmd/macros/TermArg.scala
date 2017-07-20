@@ -84,7 +84,7 @@ private object TermOpt {
 private object TermCommandEntry {
   implicit val definable: Definable[TermCommandEntry] = (a: TermCommandEntry) => {
     val children = a.children match {
-      case Nil => q"$TERM_immutable.Seq.empty[$TERM_pkg_scmd.parse.CmdNode]"
+      case Nil => q"$TERM_immutable.Seq.empty[Int]"
       case cdren => q"$TERM_immutable.Seq(..${cdren.map(_.defnTerm)})"
     }
     q"""scmdRuntime.buildCmdEntryNode(

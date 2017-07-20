@@ -57,9 +57,11 @@ sealed trait ScmdRuntime {
   def buildArgTree(topParams: Seq[Int],
                    topOpts: Seq[Int],
                    cmdEntry: Int): this.type
+
+  def argTreeString: String
 }
 object ScmdRuntime {
-  def createBuilder: ScmdRuntime = new ScmdRuntimeImpl
+  def create: ScmdRuntime = new ScmdRuntimeImpl
 }
 
 /** Not Thread-safe. It is only executed privately inside @ScmdDef annotated class, at runtime. */
@@ -80,7 +82,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] val repository = mutable.Map.empty[Int, Box[_]]
   private[this] val idGen = new AtomicInteger(0)
 
-  private def getEntity[T](e: Int): T =
+  private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recusive build failed.")).unbox[T]
 
   override def addAppInfo(name: String,
@@ -135,7 +137,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                                  tpe: ClassTag[T],
                                  value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
-    val e = getEntity[Parameter[_]](entity)
+    val e = getEntity[Parameter[T]](entity)//.asInstanceOf[Parameter[T]]
     val a = ParamNode[T](entity = e, tpe = tpe, value = value)
     repository.put(id, Box(a))
     id
@@ -144,7 +146,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                                tpe: ClassTag[T],
                                value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
-    val e = getEntity[OptionArg[_]](entity)
+    val e = getEntity[OptionArg[T]](entity)//.asInstanceOf[OptionArg[T]]
     val a = OptNode[T](entity = e, tpe = tpe, value = value)
     repository.put(id, Box(a))
     id
@@ -188,4 +190,5 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.clear()
     this
   }
+  override def argTreeString: String = argTree.prettyString
 }

@@ -17,7 +17,7 @@ object Tmp {
   }
 
   def main(args: Array[String]): Unit = {
-    //Scmd.act
+    println((new CatArgDef).argTreeString)
   }
 }
 

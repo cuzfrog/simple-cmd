@@ -36,12 +36,12 @@ private sealed trait ValueNode extends Node {
   def tpe: ClassTag[_]
 }
 
-private case class ParamNode[+T](entity: Parameter[_],
+private case class ParamNode[+T](entity: Parameter[T],
                                  tpe: ClassTag[_],
                                  value: Seq[String])
   extends ValueNode with NodeTag[ParamNode[T]]
 
-private case class OptNode[+T](entity: OptionArg[_],
+private case class OptNode[+T](entity: OptionArg[T],
                                tpe: ClassTag[_],
                                value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]] {
@@ -67,7 +67,7 @@ private object ArgTree {
     val cmdNode = a.toTopNode
 
     def recMkPrettyString(cmdNode: CmdNode, indent: String = ""): String = {
-      val cmd = cmdNode.entity.name
+      val cmd = indent + cmdNode.entity.name
       val params =
         cmdNode.params.map(n => s"$indent+-param[${n.entity.name}] = ${n.value}")
       val opts =

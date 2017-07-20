@@ -4,7 +4,7 @@ import com.github.cuzfrog.scmd.RuntimeClassDefs
 
 import scala.meta._
 import scala.collection.immutable
-
+import Constants._
 
 private[scmd] class ScmdDefMacro extends ScmdMacro {
 
@@ -31,21 +31,25 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       * This step build an TermArgTree by the order of user-defined args in source code,
       * then turn it into a single macro-reify-ready Term.
       */
-    val argTree = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
+    val argTreeBuild = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
 
+    println(argTreeBuild.syntax)
 
     val addMethods = List(
-      q"$privateMod def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree",
-      q"""def parse(args: Array[String]) = { args.foreach(println) }"""
+      q"$privateMod val scmdRuntime:ScmdRuntime = ScmdRuntime.create",
+      q"$privateMod def buildTree:ScmdRuntime = $argTreeBuild",
+      q"def argTreeString:String = buildTree.argTreeString",
+      q"def parse(args: Array[String]) = { args.foreach(println) }"
     )
 
     //abort("dev...")
-    q"""object Scmd{
-          private def argTree: com.github.cuzfrog.scmd.parse.ArgTree = $argTree
+    q"""class $name{
+          import $TERM_pkg_scmd.parse.ScmdRuntime
+          ..$addMethods
         }"""
   }
 }

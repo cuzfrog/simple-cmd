@@ -11,7 +11,7 @@ import scala.collection.immutable
   */
 private trait TermArg {
   def term: Term
-  def idx: Int
+  def pos: Position
   def tpe: Type
 }
 private object TermArg {
@@ -25,14 +25,14 @@ private object TermArg {
       case _: Command =>
         val term =
           q"scmdRuntime.buildCommand($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
-        TermCmd(term, rawArg.idx)
+        TermCmd(term, rawArg.pos)
       case param: Parameter[_] =>
         val isMandatory = Lit.Boolean(param.isMandatory)
         val term =
           q"""scmdRuntime.buildParameter[${rawArg.tpe}]($TERM_NAME = $name,
                                      $TERM_DESCRIPTION = $description,
                                      $TERM_IS_MANDATORY = $isMandatory)"""
-        TermParam(term, rawArg.idx, rawArg.tpe)
+        TermParam(term, rawArg.pos, rawArg.tpe)
       case opt: OptionArg[_] =>
         val isMandatory = Lit.Boolean(opt.isMandatory)
         val abbr = opt.abbr match {
@@ -44,7 +44,7 @@ private object TermArg {
                                        $TERM_ABBREVIATION = $abbr,
                                        $TERM_DESCRIPTION = $description,
                                        $TERM_IS_MANDATORY = $isMandatory)"""
-        TermOpt(term, rawArg.idx, rawArg.tpe)
+        TermOpt(term, rawArg.pos, rawArg.tpe)
 
       case _: CommandEntry =>
         throw new AssertionError("CommandEntry will not be in a RawArg.")
@@ -52,12 +52,12 @@ private object TermArg {
   }
 }
 
-private final case class TermCmd(term: Term, idx: Int) extends TermArg {val tpe = TYPE_NOTHING}
-private final case class TermParam(term: Term, idx: Int, tpe: Type) extends TermArg
-private final case class TermOpt(term: Term, idx: Int, tpe: Type) extends TermArg
+private final case class TermCmd(term: Term, pos: Position) extends TermArg {val tpe = TYPE_NOTHING}
+private final case class TermParam(term: Term, pos: Position, tpe: Type) extends TermArg
+private final case class TermOpt(term: Term, pos: Position, tpe: Type) extends TermArg
 private final case class TermCommandEntry(term: Term,
                                           children: immutable.Seq[TermCmdNode]) extends TermArg {
-  val idx: Int = 0
+  val pos: Position = Position.None
   val tpe: Type = TYPE_NOTHING
 }
 

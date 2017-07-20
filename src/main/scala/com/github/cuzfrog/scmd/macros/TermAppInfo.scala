@@ -8,6 +8,9 @@ private object TermAppInfo {
   def collectAppInfo(stats: Seq[Stat]): TermAppInfo = {
     stats.collect {
       case q"appDef(..$params)" =>
+    }
+
+    stats.collect{
       case q"appDefCustom(..$params)" =>
     }
 

@@ -14,24 +14,27 @@ private object TreeBuilder {
     */
   @inline
   def buildArgTreeByIdx(argDefs: immutable.Seq[TermArg]): TermArgTree = {
+    val idxDefs = argDefs.toIndexedSeq
+
     @tailrec
     def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
       if (args.isEmpty) builder
       else recAdd(builder.add(args.head), args.tail)
     }
 
-    argDefs.collectFirst { case cmd: TermCmd => cmd } match {
+    idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
       case None =>
-        val params = argDefs.collect { case param: TermParam => param }
-        val opts = argDefs.collect { case opt: TermOpt => opt }
+        val params = idxDefs.collect { case param: TermParam => param }
+        val opts = idxDefs.collect { case opt: TermOpt => opt }
         TermArgTree(params, opts, TermCommandEntry.default)
       case Some(cmd1) =>
-        val topLevelOpts = argDefs.filter(_.idx < cmd1.idx).collect {
+        import idxDefs.indexOf
+        val topLevelOpts = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1)).collect {
           case opt: TermOpt => opt
           case param: TermParam =>
-            abort(s"Parameter[${param.term.syntax}] cannot be defined before first command.")
+            abort(param.pos, s"Parameter[${param.term.syntax}] cannot be defined before first command.")
         }
-        val tail = argDefs.filter(_.idx > cmd1.idx)
+        val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
         val builder = NodeBuilder.newIdxTermBuilder(cmd1)
 
         val commands = recAdd(builder, tail).seal

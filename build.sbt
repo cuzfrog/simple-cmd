@@ -16,7 +16,7 @@ val internalMacros = project
   .settings(
     name := "simple-cmd-internal",
     libraryDependencies ++= Seq(
-      //"org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
     )
   )
 

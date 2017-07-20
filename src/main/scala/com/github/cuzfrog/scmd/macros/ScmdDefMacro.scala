@@ -39,7 +39,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     val argTreeBuild = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
 
-    println(argTreeBuild.syntax)
+    //println(argTreeBuild.syntax)
 
     val addMethods = List(
       q"$privateMod val scmdRuntime:ScmdRuntime = ScmdRuntime.create",
@@ -55,7 +55,3 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
         }"""
   }
 }
-
-
-////    require(Option(appName).nonEmpty, "appName cannot be null.") //guards
-////    require(appName != "", "appName cannot be empty. You could leave as default, which is: App")

@@ -11,6 +11,8 @@ import scala.collection.mutable
   * Util/helper class to build scmd runtime classes that is instantiated within client class.
   *
   * To privatize/capsulate other scmd classes for not to pollute client workspace.
+  *
+  * This is the only public class exposed to client.
   */
 sealed trait ScmdRuntime {
   def addAppInfo(name: String,

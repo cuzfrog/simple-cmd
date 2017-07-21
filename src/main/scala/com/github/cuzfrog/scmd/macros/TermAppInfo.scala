@@ -2,7 +2,6 @@ package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.AppInfo
 import com.github.cuzfrog.scmd.internal.RawArgMacro
-import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.meta._
 
@@ -16,8 +15,8 @@ private object TermAppInfo {
       case (q"appDef(..$params)", pos) =>
         implicit val position = pos
         import RawArgMacro.extract
-        val name = extract[String](params).getOrElse("App") //todo: app name
-      val shortDescription = extract[String](params)
+        val name = extract[String](params)
+        val shortDescription = extract[String](params)
         val fullDescription = extract[String](params)
         val version = extract[String](params)
         val license = extract[String](params)
@@ -26,7 +25,11 @@ private object TermAppInfo {
     }
 
     val customSeq: Seq[AppInfo] = stats.collect {
-      case q"appDefCustom(..$params)" => ???
+      case q"appDefCustom(..$params)" =>
+        val custom = params.collect {
+          case q"${Lit.String(n)} -> ${Lit.String(v)}" if Option(v).nonEmpty => n -> v
+        }
+        AppInfo(custom = custom)
     }
 
     if (basicSeq.size > 1 || customSeq.size > 1) abort(stats.last.pos, "appDef cannot be duplicated.")
@@ -35,17 +38,32 @@ private object TermAppInfo {
       case (Some(basic), Some(custom)) => basic.copy(custom = custom.custom)
       case (Some(basic), None) => basic
       case (None, Some(custom)) => custom
-      case (None, None) => AppInfo("App")
+      case (None, None) => AppInfo()
     }
-
     TermAppInfo(appInfo.defnTerm)
   }
 
 
   implicit val definable: Definable[AppInfo] = new Definable[AppInfo] {
     override def defnTerm(a: AppInfo): Term = {
-      ???
-      q"scmdRuntime.addAppInfo(name = ${Lit.String("dummy-app")})"
+
+      val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
+      q"""scmdRuntime.addAppInfo(
+          name = ${a.name.toTerm},
+          shortDescription = ${a.shortDescription.toTerm},
+          fullDescription = ${a.fullDescription.toTerm},
+          version = ${a.version.toTerm},
+          license = ${a.license.toTerm},
+          author = ${a.author.toTerm},
+          custom = Seq(..$customTerm)
+         )"""
+    }
+
+    private implicit class OptionTermOps(in: Option[String]) {
+      def toTerm: Term = in match {
+        case Some(s) => q"Option(${Lit.String(s)})"
+        case None => q"None"
+      }
     }
   }
 }

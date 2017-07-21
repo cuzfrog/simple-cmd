@@ -15,7 +15,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
-    val appInfo = TermAppInfo.collectAppInfo(stats)
+    val appInfoBuild = TermAppInfo.collectAppInfo(stats).term
 
     /**
       * A RawArg is macro time instance of arg definition.
@@ -43,6 +43,8 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
 
     val addMethods = List(
       q"$privateMod val scmdRuntime:ScmdRuntime = ScmdRuntime.create",
+      q"$appInfoBuild", //execute scmdRuntime to build an appInfo
+      q"def appInfoString:String = scmdRuntime.appInfoString",
       q"$argTreeBuild", //execute scmdRuntime to build an argTree
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parse(args: Array[String]) = { args.foreach(println) }"

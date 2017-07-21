@@ -15,13 +15,13 @@ import scala.collection.mutable
   * This is the only public class exposed to client.
   */
 sealed trait ScmdRuntime {
-  def addAppInfo(name: String,
+  def addAppInfo(name: Option[String] = None,
                  shortDescription: Option[String] = None,
                  fullDescription: Option[String] = None,
                  version: Option[String] = None,
                  license: Option[String] = None,
                  author: Option[String] = None,
-                 custom: Map[String, String] = Map.empty): this.type
+                 custom: Seq[(String, String)] = Seq.empty): this.type
 
   def buildCommand(name: String,
                    description: Option[String]): Int
@@ -61,6 +61,7 @@ sealed trait ScmdRuntime {
                    cmdEntry: Int): this.type
 
   def argTreeString: String
+  def appInfoString: String
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl
@@ -87,20 +88,20 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recusive build failed.")).unbox[T]
 
-  override def addAppInfo(name: String,
+  override def addAppInfo(name: Option[String],
                           shortDescription: Option[String],
                           fullDescription: Option[String],
                           version: Option[String],
                           license: Option[String],
                           author: Option[String],
-                          custom: Map[String, String]): this.type = {
+                          custom: Seq[(String, String)]): this.type = {
     appInfo = AppInfo(name = name,
       shortDescription = shortDescription,
       fullDescription = fullDescription,
       version = version,
       license = license,
       author = author,
-      custom = custom)
+      custom = custom.to[scala.collection.immutable.Seq])
     this
   }
   override def buildCommand(name: String, description: Option[String]): Int = {
@@ -193,4 +194,5 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     this
   }
   override def argTreeString: String = argTree.prettyString
+  override def appInfoString: String = appInfo.prettyString
 }

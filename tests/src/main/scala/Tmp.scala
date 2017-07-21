@@ -7,8 +7,11 @@ object Tmp {
 
   @ScmdDef
   class CatArgDef {
-    appDef(name = "cat", shortDescription = "Concatenate files.")
-    appDefCustom("About" -> "this is a test app", "Organization" -> "com.github.cuzfrog")
+    appDef(name = "cat", shortDescription = "Concatenate files.", fullDescription = null)
+    appDefCustom(
+      "About" -> "this is a test app",
+      "Organization" -> "com.github.cuzfrog",
+      "null" -> null)
 
     //val badParam = paramDef[String](description = "throw exception")
     val cat = cmdDef(description = "Concatenate contents of files.")
@@ -17,7 +20,7 @@ object Tmp {
   }
 
   def main(args: Array[String]): Unit = {
-    println((new CatArgDef).argTreeString)
+    println((new CatArgDef).appInfoString)
   }
 }
 

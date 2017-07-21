@@ -18,8 +18,7 @@ private[scmd] object RawArgMacro {
   def extractWithName[T: ClassTag](params: Seq[Term.Arg],
                                            paramName: String, pos: Position): Option[T] = {
     val value = params.map {
-      case named: Term.Arg.Named =>
-        named
+      case named: Term.Arg.Named => named
       case unnamed =>
         abort(pos, s"Definition must use named parameter in def for content:${unnamed.syntax}")
     }.collect { case Term.Arg.Named(Term.Name(n), v) if n == paramName => v }.headOption

@@ -21,9 +21,9 @@ package object scmd {
 
   def appDefCustom(item: (String, String)*): Unit = ()
 
-  def validation[T](arg: Option[T], f: T => Boolean): Unit = ()
+  def validation[T](arg: Option[T])(f: T => Unit): Unit = ()
 
-  def validationMulti[A](args: A, f: A => Boolean): Unit = ()
+  //def validationMulti[A](args: A, f: A => Boolean): Unit = ()
 
   //private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
 

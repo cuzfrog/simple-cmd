@@ -179,7 +179,7 @@ private object ParamOrCmd extends CateUtils {
           }
           //single arg:
           else c.anchors(paramNode.copy(value = Seq(arg)))
-          
+
           val possibleCmdAnchor = if (!paramNode.entity.isMandatory) {
             this.consumeCmd(arg, c).right.toSeq.flatten
           } else Seq.empty

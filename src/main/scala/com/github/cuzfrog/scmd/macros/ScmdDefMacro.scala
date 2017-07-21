@@ -9,7 +9,9 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
 
-  final def expand(name: Type.Name, stats: immutable.Seq[Stat]): Stat = {
+  final def expand(name: Type.Name,
+                   paramss: immutable.Seq[Term.Param],
+                   stats: immutable.Seq[Stat]): Stat = {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 

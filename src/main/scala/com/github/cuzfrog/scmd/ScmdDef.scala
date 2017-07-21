@@ -9,7 +9,8 @@ import scala.meta._
 private object MacroUtil {
   def apply(macroImpl: ScmdMacro, defn: Tree): Stat = {
     defn match {
-      case q"..$mods class $name { ..$stats }" => macroImpl.expand(name, stats)
+      case q"..$mods class $name (..$params) { ..$stats }" =>
+        macroImpl.expand(name, params, stats)
       case _ =>
         abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class.")
     }

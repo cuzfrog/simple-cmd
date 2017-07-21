@@ -19,6 +19,17 @@ object Tmp {
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
   }
 
+  @ScmdValid
+  class CatValidation(argDef: CatArgDef) {
+    validation(argDef.files) { files =>
+      if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
+      files.foreach { f =>
+        if(!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+      }
+    }
+  }
+
+
   def main(args: Array[String]): Unit = {
     println((new CatArgDef).appInfoString)
     println((new CatArgDef).argTreeString)

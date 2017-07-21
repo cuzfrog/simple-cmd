@@ -17,7 +17,9 @@ val internalMacros = project
     name := "simple-cmd-internal",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
-    )
+    ),
+    publish := {},
+    publishLocal := {}
   )
 
 val root = (project in file("."))
@@ -29,7 +31,7 @@ val root = (project in file("."))
     libraryDependencies ++= Seq(
 
     )
-  ).dependsOn(internalMacros)
+  ).dependsOn(internalMacros % "compile-internal, test-internal")
 
 
 val tests = project

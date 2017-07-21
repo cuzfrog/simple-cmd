@@ -9,5 +9,5 @@ import scala.meta._
   * Macro implementation interface.
   */
 private[scmd] trait ScmdMacro {
-  def expand(name: Type.Name, stats: immutable.Seq[Stat], classDefs: RuntimeClassDefs.type): Stat
+  def expand(name: Type.Name, stats: immutable.Seq[Stat]): Stat
 }

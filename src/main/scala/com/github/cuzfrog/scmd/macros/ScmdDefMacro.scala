@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.RuntimeClassDefs
-
 import scala.meta._
 import scala.collection.immutable
 import Constants._
@@ -11,7 +9,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
 
-  final def expand(name: Type.Name, stats: immutable.Seq[Stat], classDefs: RuntimeClassDefs.type): Stat = {
+  final def expand(name: Type.Name, stats: immutable.Seq[Stat]): Stat = {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 

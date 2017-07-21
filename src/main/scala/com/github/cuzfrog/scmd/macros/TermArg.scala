@@ -63,10 +63,23 @@ private final case class TermCommandEntry(term: Term,
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
+    if (a.tpe.syntax.count(_ == '[') > 1) abort(a.pos,
+      s"Nested type[${a.tpe}] is not supported. " +
+        "For variable argument, use Seq[YourType] or List[YourType]. ")
+    val (tpe, isVariable) = a.tpe match {
+      case t"Seq[$t]" => (t, true)
+      case t"List[$t]" => (t, true)
+      case t"Option[$t]" =>
+        abort(a.pos, s"[${a.tpe}]," +
+          s" Option is unnecessary, optional arg is wrapped with Option automatically.")
+      case t => (t, false)
+    }
+
     q"""scmdRuntime.buildParamNode[${a.tpe}](
             entity = ${a.term},
-            tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}]),
-            value = Nil
+            value = Nil,
+            isVariable = ${Lit.Boolean(isVariable)},
+            tpe = _root_.scala.reflect.ClassTag(classOf[$tpe])
         )"""
   }
 }
@@ -75,7 +88,6 @@ private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
     q"""scmdRuntime.buildOptNode[${a.tpe}](
             entity = ${a.term},
-            tpe = _root_.scala.reflect.ClassTag(classOf[${a.tpe}]),
             value = Nil
         )"""
   }

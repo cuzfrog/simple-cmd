@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.RuntimeClassDefs
-
 import scala.collection.immutable
 import scala.meta._
 

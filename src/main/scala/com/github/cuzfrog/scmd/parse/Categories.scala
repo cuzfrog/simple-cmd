@@ -159,30 +159,27 @@ private object ParamOrCmd extends CateUtils {
       c.nextParamNode match {
         //there's still params to match:
         case Some(paramNode) =>
-          val anchorsWithValue = paramNode.tpe.runtimeClass match {
+          val anchorsWithValue = if (paramNode.isVariable) {
             //variable/multiple args:
-            case rc if rc == classOf[Seq[_]] || rc == classOf[List[_]] =>
 
-              /** Pop args from context and create anchors along the way. */
-              @tailrec
-              def recFork(acc: Seq[Anchor], values: Seq[String]): Seq[Anchor] = {
-                c.nextArgWithType[ParamOrCmd] match {
-                  case Some(v) =>
-                    val accValues = values :+ v
-                    val newAnchor = c.anchors(paramNode.copy(value = accValues))
-                    recFork(acc ++ newAnchor, accValues)
-                  case None => acc
-                }
+            /** Pop args from context and create anchors along the way. */
+            @tailrec
+            def recFork(acc: Seq[Anchor], values: Seq[String]): Seq[Anchor] = {
+              c.nextArgWithType[ParamOrCmd] match {
+                case Some(v) =>
+                  val accValues = values :+ v
+                  val newAnchor = c.anchors(paramNode.copy(value = accValues))
+                  recFork(acc ++ newAnchor, accValues)
+                case None => acc
               }
+            }
 
-              val firstAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
-              recFork(firstAnchor, Seq(arg)) //current context state should point to last anchors.
-
-            //single arg:
-            case _ =>
-              c.anchors(paramNode.copy(value = Seq(arg)))
+            val firstAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
+            recFork(firstAnchor, Seq(arg)) //current context state should point to last anchors.
           }
-
+          //single arg:
+          else c.anchors(paramNode.copy(value = Seq(arg)))
+          
           val possibleCmdAnchor = if (!paramNode.entity.isMandatory) {
             this.consumeCmd(arg, c).right.toSeq.flatten
           } else Seq.empty

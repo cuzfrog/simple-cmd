@@ -37,13 +37,10 @@ sealed trait ScmdRuntime {
                         isMandatory: Boolean = Defaults.isMandatory,
                         default: Option[T] = None): Int
 
-  def buildParamNode[T](entity: Int,
-                        tpe: ClassTag[T],
-                        value: Seq[String]): Int
+  def buildParamNode[T](entity: Int, value: Seq[String],
+                        isVariable: Boolean, tpe: ClassTag[_]): Int
 
-  def buildOptNode[T](entity: Int,
-                      tpe: ClassTag[T],
-                      value: Seq[String]): Int
+  def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int
 
   def buildCmdEntryNode(entity: Int,
                         children: Seq[Int]): Int
@@ -136,21 +133,18 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.put(id, Box(a))
     id
   }
-  override def buildParamNode[T](entity: Int,
-                                 tpe: ClassTag[T],
-                                 value: Seq[String]): Int = {
+  override def buildParamNode[T](entity: Int, value: Seq[String],
+                                 isVariable: Boolean, tpe: ClassTag[_]): Int = {
     val id = idGen.getAndIncrement()
-    val e = getEntity[Parameter[T]](entity)//.asInstanceOf[Parameter[T]]
-    val a = ParamNode[T](entity = e, tpe = tpe, value = value)
+    val e = getEntity[Parameter[T]](entity)
+    val a = ParamNode[T](entity = e, value = value, isVariable = isVariable, tpe)
     repository.put(id, Box(a))
     id
   }
-  override def buildOptNode[T](entity: Int,
-                               tpe: ClassTag[T],
-                               value: Seq[String]): Int = {
+  override def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
-    val e = getEntity[OptionArg[T]](entity)//.asInstanceOf[OptionArg[T]]
-    val a = OptNode[T](entity = e, tpe = tpe, value = value)
+    val e = getEntity[OptionArg[T]](entity)
+    val a = OptNode[T](entity = e, value = value)
     repository.put(id, Box(a))
     id
   }

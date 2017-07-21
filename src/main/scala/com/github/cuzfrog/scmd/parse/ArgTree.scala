@@ -1,7 +1,6 @@
 package com.github.cuzfrog.scmd.parse
 
 import com.github.cuzfrog.scmd.{CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter}
-
 import scala.reflect.ClassTag
 
 private final case class ArgTree(topParams: Seq[ParamNode[_]],
@@ -33,19 +32,16 @@ private[parse] sealed trait NodeTag[+N <: NodeTag[N]]
 
 private[parse] sealed trait ValueNode extends Node {
   def value: Seq[String]
-  def tpe: ClassTag[_]
+  def tpe: ClassTag[_] //specific data type, not includes Seq or List
 }
 
-private case class ParamNode[+T](entity: Parameter[T],
-                                 tpe: ClassTag[_],
-                                 value: Seq[String])
+private case class ParamNode[+T](entity: Parameter[T], value: Seq[String],
+                                 isVariable: Boolean, tpe: ClassTag[_])
   extends ValueNode with NodeTag[ParamNode[T]]
 
-private case class OptNode[+T](entity: OptionArg[T],
-                               tpe: ClassTag[_],
-                               value: Seq[String])
+private case class OptNode[+T: ClassTag](entity: OptionArg[T], value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]] {
-
+  val tpe = implicitly[ClassTag[_]]
   //OptNode's equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {
@@ -59,8 +55,6 @@ private case class OptNode[+T](entity: OptionArg[T],
   //todo: check if equals' overriding is correct.
 }
 
-//todo: find out is it able to new private class.
-
 private object ArgTree {
   implicit val canFormPrettyString: CanFormPrettyString[ArgTree] = (a: ArgTree) => {
     val NEW_LINE = System.lineSeparator
@@ -69,13 +63,17 @@ private object ArgTree {
     def recMkPrettyString(cmdNode: CmdNode, indent: String = ""): String = {
       val cmd = indent + cmdNode.entity.name
       val params =
-        cmdNode.params.map(n => s"$indent+-param[${n.entity.name}] = ${n.value}")
+        cmdNode.params.map { n =>
+          val ifVariable = if (n.isVariable) "..." else ""
+          s"$indent+-param$ifVariable: ${n.entity.name}[${n.tpe}] = ${n.value}"
+        }
       val opts =
-        cmdNode.opts.map(n => s"$indent+-opt  [${n.entity.name}] = ${n.value}")
+        cmdNode.opts.map(n => s"$indent+-opt: ${n.entity.name}[${n.tpe}] = ${n.value}")
       val subCmds =
         cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
+      val cmdEntry = if(subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
       val result: Seq[String] =
-        Seq(cmd) ++ params ++ opts ++ Seq(s"$indent +-cmdEntry") ++ subCmds
+        Seq(cmd) ++ params ++ opts ++ cmdEntry ++ subCmds
       result.mkString(NEW_LINE)
     }
 

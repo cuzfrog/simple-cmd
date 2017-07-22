@@ -8,6 +8,6 @@ import scala.meta._
   */
 private[scmd] trait ScmdMacro {
   def expand(name: Type.Name,
-             paramss: immutable.Seq[Term.Param],
+             paramss: immutable.Seq[immutable.Seq[Term.Param]],
              stats: immutable.Seq[Stat]): Stat
 }

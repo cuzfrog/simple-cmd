@@ -6,7 +6,7 @@ import scala.meta._
 
 private[scmd] class ScmdValidMacro extends ScmdMacro {
   final def expand(name: Type.Name,
-                   paramss: immutable.Seq[Term.Param],
+                   paramss: immutable.Seq[immutable.Seq[Term.Param]],
                    stats: immutable.Seq[Stat]): Stat = {
     ???
   }

@@ -3,6 +3,7 @@ import CommonSettings._
 shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
 onLoad in Global := (onLoad in Global).value andThen (Command.process(s"", _))
 scalaVersion in ThisBuild := "2.12.2"
+val CompileOnly = config("compileonly").hide
 
 val macroAnnotationSettings = Seq(
   addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M9" cross CrossVersion.full),
@@ -20,23 +21,36 @@ val internalMacros = project
     ),
     publish := {},
     publishLocal := {}
+  ).configs(CompileOnly)
+
+val shared = project
+  .settings(commonSettings, macroAnnotationSettings)
+  .settings(
+    name := "simple-cmd-shared"
   )
 
-val monocleVersion = "1.4.0"
+val macros = project
+  .settings(commonSettings, macroAnnotationSettings)
+  .settings(
+    name := "simple-cmd-macros",
+    libraryDependencies ++= {
+      val monocleVersion = "1.4.0"
+      Seq(
+        "com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
+        "com.github.julien-truffaut" %% "monocle-macro" % monocleVersion,
+        "com.github.julien-truffaut" %% "monocle-law" % monocleVersion % "test",
+        "org.scalaz" %% "scalaz-core" % "7.2.14"
+      )
+    }
+  ).dependsOn(internalMacros,shared)
 
-val root = (project in file("."))
+val runtime = (project in file("."))
   .settings(
     commonSettings, publicationSettings, readmeVersionSettings, macroAnnotationSettings
   )
   .settings(
-    name := "simple-cmd",
-    libraryDependencies ++= Seq(
-      "com.github.julien-truffaut" %%  "monocle-core"  % monocleVersion,
-      "com.github.julien-truffaut" %%  "monocle-macro" % monocleVersion,
-      "com.github.julien-truffaut" %%  "monocle-law"   % monocleVersion % "test",
-      "org.scalaz" %% "scalaz-core" % "7.2.14"
-    )
-  ).dependsOn(internalMacros % "compile-internal, test-internal")
+    name := "simple-cmd-runtime"
+  ).dependsOn(shared)
 
 
 val tests = project
@@ -46,4 +60,4 @@ val tests = project
     libraryDependencies ++= Seq(
 
     )
-  ).dependsOn(root % "compile->test;test->test")
+  ).dependsOn(runtime % "compile->test;test->test", macros % Provided)

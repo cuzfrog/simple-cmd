@@ -39,7 +39,8 @@ val macros = project
         "com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleVersion,
         "com.github.julien-truffaut" %% "monocle-law" % monocleVersion % "test",
-        "org.scalaz" %% "scalaz-core" % "7.2.14"
+        "org.scalaz" %% "scalaz-core" % "7.2.14",
+        "org.scalameta" %% "contrib" % "1.8.0"
       )
     }
   ).dependsOn(shared)

@@ -10,7 +10,7 @@ private object MacroUtil {
   def apply(macroImpl: ScmdMacro, defn: Tree): Stat = {
     defn match {
       case q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }" =>
-        macroImpl.expand(name, paramss, stats)
+        macroImpl.expand(mods, name, ctorMods, paramss, stats)
       case _ =>
         abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class.")
     }

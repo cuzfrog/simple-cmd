@@ -5,6 +5,7 @@ import monocle.macros.syntax.lens._
 
 import scala.collection.mutable
 import scala.meta._
+import scala.meta.contrib._
 import scalaz.std.list._
 
 /**
@@ -28,44 +29,82 @@ private case class AppContext(name: String)
   */
 private object AppRegister {
   private case class AppInternal(name: String,
-                                 argDefs: List[ArgExtention] = List(),
-                                 routes: Seq[TermRoute] = Seq())
-  private case class ArgExtention(arg: RawArg,
+                                 defClassType: Type,
+                                 argDefs: List[ArgExtension] = List(),
+                                 routes: Seq[TermRoute] = List())
+  private case class ArgExtension(arg: RawArg,
                                   validFunc: Option[TermValidation] = None)
 
   private[this] val appRepository: mutable.Map[String, AppInternal] = mutable.Map.empty
 
+  def registerApp(name: String, defClassType: Type): AppContext = {
+    appRepository.get(name) match {
+      case Some(app) =>
+        abort(s"App:${app.name} defined in [${app.defClassType}] has already registered.")
+      case None =>
+        appRepository.put(name, AppInternal(name, defClassType))
+        AppContext(name)
+    }
+  }
+
+  /**App name is inferred by the class type name.*/
+  def registerAppByType(className: Type): AppContext = {
+    val appNamePossible = this.inferAppName(className)
+    appRepository.put(appNamePossible, AppInternal(appNamePossible, className))
+    AppContext(appNamePossible)
+  }
+
+  /** Pipe this arg, register and return it. */
   def registerArg(arg: RawArg)(implicit c: AppContext): RawArg = this.synchronized {
     val appInternal = appRepository.get(c.name) match {
       case Some(app) =>
         if (app.argDefs.exists(_.arg.arg.name == arg.arg.name)) {
           abort(arg.pos, s"Name conflict of arg:${arg.arg.name}")
         }
-        app.lens(_.argDefs).modify(_ :+ ArgExtention(arg))
-      case None => AppInternal(c.name, List(ArgExtention(arg)))
+        app.lens(_.argDefs).modify(_ :+ ArgExtension(arg))
+      case None => abort(arg.pos, s"App:${c.name} has not been registered.")
     }
     appRepository.put(c.name, appInternal)
     arg
   }
 
-  def registerValidation(argName: String,
-                         validFunc: TermValidation)
+  /** Pipe this validation, register and return it. */
+  def registerValidation(validation: TermValidation)
                         (implicit c: AppContext): TermValidation = this.synchronized {
     val appInternal = appRepository.get(c.name) match {
       case Some(app) =>
-        if (!app.argDefs.exists(_.arg.arg.name == argName)) {
-          abort(validFunc.pos, s"Cannot find arg:$argName")
+        if (!app.argDefs.exists(_.arg.arg.name == validation.argName)) {
+          abort(validation.pos, s"Cannot find arg:${validation.argName}")
         }
         app.lens(_.argDefs).composeTraversal(eachArgExt).modify {
-          case argExt if argExt.arg.arg.name == argName => argExt.copy(validFunc = Some(validFunc))
+          case argExt if argExt.arg.arg.name == validation.argName => argExt.copy(validFunc = Some(validation))
           case other => other
         }
-      case None => abort(validFunc.pos, s"No such app:${c.name}")
+      case None => abort(validation.pos, s"No such app:${c.name}")
     }
     appRepository.put(c.name, appInternal)
-    validFunc
+    validation
+  }
+
+  def acquireAppByType(defClassType: Type): Option[AppContext] = {
+    appRepository.find(_._2.defClassType isEqual defClassType) map {
+      case (k, _) => AppContext(k)
+    }
+  }
+
+
+  def inferAppByType(className: Type): Option[AppContext] = {
+    val appNamePossible = this.inferAppName(className)
+    appRepository.get(appNamePossible).map(_ => AppContext(appNamePossible))
   }
 
   // =============== helpers ================
-  private val eachArgExt = Traversal.fromTraverse[List, ArgExtention]
+  private val eachArgExt = Traversal.fromTraverse[List, ArgExtension]
+  private val ClassNameExtractor = """(\w+)[A-Z]{1}\w*""".r
+  private def inferAppName(className: Type): String = {
+    className.syntax match {
+      case ClassNameExtractor(n) => n
+      case n => n
+    }
+  }
 }

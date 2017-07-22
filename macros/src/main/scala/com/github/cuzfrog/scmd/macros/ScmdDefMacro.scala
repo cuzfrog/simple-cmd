@@ -10,22 +10,34 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
 
-  final def expand(name: Type.Name,
+  final def expand(mods: immutable.Seq[Mod],
+                   name: Type.Name,
+                   ctorMods: immutable.Seq[Mod],
                    paramss: immutable.Seq[immutable.Seq[Term.Param]],
                    stats: immutable.Seq[Stat]): Stat = {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
-    val appInfoBuild = TermAppInfo.collectAppInfo(stats).term
+    /**
+      * Annotated classes need to communicate with each other.
+      * This is done through AppRegister.
+      */
+    val appInfo = TermAppInfo.collectAppInfo(stats)
+    implicit val appContext: AppContext = appInfo.appInfo.name match {
+      case Some(n) => AppRegister.registerApp(n, name)
+      case None => AppRegister.registerAppByType(name)
+    }
+
+    val appInfoBuild = appInfo.term
 
     /**
       * A RawArg is macro time instance of arg definition.
       * A TermArg is macro time term of arg Node.
       *
-      * This step collects arg defs from source code, checking syntax,
+      * This step collects arg defs from source code, checking syntax, register,
       * then turn them into Node terms.
       */
-    val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
+    val argDefs = RawArg.collectRawArg(stats).map(AppRegister.registerArg).map(TermArg.raw2termArg)
 
     /**
       * ArgTree represents structure of user defined args.
@@ -52,8 +64,9 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     )
 
     //abort("dev...")
-    q"""class $name{
+    q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd.parse.ScmdRuntime
+          ..$stats
           ..$addMethods
         }"""
   }

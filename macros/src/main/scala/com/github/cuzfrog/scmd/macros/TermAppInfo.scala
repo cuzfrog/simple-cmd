@@ -5,7 +5,7 @@ import com.github.cuzfrog.scmd.internal.RawArgMacro
 
 import scala.meta._
 
-private case class TermAppInfo(term: Term)
+private case class TermAppInfo(term: Term, appInfo: AppInfo)
 
 private object TermAppInfo {
 
@@ -40,7 +40,7 @@ private object TermAppInfo {
       case (None, Some(custom)) => custom
       case (None, None) => AppInfo()
     }
-    TermAppInfo(appInfo.defnTerm)
+    TermAppInfo(appInfo.defnTerm, appInfo)
   }
 
 

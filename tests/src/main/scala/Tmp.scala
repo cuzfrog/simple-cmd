@@ -6,7 +6,7 @@ import com.github.cuzfrog.scmd._
 object Tmp {
 
   @ScmdDef
-  class CatArgDef {
+  class CatDef {
     appDef(name = "cat", shortDescription = "Concatenate files.", fullDescription = null)
     appDefCustom(
       "About" -> "this is a test app",
@@ -20,7 +20,7 @@ object Tmp {
   }
 
   @ScmdValid
-  class CatValidation(argDef: CatArgDef) {
+  class CatValidation(argDef: CatDef) {
     validation(argDef.files) { files =>
       if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
       files.foreach { f =>
@@ -31,8 +31,8 @@ object Tmp {
 
 
   def main(args: Array[String]): Unit = {
-    println((new CatArgDef).appInfoString)
-    println((new CatArgDef).argTreeString)
+    println((new CatDef).appInfoString)
+    println((new CatDef).argTreeString)
   }
 }
 

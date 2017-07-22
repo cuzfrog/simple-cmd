@@ -27,7 +27,7 @@ val shared = project
   .settings(commonSettings, macroAnnotationSettings)
   .settings(
     name := "simple-cmd-shared"
-  )
+  ).dependsOn(internalMacros)
 
 val macros = project
   .settings(commonSettings, macroAnnotationSettings)
@@ -42,7 +42,7 @@ val macros = project
         "org.scalaz" %% "scalaz-core" % "7.2.14"
       )
     }
-  ).dependsOn(internalMacros,shared)
+  ).dependsOn(shared)
 
 val runtime = (project in file("."))
   .settings(
@@ -50,7 +50,7 @@ val runtime = (project in file("."))
   )
   .settings(
     name := "simple-cmd-runtime"
-  ).dependsOn(shared)
+  ).dependsOn(shared, macros % Provided)
 
 
 val tests = project

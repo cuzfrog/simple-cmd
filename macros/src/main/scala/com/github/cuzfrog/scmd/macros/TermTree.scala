@@ -1,9 +1,9 @@
 package com.github.cuzfrog.scmd.macros
 
-import scala.meta._
-import scala.collection.immutable
+import com.github.cuzfrog.scmd.macros.Constants._
 
-import Constants._
+import scala.collection.immutable
+import scala.meta._
 
 private final case class TermCmdNode(cmd: TermCmd,
                                      params: immutable.Seq[TermParam],

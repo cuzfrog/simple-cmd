@@ -3,8 +3,8 @@ package com.github.cuzfrog.scmd.macros
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.{Command, CommandEntry, OptionArg, Parameter}
 
-import scala.meta._
 import scala.collection.immutable
+import scala.meta._
 
 /**
   * Created by cuz on 7/14/17.

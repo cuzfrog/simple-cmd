@@ -1,10 +1,10 @@
 package com.github.cuzfrog.scmd.macros
 
-import scala.collection.mutable
-
-import scala.meta._
-import monocle.macros.syntax.lens._
 import monocle.Traversal
+import monocle.macros.syntax.lens._
+
+import scala.collection.mutable
+import scala.meta._
 import scalaz.std.list._
 
 /**

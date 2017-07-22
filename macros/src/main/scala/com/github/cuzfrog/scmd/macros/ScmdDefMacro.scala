@@ -1,8 +1,9 @@
 package com.github.cuzfrog.scmd.macros
 
-import scala.meta._
+import com.github.cuzfrog.scmd.macros.Constants._
+
 import scala.collection.immutable
-import Constants._
+import scala.meta._
 
 private[scmd] class ScmdDefMacro extends ScmdMacro {
 

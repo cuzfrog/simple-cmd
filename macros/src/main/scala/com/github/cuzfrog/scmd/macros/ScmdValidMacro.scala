@@ -28,6 +28,7 @@ private[scmd] class ScmdValidMacro extends ScmdMacro {
     implicit val appContext: AppContext = apps.headOption match {
       case Some(app) => app
       case None =>
+
         AppRegister.inferAppByType(name).getOrElse(abort(s"Cannot infer app by this class:$name"))
     }
 

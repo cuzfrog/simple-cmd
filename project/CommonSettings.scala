@@ -4,11 +4,11 @@ import MyTasks._
 
 object CommonSettings {
 
-  private val loggingDependencies = Seq(
+  val loggingDependencies = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-    "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.8.2" % "provided",
-    "org.apache.logging.log4j" % "log4j-api" % "2.8.2" % "provided",
-    "org.apache.logging.log4j" % "log4j-core" % "2.8.2" % "provided"
+    "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.8.2",
+    "org.apache.logging.log4j" % "log4j-api" % "2.8.2",
+    "org.apache.logging.log4j" % "log4j-core" % "2.8.2"
   )
 
   val commonSettings = Seq(

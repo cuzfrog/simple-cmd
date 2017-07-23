@@ -7,6 +7,7 @@ import scala.meta._
 
 //MacroUtil has to be in the same file.
 private object MacroUtil {
+  println(this.toString)
   def apply(macroImpl: ScmdMacro, defn: Tree): Stat = {
     defn match {
       case q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }" =>

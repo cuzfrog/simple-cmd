@@ -42,17 +42,15 @@ val macros = project
         "org.scalaz" %% "scalaz-core" % "7.2.14",
         "org.scalameta" %% "contrib" % "1.8.0"
       )
-    }
+    },
+    libraryDependencies ++= loggingDependencies
   ).dependsOn(shared)
 
-val runtime = (project in file("."))
-  .settings(
-    commonSettings, publicationSettings, readmeVersionSettings, macroAnnotationSettings
-  )
+val runtime = project
+  .settings(commonSettings, macroAnnotationSettings)
   .settings(
     name := "simple-cmd-runtime"
   ).dependsOn(shared, macros % Provided)
-
 
 val tests = project
   .settings(commonSettings, macroAnnotationSettings)
@@ -62,3 +60,11 @@ val tests = project
 
     )
   ).dependsOn(runtime % "compile->test;test->test", macros % Provided)
+
+val bundle = (project in file("."))
+  .settings(
+    commonSettings, publicationSettings, readmeVersionSettings, macroAnnotationSettings
+  )
+  .settings(
+    name := "simple-cmd"
+  ).dependsOn(runtime, macros)

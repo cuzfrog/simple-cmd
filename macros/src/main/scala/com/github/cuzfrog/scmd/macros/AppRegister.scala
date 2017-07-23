@@ -3,6 +3,7 @@ package com.github.cuzfrog.scmd.macros
 import monocle.Traversal
 import monocle.macros.syntax.lens._
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.meta._
 import scala.meta.contrib._
@@ -27,7 +28,7 @@ private case class AppContext(name: String)
   *
   * Thread-safe by synchronization to guard against possible concurrent compilation.
   */
-private object AppRegister {
+private object AppRegister extends Logging {
   private case class AppInternal(name: String,
                                  defClassType: Type,
                                  argDefs: List[ArgExtension] = List(),
@@ -35,9 +36,10 @@ private object AppRegister {
   private case class ArgExtension(arg: RawArg,
                                   validFunc: Option[TermValidation] = None)
 
-  private[this] val appRepository: mutable.Map[String, AppInternal] = mutable.Map.empty
+  private[this] val appRepository: mutable.Map[String, AppInternal] = TrieMap.empty
 
-  def registerApp(name: String, defClassType: Type): AppContext = {
+  def registerApp(name: String, defClassType: Type): AppContext = this.synchronized {
+    logger.debug(s"Register app:$name of type:$defClassType")
     appRepository.get(name) match {
       case Some(app) =>
         abort(s"App:${app.name} defined in [${app.defClassType}] has already registered.")
@@ -47,15 +49,19 @@ private object AppRegister {
     }
   }
 
-  /**App name is inferred by the class type name.*/
-  def registerAppByType(className: Type): AppContext = {
+  /** App name is inferred by the class type name. */
+  @inline
+  def registerAppByType(className: Type): AppContext = this.synchronized {
     val appNamePossible = this.inferAppName(className)
+    logger.debug(s"Register app by type:$className inferred name:$appNamePossible")
     appRepository.put(appNamePossible, AppInternal(appNamePossible, className))
     AppContext(appNamePossible)
   }
 
   /** Pipe this arg, register and return it. */
+  @inline
   def registerArg(arg: RawArg)(implicit c: AppContext): RawArg = this.synchronized {
+    logger.trace(s"Register arg:${arg.arg.name}-${arg.arg.getClass.getSimpleName}[${arg.tpe}]")
     val appInternal = appRepository.get(c.name) match {
       case Some(app) =>
         if (app.argDefs.exists(_.arg.arg.name == arg.arg.name)) {
@@ -69,15 +75,18 @@ private object AppRegister {
   }
 
   /** Pipe this validation, register and return it. */
+  @inline
   def registerValidation(validation: TermValidation)
                         (implicit c: AppContext): TermValidation = this.synchronized {
+    logger.trace(s"Register validation for arg:${validation.argName}")
     val appInternal = appRepository.get(c.name) match {
       case Some(app) =>
         if (!app.argDefs.exists(_.arg.arg.name == validation.argName)) {
           abort(validation.pos, s"Cannot find arg:${validation.argName}")
         }
         app.lens(_.argDefs).composeTraversal(eachArgExt).modify {
-          case argExt if argExt.arg.arg.name == validation.argName => argExt.copy(validFunc = Some(validation))
+          case argExt if argExt.arg.arg.name == validation.argName =>
+            argExt.copy(validFunc = Some(validation))
           case other => other
         }
       case None => abort(validation.pos, s"No such app:${c.name}")
@@ -86,16 +95,21 @@ private object AppRegister {
     validation
   }
 
-  def acquireAppByType(defClassType: Type): Option[AppContext] = {
-    appRepository.find(_._2.defClassType isEqual defClassType) map {
+  def acquireAppByType(defClassType: Type): Option[AppContext] = this.synchronized {
+    val result = appRepository.find(_._2.defClassType isEqual defClassType) map {
       case (k, _) => AppContext(k)
     }
+    logger.trace(s"Try to get app by type:$defClassType, result:$result")
+    result
   }
 
-
-  def inferAppByType(className: Type): Option[AppContext] = {
+  @inline
+  def inferAppByType(className: Type): Option[AppContext] = this.synchronized {
     val appNamePossible = this.inferAppName(className)
-    appRepository.get(appNamePossible).map(_ => AppContext(appNamePossible))
+    val result = appRepository.get(appNamePossible).map(_ => AppContext(appNamePossible))
+    logger.trace(s"Try to infer app by class name:$className," +
+      s" inferred name:$className, result:$result")
+    result
   }
 
   // =============== helpers ================

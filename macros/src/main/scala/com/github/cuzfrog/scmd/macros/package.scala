@@ -4,6 +4,8 @@ import scala.meta._
 
 package object macros {
 
+  private[macros] type Logging = com.typesafe.scalalogging.StrictLogging
+
   import Constants._
 
   /** Typeclass that define A to a single Term. */

@@ -15,7 +15,7 @@ import scalaz.std.list._
   * In scmd, multiple apps could be defined within same project.
   * They are distinguished by their names.
   */
-private case class AppContext(name: String)
+private case class AppContext(name: String) extends AnyVal
 
 /**
   * Db to restore and pass shared compile time information

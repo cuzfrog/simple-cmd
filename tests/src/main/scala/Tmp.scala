@@ -5,7 +5,7 @@ import com.github.cuzfrog.scmd._
 
 object Tmp {
 
-  //@ScmdDef
+  @ScmdDef
   class CatDef {
     appDef(name = "cat", shortDescription = "Concatenate files.", fullDescription = null)
     appDefCustom(
@@ -37,7 +37,7 @@ object Tmp {
     val route =
       cmd(argDef.cat) {
         opt(argDef.newLine){ nl=>
-
+          println(nl)
         }
       }
 

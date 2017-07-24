@@ -7,12 +7,12 @@ import org.junit.Assert._
 class BacktrackingParserTest {
 
   private val argTree = {
-    val cmdEntry = new CmdEntryNode {
-      override val entity = CommandEntry(name = "test-empty-cmdEntry")
-      override val children = Seq(
+    val cmdEntry = CmdEntryNode(
+      entity = CommandEntry(name = "test-empty-cmdEntry"),
+      children = Seq(
 
       )
-    }
+    )
     ArgTree(
       topParams = Seq(),
       topOpts = Seq(),
@@ -31,5 +31,5 @@ class BacktrackingParserTest {
 
 private class BacktrackingParserTestOne(argTree: ArgTree, args: Array[String])
   extends BacktrackingParser(argTree, Array()) {
-  def parsedToPath: Path = this.recProceed()
+  def parsedToPath: TryPath = this.recProceed()
 }

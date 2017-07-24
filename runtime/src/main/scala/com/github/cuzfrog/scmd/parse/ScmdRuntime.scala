@@ -59,11 +59,12 @@ sealed trait ScmdRuntime {
 
   def addValidation(name: String, func: (_) => Unit): Unit
   /** Convert string value to typed value and validate it with previously provided function. */
-  def validate[T: ClassTag](valueNode: ValueNode, value: String)
+  def validate[T: ClassTag](valueNode: ValueNode, value: Seq[String])
                            (implicit typeEvidence: ArgTypeEvidence[T]): T
 
   def argTreeString: String
   def appInfoString: String
+  
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl
@@ -207,7 +208,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
   }
   override def validate[T: ClassTag](valueNode: ValueNode,
-                                     value: String)
+                                     value: Seq[String])
                                     (implicit typeEvidence: ArgTypeEvidence[T]): T = {
     val tpe = implicitly[ClassTag[T]]
     if (tpe != valueNode.tpe)
@@ -218,4 +219,5 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
     typedValue
   }
+
 }

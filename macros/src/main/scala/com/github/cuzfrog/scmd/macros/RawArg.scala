@@ -39,6 +39,15 @@ private object RawArg {
         )
     }
   }
-
   //todo: convert camel case name to hyphen linked
+
+  def addExplicitType(stat: Stat):Stat = stat match{
+    case q"val $cmd:$_ = cmdDef(..$params)" =>
+      q"val ${cmd.asInstanceOf[Pat.Var.Term]}: String = cmdDef(..$params)"
+    case q"val $para:$_ = paramDef[$tpe](..$params)" =>
+      q"val ${para.asInstanceOf[Pat.Var.Term]}: Option[$tpe] = paramDef[$tpe](..$params)"
+    case q"val $opt:$_ = optDef[$tpe](..$params)" =>
+      q"val ${opt.asInstanceOf[Pat.Var.Term]}: Option[$tpe] = optDef[$tpe](..$params)"
+    case other => other
+  }
 }

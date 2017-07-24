@@ -64,7 +64,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd.parse.ScmdRuntime
-          ..$stats
+          ..${stats.map(RawArg.addExplicitType)}
           ..$addMethods
         }"""
   }

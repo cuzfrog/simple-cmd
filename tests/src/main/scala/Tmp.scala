@@ -5,7 +5,7 @@ import com.github.cuzfrog.scmd._
 
 object Tmp {
 
-  @ScmdDef
+  //@ScmdDef
   class CatDef {
     appDef(name = "cat", shortDescription = "Concatenate files.", fullDescription = null)
     appDefCustom(
@@ -24,9 +24,23 @@ object Tmp {
     validation(argDef.files) { files =>
       if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
       files.foreach { f =>
-        if(!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+        if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
       }
     }
+  }
+
+
+  class CatRoute(argDef: CatDef) {
+
+    import ScmdRouteDSL._
+
+    val route =
+      cmd(argDef.cat) {
+        opt(argDef.newLine){ nl=>
+
+        }
+      }
+
   }
 
 

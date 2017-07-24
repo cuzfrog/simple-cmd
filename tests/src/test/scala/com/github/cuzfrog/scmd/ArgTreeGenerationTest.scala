@@ -11,7 +11,7 @@ class ArgTreeGenerationTest {
 
   @Test
   def cpTest(): Unit = {
-    val cpDef = new CpDef
-    println(cpDef.argTree.prettyString)
+//    val cpDef = new CpDef
+//    println(cpDef.prettyString)
   }
 }

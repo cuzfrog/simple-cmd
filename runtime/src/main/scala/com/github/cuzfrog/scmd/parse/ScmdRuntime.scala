@@ -59,6 +59,11 @@ sealed trait ScmdRuntime {
 
   def argTreeString: String
   def appInfoString: String
+
+  def addValidation(name: String, func: (_) => Unit): Unit
+  /** Convert string value to typed value and validate it with previously provided function. */
+  def validate[T: ClassTag](valueNode: ValueNode, value: String)
+                           (implicit typeEvidence: ArgTypeEvidence[T]): T
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl
@@ -76,14 +81,16 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
       else throw new AssertionError("Unbox with wrong type.")
     }
   }
+  private[this] val idGen = new AtomicInteger(0)
 
   private[this] var appInfo: AppInfo = _
   private[this] var argTree: ArgTree = _
-  private[this] val repository = mutable.Map.empty[Int, Box[_]]
-  private[this] val idGen = new AtomicInteger(0)
+  private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
+  private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> id of node
+  private[this] val valiRefs = mutable.Map.empty[ValueNode, (_) => Unit] //id -> func
 
   private def getEntity[T: ClassTag](e: Int): T =
-    repository.getOrElse(e, throw new AssertionError("Recusive build failed.")).unbox[T]
+    repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]
 
   override def addAppInfo(name: Option[String],
                           shortDescription: Option[String],
@@ -139,6 +146,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val e = getEntity[Parameter[T]](entity)
     val a = ParamNode[T](entity = e, value = value, isVariable = isVariable, tpe)
     repository.put(id, Box(a))
+    nodeRefs.put(e.name, a)
     id
   }
   override def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
@@ -146,6 +154,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val e = getEntity[OptionArg[T]](entity)
     val a = OptNode[T](entity = e, value = value)
     repository.put(id, Box(a))
+    nodeRefs.put(e.name, a)
     id
   }
   override def buildCmdEntryNode(entity: Int, children: Seq[Int]): Int = {
@@ -175,6 +184,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val se = getEntity[CmdEntryNode](subCmdEntry)
     val a = CmdNode(e, p, o, pa, se)
     repository.put(id, Box(a))
+    nodeRefs.put(e.name, a)
     id
   }
   override def buildArgTree(topParams: Seq[Int],
@@ -189,4 +199,23 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def argTreeString: String = argTree.prettyString
   override def appInfoString: String = appInfo.prettyString
+  override def addValidation(name: String, func: (_) => Unit): Unit = {
+    nodeRefs.get(name) match {
+      case Some(node: ValueNode) => valiRefs.put(node, func)
+      case Some(node) => throw new AssertionError(s"Node[$node] with name$name is not a value node.")
+      case None => throw new AssertionError(s"Cannot find node with name$name")
+    }
+  }
+  override def validate[T: ClassTag](valueNode: ValueNode,
+                                     value: String)
+                                    (implicit typeEvidence: ArgTypeEvidence[T]): T = {
+    val tpe = implicitly[ClassTag[T]]
+    if (tpe != valueNode.tpe)
+      throw new AssertionError(s"Type of demanded value is different from node's")
+    val typedValue = typeEvidence.verify(value)
+    valiRefs.get(valueNode).foreach { basicValidationFunc =>
+      basicValidationFunc.asInstanceOf[T => Unit].apply(typedValue)
+    }
+    typedValue
+  }
 }

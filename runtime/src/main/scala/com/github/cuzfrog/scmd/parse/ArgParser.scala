@@ -4,8 +4,8 @@ import scala.annotation.tailrec
 
 
 private object ArgParser {
-  def parse(argTree: ArgTree, args: Array[String]) = {
-    val parsedTree = new BacktrackingParser(argTree, args).parse
+  def parse(argTree: ArgTree, args: Array[String]): Seq[Node] = {
+    new BacktrackingParser(argTree, args).parse
   }
 }
 
@@ -22,25 +22,45 @@ private object ArgParser {
 private class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
 
   import BacktrackingParser._
-  import scala.collection.mutable
 
   private[this] implicit val c: Context = new Context(argTree, args.map(categorize).toSeq)
-  private[this] var pathCursor: Path = Path(c.anchor(c.getCurrentCmdNode))
+  private[this] var pathCursor: TryPath = TryPath(c.anchor(c.getCurrentCmdNode))
 
   /**
     * Parse args against client defined argTree,
-    * return a new tree only containing a path of parsed args.
+    * return a new tree containing value and consisting of only the right path.
     */
-  def parse: ArgTree = ???
+  def parse: Seq[Node] = {
+    val path = recProceed()
+    val top = path.toTop
+    top.findFork match { //check if it's a single path through.
+      case Nil => top.convertTo[Seq[Node]]
+      case forks =>
+        val arg = try{
+          args(forks.head.anchor.contextSnapshot.argCursor)
+        }catch{
+          case e:ArrayIndexOutOfBoundsException =>
+            throw new AssertionError("Arg cursor resides out the bounds of array.")
+        }
+
+        val msg = forks.map(_.anchor.node).map {
+          case cmdNode: CmdNode => cmdNode.entity.name
+          case paramNode: ParamNode[_] => paramNode.entity.name
+          case optNode: OptNode[_] =>
+            throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
+        }
+        throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString("|")}", c)
+    }
+  }
 
   @tailrec
-  protected final def recProceed(): Path = {
+  protected final def recProceed(): TryPath = {
     proceedOne() match {
       case Some(ae) =>
         ae match {
           //if return possible anchors:
           case Right(anchors) =>
-            val forks = anchors.map(Path.apply).map(pathCursor.pipeAddFork)
+            val forks = anchors.map(TryPath.apply).map(pathCursor.pipeAddFork)
             pathCursor = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
             recProceed()
@@ -83,8 +103,6 @@ private object BacktrackingParser {
     }
     TypedArg(cateArg, arg)
   }
-
-
 }
 
 

@@ -52,6 +52,7 @@ private[parse] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   @inline
   def anchors(ns: Node*): Seq[Anchor] = this.synchronized {ns.map(anchor)}
 
+  /** Create an anchor, if the node is an opt, register it as consumed. */
   @inline
   def anchor(n: Node): Anchor = this.synchronized {
     n match {

@@ -11,36 +11,24 @@ private[scmd] class ScmdValidMacro extends ScmdMacro {
                    paramss: immutable.Seq[immutable.Seq[Term.Param]],
                    stats: immutable.Seq[Stat]): Stat = {
 
-    /*
-     * Validation defining class needs to communicate with argument defining class.
-     * This is done through AppRegister.
-     *
-     * Try to find current app by:
-     *  1. parameters passed in.
-     *  2. Inferring by name of the class.
-     */
-    val apps = paramss.flatMap(_.flatMap {
-      case param"..$mods $name: $tpe = $_" =>
-        val t = Type.Name(tpe.get.syntax)
-        AppRegister.acquireAppByType(t)
-    })
-    if (apps.nonEmpty) abort("More than one app found by parameters.")
-    implicit val appContext: AppContext = apps.headOption match {
-      case Some(app) => app
-      case None =>
-
-        AppRegister.inferAppByType(name).getOrElse(abort(s"Cannot infer app by this class:$name"))
+    val defClassName = paramss.flatten.headOption match {
+      case Some(param"..$mods $name:$tpe") => name
+      case _ => abort("ValidationClass should have DefClass as its first argument.")
     }
 
     /**
       * Client defined validations against arguments.
       *
-      * This step extracts validation from class stats and register them.
+      * This step extracts validation from class stats.
       */
-    val validations = TermValidation.collectValidation(stats).map(AppRegister.registerValidation)
+    val validations = TermValidation.collectValidation(stats)
+
+    val addStats = validations.map { tv =>
+      q"${Term.Name(defClassName.value)}.addValidation(${Lit.String(tv.argName)},${tv.func})"
+    }
 
     q"""..$mods class $name ..$ctorMods (...$paramss){
-
+          ..$addStats
         }"""
   }
 }

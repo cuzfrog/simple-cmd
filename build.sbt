@@ -36,11 +36,11 @@ val macros = project
     libraryDependencies ++= {
       val monocleVersion = "1.4.0"
       Seq(
-        "com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
-        "com.github.julien-truffaut" %% "monocle-macro" % monocleVersion,
-        "com.github.julien-truffaut" %% "monocle-law" % monocleVersion % "test",
-        "org.scalaz" %% "scalaz-core" % "7.2.14",
-        "org.scalameta" %% "contrib" % "1.8.0"
+        //"com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
+        //"com.github.julien-truffaut" %% "monocle-macro" % monocleVersion,
+        //"com.github.julien-truffaut" %% "monocle-law" % monocleVersion % "test",
+        //"org.scalaz" %% "scalaz-core" % "7.2.14",
+        //"org.scalameta" %% "contrib" % "1.8.0"
       )
     },
     libraryDependencies ++= loggingDependencies

@@ -31,8 +31,13 @@ object Tmp {
 
 
   def main(args: Array[String]): Unit = {
-    println((new CatDef).appInfoString)
-    println((new CatDef).argTreeString)
+    val parser = new CatDef
+    println("-----------App info------------")
+    println(parser.appInfoString)
+    println("-----------Arg tree------------")
+    println(parser.argTreeString)
+    println("---------Parse result----------")
+
   }
 }
 

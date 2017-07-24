@@ -57,13 +57,13 @@ sealed trait ScmdRuntime {
                    topOpts: Seq[Int],
                    cmdEntry: Int): this.type
 
-  def argTreeString: String
-  def appInfoString: String
-
   def addValidation(name: String, func: (_) => Unit): Unit
   /** Convert string value to typed value and validate it with previously provided function. */
   def validate[T: ClassTag](valueNode: ValueNode, value: String)
                            (implicit typeEvidence: ArgTypeEvidence[T]): T
+
+  def argTreeString: String
+  def appInfoString: String
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl

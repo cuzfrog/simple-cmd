@@ -18,15 +18,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
-    /**
-      * Annotated classes need to communicate with each other.
-      * This is done through AppRegister.
-      */
     val appInfo = TermAppInfo.collectAppInfo(stats)
-    implicit val appContext: AppContext = appInfo.appInfo.name match {
-      case Some(n) => AppRegister.registerApp(n, name)
-      case None => AppRegister.registerAppByType(name)
-    }
 
     val appInfoBuild = appInfo.term
 
@@ -34,10 +26,10 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       * A RawArg is macro time instance of arg definition.
       * A TermArg is macro time term of arg Node.
       *
-      * This step collects arg defs from source code, checking syntax, register,
+      * This step collects arg defs from source code, checking syntax,
       * then turn them into Node terms.
       */
-    val argDefs = RawArg.collectRawArg(stats).map(AppRegister.registerArg).map(TermArg.raw2termArg)
+    val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
 
     /**
       * ArgTree represents structure of user defined args.
@@ -52,7 +44,12 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     val argTreeBuild = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
 
-    //println(argTreeBuild.syntax)
+    /** Method expose to validation class for runtime manipulation.*/
+    val public_def_addValidation =
+      q"""def addValidation[T](argName:String,func: T => Unit): this.type = {
+            scmdRuntime.addValidation(argName,func)
+            this
+          }"""
 
     val addMethods = List(
       q"$privateMod val scmdRuntime:ScmdRuntime = ScmdRuntime.create",
@@ -60,6 +57,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"$argTreeBuild", //execute scmdRuntime to build an argTree
       q"def argTreeString:String = scmdRuntime.argTreeString",
+      public_def_addValidation,
       q"def parse(args: Array[String]) = { args.foreach(println) }"
     )
 

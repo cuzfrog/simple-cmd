@@ -2,15 +2,15 @@ package com.github.cuzfrog
 
 package object scmd {
 
-  def cmdDef(description: String = ""): String = ""
+  def cmdDef(description: String = ""): Command = DummyCommand
 
   def paramDef[T](description: String = "",
                   isMandatory: Boolean = false,
-                  default: => T = Empty): Option[T] = None
+                  default: => T = Empty): Parameter[T] = DummyParameter
 
   def optDef[T](abbr: String = "",
                 description: String = "",
-                default: => T = Empty): Option[T] = None
+                default: => T = Empty): OptionArg[T] = DummyOptionArt
 
   def appDef(name: String,
              shortDescription: String = "",
@@ -21,7 +21,8 @@ package object scmd {
 
   def appDefCustom(item: (String, String)*): Unit = ()
 
-  def validation[T](arg: Option[T])(f: T => Unit): Unit = ()
+  def validation[T](param: Parameter[T])(f: T => Unit): Unit = ()
+  def validation[T](opt: OptionArg[T])(f: T => Unit): Unit = ()
 
   //def validationMulti[A](args: A, f: A => Boolean): Unit = ()
 

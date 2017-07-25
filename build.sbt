@@ -23,34 +23,13 @@ val internalMacros = project
     publishLocal := {}
   ).configs(CompileOnly)
 
-val shared = project
-  .settings(commonSettings, macroAnnotationSettings)
+val scmd = (project in file("."))
   .settings(
-    name := "simple-cmd-shared"
+    commonSettings, publicationSettings, readmeVersionSettings, macroAnnotationSettings
+  )
+  .settings(
+    name := "simple-cmd"
   ).dependsOn(internalMacros)
-
-val macros = project
-  .settings(commonSettings, macroAnnotationSettings)
-  .settings(
-    name := "simple-cmd-macros",
-    libraryDependencies ++= {
-      val monocleVersion = "1.4.0"
-      Seq(
-        //"com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
-        //"com.github.julien-truffaut" %% "monocle-macro" % monocleVersion,
-        //"com.github.julien-truffaut" %% "monocle-law" % monocleVersion % "test",
-        //"org.scalaz" %% "scalaz-core" % "7.2.14",
-        //"org.scalameta" %% "contrib" % "1.8.0"
-      )
-    },
-    libraryDependencies ++= loggingDependencies
-  ).dependsOn(shared)
-
-val runtime = project
-  .settings(commonSettings, macroAnnotationSettings)
-  .settings(
-    name := "simple-cmd-runtime"
-  ).dependsOn(shared, macros % Provided)
 
 val tests = project
   .settings(commonSettings, macroAnnotationSettings)
@@ -59,12 +38,5 @@ val tests = project
     libraryDependencies ++= Seq(
 
     )
-  ).dependsOn(runtime % "compile->test;test->test", macros % Provided)
+  ).dependsOn(scmd % "compile->test;test->test")
 
-val bundle = (project in file("."))
-  .settings(
-    commonSettings, publicationSettings, readmeVersionSettings, macroAnnotationSettings
-  )
-  .settings(
-    name := "simple-cmd"
-  ).dependsOn(runtime, macros)

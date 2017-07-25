@@ -16,7 +16,9 @@ private final case class ArgTree(topParams: Seq[ParamNode[_]],
   )
 }
 
-private sealed trait Node
+private sealed trait Node {
+  def entity: {val name: String}
+}
 
 private case class CmdNode(entity: Command,
                            params: Seq[ParamNode[_]],

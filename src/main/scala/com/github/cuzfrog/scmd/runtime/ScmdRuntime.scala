@@ -7,6 +7,7 @@ import com.github.cuzfrog.scmd.{AppInfo, Argument, Command, CommandEntry, Defaul
 import scala.reflect.ClassTag
 import scala.collection.mutable
 
+import scala.language.reflectiveCalls
 /**
   * Util/helper class to build scmd runtime classes that is instantiated within client class.
   *
@@ -62,7 +63,13 @@ sealed trait ScmdRuntime {
   def validate[T: ClassTag](valueNode: ValueNode)
                            (implicit typeEvidence: ArgTypeEvidence[T]): T
 
-  def parse(args: Seq[String]): Seq[Node]
+
+  def parse(args: Seq[String]): Unit
+
+  /** Return not parsed node. */
+  def getNodeByName[N <: Node : ClassTag](name: String): N
+
+  def getArgumentWithValueByName[T: ClassTag, A <: Argument[T] : ClassTag](name: String): A
 
   def argTreeString: String
   def appInfoString: String
@@ -88,8 +95,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] var appInfo: AppInfo = _
   private[this] var argTree: ArgTree = _
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
-  private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> id of node
+  private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
   private[this] val valiRefs = mutable.Map.empty[ValueNode, (_) => Unit] //id -> func
+  private[this] val parsedNodes = mutable.Map.empty[String, Node] //name -> node
 
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]
@@ -204,7 +212,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def addValidation(name: String, func: (_) => Unit): Unit = {
     nodeRefs.get(name) match {
       case Some(node: ValueNode) => valiRefs.put(node, func)
-      case Some(node) => throw new AssertionError(s"Node[$node] with name$name is not a value node.")
+      case Some(node) =>
+        throw new AssertionError(s"Node[$node] with name$name is not a value node" +
+          s"(so not compatible with validation).")
       case None => throw new AssertionError(s"Cannot find node with name$name")
     }
   }
@@ -219,14 +229,65 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
     typedValue
   }
-  override def parse(args: Seq[String]): Seq[Node] = {
-    ArgParser.parse(argTree, args)
-//      .map {
-//      case cmdNode: CmdNode => cmdNode.entity.copy(met = true)
-//      case paramNode: ParamNode[_] => paramNode.entity.copy(value = this.validate(paramNode))
-//      case optNode: OptNode[_] => optNode.entity.copy(value = this.validate(optNode))
-//      case cmdEntry: CmdEntryNode =>
-//        throw new AssertionError(s"CmdEntry should not be parsed:$cmdEntry")
-//    }
+  override def parse(args: Seq[String]): Unit = {
+    if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
+    ArgParser.parse(argTree, args).foreach(n => parsedNodes.put(n.entity.name, n))
+  }
+  override def getNodeByName[N <: Node : ClassTag](name: String): N = {
+    this.getNode[N](name, nodeRefs) match {
+      case Some(n) => n
+      case None =>
+        throw new NoSuchElementException(s"Node of name:$name cannot be found in runtime.")
+    }
+  }
+
+  private def getNode[N <: Node : ClassTag](name: String,
+                                            refs: mutable.Map[String, Node]): Option[N] = {
+    val tpe = implicitly[ClassTag[N]].runtimeClass
+    val node: Option[Node] = refs.get(name).map {
+      case cmdNode: CmdNode if tpe == classOf[CmdNode] => cmdNode
+      case paramNode: ParamNode[_] if tpe == classOf[ParamNode[_]] => paramNode
+      case optNode: OptNode[_] if tpe == classOf[OptNode[_]] => optNode
+      case cmdEntryNode: CmdEntryNode =>
+        throw new AssertionError(s"CmdEntryNode has no name and should not be cached.")
+      case bad =>
+        throw new MatchError(s"Node of specified type[$tpe] has not specified name:$name.$bad")
+    }
+    node.map(_.asInstanceOf[N])
+  }
+
+  override def getArgumentWithValueByName
+  [T: ClassTag, A <: Argument[T] : ClassTag](name: String): A = {
+    val valueTpe = implicitly[ClassTag[T]]
+    val argTpe = implicitly[ClassTag[A]]
+
+    def parsedNode[N <: Node : ClassTag]: Option[N] = this.getNode[N](name, parsedNodes)
+    def checkNodeType(n: ValueNode): Unit = if (n.tpe != valueTpe)
+      throw new AssertionError(s"Node's value type[${n.tpe}]" +
+        s" is different from specified type[$valueTpe].")
+
+
+    val argument: Argument[_] = argTpe.runtimeClass match {
+      case rc if rc == classOf[Command] =>
+        val node = this.getNodeByName[CmdNode](name)
+        node.entity.copy(met = parsedNodes.get(name).nonEmpty)
+      case rc if rc == classOf[Parameter[_]] =>
+        val node = this.getNodeByName[ParamNode[_]](name)
+        checkNodeType(node)
+        val value = parsedNode[ParamNode[_]] match {
+          case None => Seq.empty[T]
+          case Some(n) => n.value.asInstanceOf[Seq[T]]
+        }
+        node.entity.copy(value = value)
+      case rc if rc == classOf[OptionArg[_]] =>
+        val node = this.getNodeByName[OptNode[_]](name)
+        checkNodeType(node)
+        val value = parsedNode[OptNode[_]] match {
+          case None => Seq.empty[T]
+          case Some(n) => n.value.asInstanceOf[Seq[T]]
+        }
+        node.entity.copy(value = value)
+    }
+    argument.asInstanceOf[A]
   }
 }

@@ -18,8 +18,9 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
-    val args = paramss.flatten.headOption match {
-      case Some(param"..$mods $name: Seq[String]") => q"${Term.Name(name.value)}"
+    /** args passed in from constructor. */
+    val argsParam = paramss.flatten.headOption match {
+      case Some(param"..$mods $name: Seq[String]") => Term.Name(name.value)
       case _ => abort(s"$name's first parameter must be of type Seq[String] to accept arguments.")
     }
 
@@ -55,10 +56,13 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
             this
           }"""
 
-    val newDef = {
-      val args = paramss.map(_.map(param => Term.Name(param.name.value)))
-      q"""new ${Ctor.Ref.Name(name.value)}(...$args){
+    val public_def_parsed = {
+      val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
+      q"""def parsed: $name = {
+            val nodes = scmdRuntime.parse($argsParam)
+            new ${Ctor.Ref.Name(name.value)}(...$termParamss){
 
+            }
           }"""
     }
 
@@ -70,8 +74,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       q"$argTreeBuild", //execute scmdRuntime to build an argTree
       q"def argTreeString:String = scmdRuntime.argTreeString",
       public_def_addValidation,
-      q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
-      q"def parsed: $name = { args.foreach(println) }"
+      q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}"
     )
 
     //abort("dev...")

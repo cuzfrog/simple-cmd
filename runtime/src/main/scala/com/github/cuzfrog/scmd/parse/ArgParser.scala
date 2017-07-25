@@ -36,10 +36,10 @@ private class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
     top.findFork match { //check if it's a single path through.
       case Nil => top.convertTo[Seq[Node]]
       case forks =>
-        val arg = try{
+        val arg = try {
           args(forks.head.anchor.contextSnapshot.argCursor)
-        }catch{
-          case e:ArrayIndexOutOfBoundsException =>
+        } catch {
+          case e: ArrayIndexOutOfBoundsException =>
             throw new AssertionError("Arg cursor resides out the bounds of array.")
         }
 
@@ -48,6 +48,8 @@ private class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
           case paramNode: ParamNode[_] => paramNode.entity.name
           case optNode: OptNode[_] =>
             throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
+          case cmdEntry: CmdEntryNode =>
+            throw new AssertionError(s"CmdEntry should not be anchored.[$cmdEntry]")
         }
         throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString("|")}", c)
     }

@@ -28,16 +28,16 @@ package object macros {
     q"Command($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
   }
 
-//  implicit val definableCommandEntry: Definable[CommandEntry] = (a: CommandEntry) => {
-//    val name = Lit.String(a.name)
-//    val description = description2term(a.description)
-//    val isMandatory = Lit.Boolean(a.isMandatory)
-//    val subCmds = a.subCmds.map(_.defnTerm)
-//    q"""CommandEntry($TERM_NAME = $name,
-//                     $TERM_DESCRIPTION = $description,
-//                     $TERM_SUBCMDS = $TERM_immutable.Seq(..$subCmds),
-//                     $TERM_IS_MANDATORY = $isMandatory)"""
-//  }
+  //  implicit val definableCommandEntry: Definable[CommandEntry] = (a: CommandEntry) => {
+  //    val name = Lit.String(a.name)
+  //    val description = description2term(a.description)
+  //    val isMandatory = Lit.Boolean(a.isMandatory)
+  //    val subCmds = a.subCmds.map(_.defnTerm)
+  //    q"""CommandEntry($TERM_NAME = $name,
+  //                       $TERM_DESCRIPTION = $description,
+  //                       $TERM_SUBCMDS = $TERM_immutable.Seq(..$subCmds),
+  //                       $TERM_IS_MANDATORY = $isMandatory)"""
+  //  }
 
   private def description2term(in: Option[String]): Term = in match {
     case Some(dscr) => q"Option(${Lit.String(dscr)})"

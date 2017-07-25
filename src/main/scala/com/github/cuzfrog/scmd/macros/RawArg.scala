@@ -10,6 +10,7 @@ import scala.meta._
 private final case class RawArg(arg: Argument[_], pos: Position, tpe: Type)
 
 private object RawArg {
+  /** Collect stats that confirm to arg-definition, and turn them into middle form RawArg. */
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
     stats zip stats.map(_.pos) collect {
       case (q"val $cmd: $_ = cmdDef(..$params)", pos) =>
@@ -41,19 +42,10 @@ private object RawArg {
   }
   //todo: convert camel case name to hyphen linked
 
+  /** Scala meta generated fields need explicit types to inform IDE. */
   def addExplicitType(stat: Stat):Stat = stat match{
     case q"val $cmd:$_ = cmdDef(..$params)" =>
       q"val ${cmd.asInstanceOf[Pat.Var.Term]}: Command = cmdDef(..$params)"
-    case q"val $para:$_ = paramDef[$tpe](..$params)" =>
-      q"val ${para.asInstanceOf[Pat.Var.Term]}: Parameter[$tpe] = paramDef[$tpe](..$params)"
-    case q"val $opt:$_ = optDef[$tpe](..$params)" =>
-      q"val ${opt.asInstanceOf[Pat.Var.Term]}: OptionArg[$tpe] = optDef[$tpe](..$params)"
-    case other => other
-  }
-
-  def convertParsed(stat:Stat):Stat = stat match{
-    case q"val $cmd:$_ = cmdDef(..$params)" =>
-      q"val ${cmd.asInstanceOf[Pat.Var.Term]}: Command = nodes.find(_.entity)"
     case q"val $para:$_ = paramDef[$tpe](..$params)" =>
       q"val ${para.asInstanceOf[Pat.Var.Term]}: Parameter[$tpe] = paramDef[$tpe](..$params)"
     case q"val $opt:$_ = optDef[$tpe](..$params)" =>

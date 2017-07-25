@@ -48,7 +48,7 @@ private object TermAppInfo {
     override def defnTerm(a: AppInfo): Term = {
 
       val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
-      q"""scmdRuntime.addAppInfo(
+      q"""runtime.addAppInfo(
           name = ${a.name.toTerm},
           shortDescription = ${a.shortDescription.toTerm},
           fullDescription = ${a.fullDescription.toTerm},

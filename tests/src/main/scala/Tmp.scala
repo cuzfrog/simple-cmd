@@ -48,12 +48,12 @@ object Tmp {
 
 
   def main(args: Array[String]): Unit = {
-    val parser = (new CatDef(args))
+    val parsed = (new CatDef(args))
       .withValidation(new CatValidation(_))
     println("-----------App info------------")
-    println(parser.appInfoString)
+    println(parsed.appInfoString)
     println("-----------Arg tree------------")
-    println(parser.argTreeString)
+    println(parsed.argTreeString)
     println("---------Parse result----------")
 
   }

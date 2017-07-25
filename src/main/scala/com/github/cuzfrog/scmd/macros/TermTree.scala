@@ -28,7 +28,7 @@ private object TermCmdNode {
     }
     val subCmdEntry = q"subCmdEntry = ${a.subCmdEntry.defnTerm}"
 
-    q"""scmdRuntime.buildCmdNode(
+    q"""runtime.buildCmdNode(
           $entity,
           $params,
           $opts,
@@ -43,7 +43,7 @@ private object TermArgTree {
     val topParams = a.topParams.map(_.defnTerm)
     val topOpts = a.topOpts.map(_.defnTerm)
     val cmdEntry = a.cmdEntry.defnTerm
-    q"""scmdRuntime.buildArgTree(
+    q"""runtime.buildArgTree(
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
           cmdEntry = $cmdEntry

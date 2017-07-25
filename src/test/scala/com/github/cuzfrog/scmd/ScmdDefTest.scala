@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd
 
-import com.github.cuzfrog.scmd.macros.ScmdDefMacroTest
+import com.github.cuzfrog.scmd.macros.{MacroUtil, ScmdDefMacroTest}
 
 import scala.annotation.StaticAnnotation
 import scala.meta._

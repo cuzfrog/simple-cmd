@@ -1,6 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter}
+
 import scala.reflect.ClassTag
 
 private final case class ArgTree(topParams: Seq[ParamNode[_]],
@@ -71,7 +72,7 @@ private object ArgTree {
         cmdNode.opts.map(n => s"$indent+-opt: ${n.entity.name}[${n.tpe}] = ${n.value}")
       val subCmds =
         cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
-      val cmdEntry = if(subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
+      val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
       val result: Seq[String] =
         Seq(cmd) ++ params ++ opts ++ cmdEntry ++ subCmds
       result.mkString(NEW_LINE)

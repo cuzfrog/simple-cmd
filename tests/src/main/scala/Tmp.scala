@@ -6,7 +6,7 @@ import com.github.cuzfrog.scmd._
 object Tmp {
 
   @ScmdDef
-  class CatDef {
+  class CatDef(args: Seq[String]) {
     appDef(name = "cat", shortDescription = "Concatenate files.", fullDescription = null)
     appDefCustom(
       "About" -> "this is a test app",
@@ -36,8 +36,11 @@ object Tmp {
 
     val route =
       cmd(argDef.cat) {
-        opt(argDef.newLine){ nl=>
-          println(nl)
+        opt(argDef.newLine) { nl =>
+          expectParam(argDef.files) { files =>
+            println(nl)
+            println(files)
+          }
         }
       }
 
@@ -45,7 +48,8 @@ object Tmp {
 
 
   def main(args: Array[String]): Unit = {
-    val parser = new CatDef
+    val parser = (new CatDef(args))
+      .withValidation(new CatValidation)
     println("-----------App info------------")
     println(parser.appInfoString)
     println("-----------Arg tree------------")

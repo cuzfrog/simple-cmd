@@ -4,7 +4,7 @@ import scala.annotation.tailrec
 
 
 private object ArgParser {
-  def parse(argTree: ArgTree, args: Array[String]): Seq[Node] = {
+  def parse(argTree: ArgTree, args: Seq[String]): Seq[Node] = {
     new BacktrackingParser(argTree, args).parse
   }
 }
@@ -19,7 +19,7 @@ private object ArgParser {
   *
   * Not thread-safe. It should only be accessed inside ArgParser.
   */
-private class BacktrackingParser(argTree: ArgTree, args: Array[String]) {
+private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
 
   import BacktrackingParser._
 

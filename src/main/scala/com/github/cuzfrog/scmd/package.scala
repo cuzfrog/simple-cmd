@@ -32,7 +32,7 @@ package object scmd {
     * A placeholder to make parameters optional.
     * For client's simplicity, `Option` is not used.
     */
-  private def Empty[T]: T =
+  private[scmd] def Empty[T]: T =
     throw new IllegalArgumentException("Empty default value called. See scmd.Empty.")
 
   private[scmd] trait CanFormPrettyString[A] {

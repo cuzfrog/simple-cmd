@@ -2,7 +2,7 @@ package com.github.cuzfrog.scmd.runtime
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.cuzfrog.scmd.{AppInfo, Command, CommandEntry, Defaults, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{AppInfo, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter}
 
 import scala.reflect.ClassTag
 import scala.collection.mutable
@@ -59,12 +59,13 @@ sealed trait ScmdRuntime {
 
   def addValidation(name: String, func: (_) => Unit): Unit
   /** Convert string value to typed value and validate it with previously provided function. */
-  def validate[T: ClassTag](valueNode: ValueNode, value: Seq[String])
+  def validate[T: ClassTag](valueNode: ValueNode)
                            (implicit typeEvidence: ArgTypeEvidence[T]): T
+
+  def parse(args: Seq[String]): Seq[Argument[_]]
 
   def argTreeString: String
   def appInfoString: String
-  
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl
@@ -207,17 +208,23 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
       case None => throw new AssertionError(s"Cannot find node with name$name")
     }
   }
-  override def validate[T: ClassTag](valueNode: ValueNode,
-                                     value: Seq[String])
+  override def validate[T: ClassTag](valueNode: ValueNode)
                                     (implicit typeEvidence: ArgTypeEvidence[T]): T = {
     val tpe = implicitly[ClassTag[T]]
     if (tpe != valueNode.tpe)
       throw new AssertionError(s"Type of demanded value is different from node's")
-    val typedValue = typeEvidence.verify(value)
+    val typedValue = typeEvidence.verify(valueNode.value)
     valiRefs.get(valueNode).foreach { basicValidationFunc =>
       basicValidationFunc.asInstanceOf[T => Unit].apply(typedValue)
     }
     typedValue
   }
-
+  override def parse(args: Seq[String]): Seq[Argument[_]] = {
+    ArgParser.parse(argTree, args).map{
+      case cmdNode: CmdNode => cmdNode.entity
+      case paramNode: ParamNode[_] => paramNode.entity.copy(value = paramNode.value)
+      case optNode: OptNode[_] => s"opt  [${optNode.entity.name}] - ${optNode.value}"
+      case cmdEntry: CmdEntryNode =>
+    }
+  }
 }

@@ -46,4 +46,11 @@ package object runtime extends ArgTreeUtils {
   private[runtime] implicit class ConversionOps[A](a: A) {
     def convertTo[R](implicit ev: Convertible[A, R]): R = ev.convertTo(a)
   }
+
+  private[runtime] trait Fillable[A, S] {
+    def fillWith(a: A, stuff: S): A
+  }
+  private[runtime] implicit class FillOps[A, S](in: A)(implicit ev: Fillable[A, S]) {
+    def fillWithStuff(stuff: S): A = ev.fillWith(in, stuff)
+  }
 }

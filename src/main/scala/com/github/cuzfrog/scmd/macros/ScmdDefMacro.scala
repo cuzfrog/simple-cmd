@@ -18,9 +18,12 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
-    val appInfo = TermAppInfo.collectAppInfo(stats)
+    val args = paramss.flatten.headOption match {
+      case Some(param"..$mods $name: Seq[String]") => q"${Term.Name(name.value)}"
+      case _ => abort("First parameter must be of type Seq[String] to accept arguments.")
+    }
 
-    val appInfoBuild = appInfo.term
+    val appInfoBuild = TermAppInfo.collectAppInfo(stats).term
 
     /**
       * A RawArg is macro time instance of arg definition.
@@ -44,7 +47,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     val argTreeBuild = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
 
 
-    /** Method expose to validation class for runtime manipulation.*/
+    /** Method expose to validation class for runtime manipulation. */
     val public_def_addValidation =
       q"""def addValidation[T](argName:String,func: T => Unit): this.type = {
             scmdRuntime.addValidation(argName,func)
@@ -58,6 +61,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       q"$argTreeBuild", //execute scmdRuntime to build an argTree
       q"def argTreeString:String = scmdRuntime.argTreeString",
       public_def_addValidation,
+      q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
       q"def parse(args: Array[String]) = { args.foreach(println) }"
     )
 

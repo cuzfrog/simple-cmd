@@ -9,27 +9,37 @@ sealed trait Argument[+A] {
 }
 
 
-case class Command(name: String,
-                   description: Option[String] = None) extends Argument[Nothing]
+case class
+Command private[scmd](name: String,
+                      description: Option[String] = None,
+                      private[scmd] val met: Boolean = false) extends Argument[Nothing]
 
 
-case class CommandEntry(name: String,
-                        description: Option[String] = None,
-                        //subCmds: immutable.Seq[Command],
-                        isMandatory: Boolean = Defaults.isMandatory) extends Argument[Nothing]
+case class
+CommandEntry private[scmd](name: String,
+                           description: Option[String] = None,
+                           //subCmds: immutable.Seq[Command],
+                           isMandatory: Boolean = Defaults.isMandatory) extends Argument[Nothing]
 
 
-case class Parameter[+T](name: String,
-                         description: Option[String] = None,
-                         isMandatory: Boolean = Defaults.isMandatory,
-                         default: Option[T] = None) extends Argument[T]
+case class
+Parameter[+T] private[scmd](name: String,
+                            description: Option[String] = None,
+                            isMandatory: Boolean = Defaults.isMandatory,
+                            default: Option[T] = None,
+                            private[scmd] val value: Seq[T] = Seq()) extends Argument[T] {
+}
 
 
-case class OptionArg[+T](name: String,
-                         abbr: Option[String] = None,
-                         description: Option[String] = None,
-                         isMandatory: Boolean = Defaults.isMandatory,
-                         default: Option[T] = None) extends Argument[T]
+case class
+OptionArg[+T] private[scmd](name: String,
+                            abbr: Option[String] = None,
+                            description: Option[String] = None,
+                            isMandatory: Boolean = Defaults.isMandatory,
+                            default: Option[T] = None,
+                            private[scmd] val value: Seq[T] = Seq()) extends Argument[T] {
+
+}
 
 private[scmd] object DummyCommand extends Command("")
 private[scmd] object DummyParameter extends Parameter[Nothing]("")

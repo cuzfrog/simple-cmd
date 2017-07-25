@@ -41,4 +41,11 @@ package object scmd {
   private[scmd] implicit class PrettyStringBuildOps[A: CanFormPrettyString](a: A) {
     def prettyString: String = implicitly[CanFormPrettyString[A]].mkPrettyString(a)
   }
+
+  private[scmd] trait Fillable[A, S] {
+    def fillWith(a: A, stuff: S): A
+  }
+  private[scmd] implicit class FillOps[A, S](in: A)(implicit ev: Fillable[A, S]) {
+    def fillWithStuff(stuff: S): A = ev.fillWith(in, stuff)
+  }
 }

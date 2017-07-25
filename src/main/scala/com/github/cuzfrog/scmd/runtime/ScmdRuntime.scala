@@ -62,7 +62,7 @@ sealed trait ScmdRuntime {
   def validate[T: ClassTag](valueNode: ValueNode)
                            (implicit typeEvidence: ArgTypeEvidence[T]): T
 
-  def parse(args: Seq[String]): Seq[Argument[_]]
+  def parse(args: Seq[String]): Seq[Node]
 
   def argTreeString: String
   def appInfoString: String
@@ -219,12 +219,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
     typedValue
   }
-  override def parse(args: Seq[String]): Seq[Argument[_]] = {
-    ArgParser.parse(argTree, args).map{
-      case cmdNode: CmdNode => cmdNode.entity
-      case paramNode: ParamNode[_] => paramNode.entity.copy(value = paramNode.value)
-      case optNode: OptNode[_] => s"opt  [${optNode.entity.name}] - ${optNode.value}"
-      case cmdEntry: CmdEntryNode =>
-    }
+  override def parse(args: Seq[String]): Seq[Node] = {
+    ArgParser.parse(argTree, args)
+//      .map {
+//      case cmdNode: CmdNode => cmdNode.entity.copy(met = true)
+//      case paramNode: ParamNode[_] => paramNode.entity.copy(value = this.validate(paramNode))
+//      case optNode: OptNode[_] => optNode.entity.copy(value = this.validate(optNode))
+//      case cmdEntry: CmdEntryNode =>
+//        throw new AssertionError(s"CmdEntry should not be parsed:$cmdEntry")
+//    }
   }
 }

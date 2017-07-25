@@ -20,8 +20,9 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
 
     val args = paramss.flatten.headOption match {
       case Some(param"..$mods $name: Seq[String]") => q"${Term.Name(name.value)}"
-      case _ => abort("First parameter must be of type Seq[String] to accept arguments.")
+      case _ => abort(s"$name's first parameter must be of type Seq[String] to accept arguments.")
     }
+
 
     val appInfoBuild = TermAppInfo.collectAppInfo(stats).term
 
@@ -54,6 +55,14 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
             this
           }"""
 
+    val newDef = {
+      val args = paramss.map(_.map(param => Term.Name(param.name.value)))
+      q"""new ${Ctor.Ref.Name(name.value)}(...$args){
+
+          }"""
+    }
+
+
     val addMethods = List(
       q"$privateMod val scmdRuntime:ScmdRuntime = ScmdRuntime.create",
       q"$appInfoBuild", //execute scmdRuntime to build an appInfo
@@ -62,7 +71,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       q"def argTreeString:String = scmdRuntime.argTreeString",
       public_def_addValidation,
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
-      q"def parse(args: Array[String]) = { args.foreach(println) }"
+      q"def parsed: $name = { args.foreach(println) }"
     )
 
     //abort("dev...")

@@ -101,7 +101,7 @@ private object BacktrackingParser {
   def categorize(arg: String): TypedArg[CateArg] = {
     val cateArg: CateArg = arg match {
       case SingleOptExtractor(sOpt) => SingleOpts(sOpt)
-      case LongOptExtractor(lOpt) => LongOpt(lOpt)
+      case LongOptExtractor(lOpt, _, _) => LongOpt(lOpt)
       case paramOrCmd => ParamOrCmd(paramOrCmd)
     }
     TypedArg(cateArg, arg)

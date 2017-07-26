@@ -65,7 +65,12 @@ private final case class TryPath(anchor: Anchor) {
     }
   }
 
-  def next: Option[TryPath] = this.branches.headOption
+  /** From this, downstream, cut forks that are not complete(end with exception and not long enough). */
+  def prune: TryPath = {
+
+  }
+
+  def nextHeadOption: Option[TryPath] = this.branches.headOption
 }
 
 private object TryPath {
@@ -76,8 +81,8 @@ private object TryPath {
     @tailrec
     def recConvert(p: TryPath, acc: Seq[Node]): Seq[Node] = {
       p.branches.headOption match {
-        case None => acc
-        case Some(path) => recConvert(path, p.anchor.node +: acc)
+        case None => acc :+ p.anchor.node
+        case Some(path) => recConvert(path, acc :+ p.anchor.node)
       }
     }
 

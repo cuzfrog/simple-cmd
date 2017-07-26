@@ -37,6 +37,8 @@ private object SingleOpts extends CateUtils {
       val cmdNode = c.getCurrentCmdNode
       val arg = a.arg
 
+      trace(s"parse SingleOpts ${a.arg}")
+
       val matchOpt =
         c.getUpstreamLeftOpts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
       matchOpt match {
@@ -107,7 +109,7 @@ private object LongOpt extends CateUtils {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
       val cmdNode = c.getCurrentCmdNode
       val arg = a.arg
-
+      trace(s"Parse LongOpt $arg")
       arg match {
         case EqualLiteral(name, e_Value) =>
           val valueOpt = Option(e_Value).map(_.drop(1))

@@ -3,7 +3,9 @@ package com.github.cuzfrog.scmd
 import scala.reflect.ClassTag
 
 package object runtime extends ArgTreeUtils {
-  type AnchorEither = Either[ArgParseException, Seq[Anchor]]
+  private[runtime] type AnchorEither = Either[ArgParseException, Seq[Anchor]]
+
+  private[runtime] val NEWLINE: String = System.lineSeparator
 
   private[runtime] trait Parser[A, R] {
     def parse(a: A)(implicit c: Context): R

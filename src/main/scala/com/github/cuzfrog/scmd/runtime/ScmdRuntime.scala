@@ -98,8 +98,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] var argTree: ArgTree = _
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
   private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
-  private[this] val valiRefs = mutable.Map.empty[ValueNode, Function1[_,Unit]] //id -> func
-  private[this] val parsedNodes = mutable.ListMap.empty[String, Node] //name -> node
+  private[this] val valiRefs = mutable.Map.empty[ValueNode, Function1[_, Unit]] //id -> func
+  private[this] val parsedNodes = mutable.LinkedHashMap.empty[String, Node] //name -> node
 
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]
@@ -231,7 +231,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def parse(args: Seq[String]): Unit = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
-    ArgParser.parse(argTree, args).foreach(n => parsedNodes.put(n.entity.name, n))
+    parsedNodes ++= ArgParser.parse(argTree, args).map(n => n.entity.name -> n)
   }
   override def getNodeByName[N <: Node : ClassTag](name: String): N = {
     this.getNode[N](name, nodeRefs) match {
@@ -258,7 +258,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
 
   override def getArgumentWithValueByName
   [T: ClassTag, A <: Argument[T] : ClassTag](name: String): A = {
-    if(parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
+    if (parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
     val valueTpe = implicitly[ClassTag[T]]
     val argTpe = implicitly[ClassTag[A]]
 

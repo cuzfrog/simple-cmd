@@ -12,11 +12,16 @@ private trait Contextlogging extends Context with SimpleLogger {
 
   abstract override def nodeAdvance(cmdName: String): Option[CmdNode] = {
     val result = super.nodeAdvance(cmdName)
-    result match{
+    result match {
       case Some(cmdNode) => debug(s"advance to ${cmdNode.prettyString}")
       case None => debug(s"advance to cmd node failed.")
     }
-
     result
+  }
+
+  abstract override def nextParamNode: Option[ParamNode[_]] = {
+    debug(s"Try next params. " +
+      s"current of cmdNode: ${getCurrentCmdNode.params.size}; cursor:$getParamCursor")
+    super.nextParamNode
   }
 }

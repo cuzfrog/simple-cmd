@@ -13,7 +13,6 @@ import scala.reflect.ClassTag
   * ArgTree needs to be immutable.
   */
 private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
-
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
   /** Parameter is ordered. */
   private[this] var paramCursor: Int = 0
@@ -36,12 +35,16 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   /** Try to advance to a child cmd node and return it. */
   def nodeAdvance(cmdName: String): Option[CmdNode] = this.synchronized {
-    currentCmdNode.subCmdEntry.children.find(_.entity.name == cmdName) map {
-      n => optsUpstreamLeft ++= n.opts; n
+    currentCmdNode.subCmdEntry.children.find(_.entity.name == cmdName) map { n =>
+      optsUpstreamLeft ++= n.opts //register opt nodes.
+      paramCursor = 0 //reset param cursor
+      currentCmdNode = n //set cmd node
+      n
     }
   }
 
   def getCurrentCmdNode: CmdNode = this.currentCmdNode //return immutable object.
+  def getParamCursor: Int = paramCursor
 
   /** Return not yet consumed opts accumulated upstream. */
   def getUpstreamLeftOpts: Seq[OptNode[_]] = this.synchronized {

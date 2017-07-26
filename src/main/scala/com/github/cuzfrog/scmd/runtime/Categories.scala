@@ -9,7 +9,9 @@ import scala.reflect.ClassTag
  * The three categories of args provide low level parsing.
  */
 
-private sealed trait CateArg {def arg: String}
+private sealed trait CateArg {
+  def arg: String
+}
 private object CateArg {
   implicit val parser: Parser[CateArg, AnchorEither] = new Parser[CateArg, AnchorEither] {
     override def parse(a: CateArg)(implicit context: Context): AnchorEither = a match {
@@ -109,44 +111,48 @@ private object LongOpt extends CateUtils {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
       val cmdNode = c.getCurrentCmdNode
       val arg = a.arg
-      trace(s"Parse LongOpt $arg")
+
       arg match {
         case EqualLiteral(name, e_Value) =>
           val valueOpt = Option(e_Value).map(_.drop(1))
           val matchOpt = c.getUpstreamLeftOpts.find(_.entity.name == name)
           matchOpt match {
-            case Some(optNode) => optNode.tpe match {
-              //arg def of type Boolean
-              case ClassTag.Boolean =>
-                valueOpt match {
-                  case Some(boolStr) => parseBoolStr(boolStr) match {
-                    case Some(b) => c.anchors(optNode.copy(value = Seq(b)))
-                    case None => ArgParseException(s"Unknown bool literal: $arg", c)
-                  }
-                  case None =>
-                    //logic not default boolean value
-                    val defaultB = optNode.entity.default match {
-                      case Some(b: Boolean) => b
-                      case _ => false //type boolean checked by ClassTag
+            case Some(optNode) =>
+              trace(s"Parse LongOpt $arg -> matched [${optNode.tpe}]")
+              optNode.tpe match {
+                //arg def of type Boolean
+                case ClassTag.Boolean =>
+                  valueOpt match {
+                    case Some(boolStr) => parseBoolStr(boolStr) match {
+                      case Some(b) => c.anchors(optNode.copy(value = Seq(b)))
+                      case None => ArgParseException(s"Unknown bool literal: $arg", c)
                     }
-                    c.anchors(optNode.copy(value = Seq(defaultB.unary_!)))
-                }
+                    case None =>
+                      //logic not default boolean value
+                      val defaultB = optNode.entity.default match {
+                        case Some(b: Boolean) => b
+                        case _ => false //type boolean checked by ClassTag
+                      }
+                      c.anchors(optNode.copy(value = Seq(defaultB.unary_!)))
+                  }
 
-              //arg def of other type
-              case otherTpe =>
-                val vOpt = valueOpt match {
-                  case Some(v) => Some(v)
-                  case None => c.nextArg
-                }
-                vOpt match {
-                  case Some(v) => c.anchors(optNode.copy(value = Seq(v)))
-                  case None =>
-                    ArgParseException(
-                      s"No value found for opt[$name] with type[${otherTpe.name}].", c)
-                }
-            }
+                //arg def of other type
+                case otherTpe =>
+                  val vOpt = valueOpt match {
+                    case Some(v) => Some(v)
+                    case None => c.nextArg
+                  }
+                  vOpt match {
+                    case Some(v) => c.anchors(optNode.copy(value = Seq(v)))
+                    case None =>
+                      ArgParseException(
+                        s"No value found for opt[$name] with type[${otherTpe.name}].", c)
+                  }
+              }
 
-            case None => ArgParseException(s"Unknown option: $name", c)
+            case None =>
+              trace(s"Parse LongOpt $arg -> not-matched.")
+              ArgParseException(s"Unknown option: $name", c)
           }
         case bad => ArgParseException(s"Malformed option: $bad", c)
       }
@@ -207,7 +213,7 @@ private object ParamOrCmd extends CateUtils {
   }
 }
 
-private sealed trait CateUtils extends SimpleLogger{
+private sealed trait CateUtils extends SimpleLogger {
   protected implicit
   def seqValue2Right[L](in: Seq[Anchor]): Either[L, Seq[Anchor]] = Right(in)
 

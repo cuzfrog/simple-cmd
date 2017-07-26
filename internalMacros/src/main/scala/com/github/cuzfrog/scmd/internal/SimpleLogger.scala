@@ -17,13 +17,13 @@ private[scmd] trait SimpleLogger {
   implicit val loggerAgent: String = this.getClass.getName
   implicit val loggerLevel: Level = queryLevel(this.getClass.getName)
 
-  protected def trace(x: Any, withTitle: Boolean = true) = pl(x, Trace, LIGHT_BLUE)(withTitle)
-  protected def debug(x: Any, withTitle: Boolean = true) = pl(x, Debug, MAGENTA)(withTitle)
-  protected def info(x: Any, withTitle: Boolean = true) = pl(x, Info, GREEN)(withTitle)
-  protected def warn(x: Any, withTitle: Boolean = true) = pl(x, Warn, YELLOW)(withTitle)
-  protected def err(x: Any, withTitle: Boolean = true) = pl(x, Error, RED)(withTitle)
+  protected def trace(x: => Any, withTitle: Boolean = true): Unit = pl(x, Trace, LIGHT_BLUE)(withTitle)
+  protected def debug(x: => Any, withTitle: Boolean = true): Unit = pl(x, Debug, MAGENTA)(withTitle)
+  protected def info(x: => Any, withTitle: Boolean = true): Unit = pl(x, Info, GREEN)(withTitle)
+  protected def warn(x: => Any, withTitle: Boolean = true): Unit = pl(x, Warn, YELLOW)(withTitle)
+  protected def err(x: => Any, withTitle: Boolean = true): Unit = pl(x, Error, RED)(withTitle)
 
-  private def pl(x: Any, level: Level, color: String = "")
+  private def pl(x: => Any, level: Level, color: String = "")
                 (withTitle: Boolean)
                 (implicit agent: String, levelThreshold: Level) = {
     lazy val prefix = if (withTitle) s"[$agent][$color$level$RESET]" else ""

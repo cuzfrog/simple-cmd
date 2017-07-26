@@ -45,9 +45,9 @@ private class TryPath(argAnchor: Anchor) {
   def backtrack: Option[TryPath] = {
     @tailrec
     def recBacktrack(currentTop: TryPath): Option[TryPath] = {
-      parentOpt match {
+      currentTop.parentOpt match {
         case Some(parent) =>
-          if (parent.branches.size < 1) {
+          if (parent.branches.isEmpty) {
             throw new AssertionError("Forks have not been put into anchor." +
               "Children not in parent's branches." +
               s"Of node: ${this.anchor.node.prettyString}")

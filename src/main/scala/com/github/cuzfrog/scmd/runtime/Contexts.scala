@@ -15,6 +15,7 @@ import scala.reflect.ClassTag
   * ArgTree needs to be immutable.
   */
 private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
+  require(args.nonEmpty,"Context construct failed because of empty args.")
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
   /** Parameter is ordered. */
   private[this] var paramCursor: Int = 0
@@ -26,7 +27,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   private[this] val optsUpstreamLeft: mutable.ArrayBuffer[OptNode[_]] =
     mutable.ArrayBuffer(currentCmdNode.opts: _*)
   private[this] var argCursor: Int = 0
-
+  private[this] var currentCateArg: TypedArg[CateArg] = args.head
 
   /** Try to regress to parent cmd node and return it. */
   //  def nodeRegress: Option[CmdNode] = this.synchronized {
@@ -47,6 +48,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   def getCurrentCmdNode: CmdNode = this.currentCmdNode //return immutable object.
   def getParamCursor: Int = paramCursor
+  def getCurrentArg: TypedArg[CateArg] = currentCateArg
 
   /** Return not yet consumed opts accumulated upstream. */
   def getUpstreamLeftOpts: Seq[OptNode[_]] = this.synchronized {
@@ -91,6 +93,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     if (noArgLeft) None else {
       val result = args(argCursor)
       argCursor += 1
+      currentCateArg = result
       Option(result.typedArg)
     }
   }

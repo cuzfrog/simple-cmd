@@ -78,9 +78,11 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       q"protected def getRuntime:ScmdRuntime = this.scmdRuntime",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
+      q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
       public_def_addValidation,
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
-      public_def_parsed
+      public_def_parsed,
+      q"def parse():Unit = scmdRuntime.parse($argsParam)"
     )
 
     //abort("dev...")

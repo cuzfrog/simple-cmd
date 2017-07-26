@@ -36,7 +36,7 @@ private object SingleOpts extends CateUtils {
       val arg = a.arg
 
       val matchOpt =
-        cmdNode.opts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
+        c.getUpstreamLeftOpts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
       matchOpt match {
         case Some(optNode1) => optNode1.tpe match {
           //found argDef for type Boolean
@@ -109,7 +109,7 @@ private object LongOpt extends CateUtils {
       arg match {
         case EqualLiteral(name, e_Value) =>
           val valueOpt = Option(e_Value).map(_.drop(1))
-          val matchOpt = cmdNode.opts.find(_.entity.name == name)
+          val matchOpt = c.getUpstreamLeftOpts.find(_.entity.name == name)
           matchOpt match {
             case Some(optNode) => optNode.tpe match {
               //arg def of type Boolean

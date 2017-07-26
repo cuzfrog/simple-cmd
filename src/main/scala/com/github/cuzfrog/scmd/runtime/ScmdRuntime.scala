@@ -74,6 +74,7 @@ sealed trait ScmdRuntime {
 
   def argTreeString: String
   def appInfoString: String
+  def parsedSeqString: String
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl
@@ -208,8 +209,6 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.clear()
     this
   }
-  override def argTreeString: String = argTree.prettyString
-  override def appInfoString: String = appInfo.prettyString
   override def addValidation[T](name: String, func: T => Unit): Unit = {
     nodeRefs.get(name) match {
       case Some(node: ValueNode) => valiRefs.put(node, func)
@@ -233,7 +232,6 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def parse(args: Seq[String]): Unit = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
     ArgParser.parse(argTree, args).foreach(n => parsedNodes.put(n.entity.name, n))
-    parsedNodes.foreach(println)
   }
   override def getNodeByName[N <: Node : ClassTag](name: String): N = {
     this.getNode[N](name, nodeRefs) match {
@@ -260,10 +258,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
 
   override def getArgumentWithValueByName
   [T: ClassTag, A <: Argument[T] : ClassTag](name: String): A = {
+    if(parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
     val valueTpe = implicitly[ClassTag[T]]
     val argTpe = implicitly[ClassTag[A]]
-
-    println(s"Argument queried, name:$name with type:$valueTpe")
 
     def parsedNode[N <: Node : ClassTag]: Option[N] = this.getNode[N](name, parsedNodes)
     def checkNodeType(n: ValueNode): Unit = if (n.tpe != valueTpe)
@@ -298,4 +295,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
     argument.asInstanceOf[A]
   }
+
+
+  override def argTreeString: String = argTree.prettyString
+  override def appInfoString: String = appInfo.prettyString
+  override def parsedSeqString: String = parsedNodes.values.toSeq.prettyString
 }

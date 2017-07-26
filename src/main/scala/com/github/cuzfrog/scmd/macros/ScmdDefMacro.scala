@@ -16,7 +16,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
                    paramss: immutable.Seq[immutable.Seq[Term.Param]],
                    stats: immutable.Seq[Stat]): Stat = {
     /** For testing. */
-    val privateMod = if (isTestMode) mod"private[scmd]" else mod"protected"
+    val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
     /** args passed in from constructor. */
     val argsParam = paramss.flatten.headOption match {
@@ -60,7 +60,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
       q"""def parsed: $name = {
             new ${Ctor.Ref.Name(name.value)}(...$termParamss){
-              override $privateMod val scmdRuntime:ScmdRuntime = super.getRuntime
+              private[this] val scmdRuntime:ScmdRuntime = super.getRuntime
               ..${stats.map(ParsedArg.convertParsed)}
             }
           }"""
@@ -68,13 +68,13 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
 
 
     val addMethods = List(
-      q"protected def getRuntime:ScmdRuntime = this.scmdRuntime",
-      q"""$privateMod val scmdRuntime:ScmdRuntime = {
+      q"""private[this] val scmdRuntime:ScmdRuntime = {
              val runtime = ScmdRuntime.create
              $appInfoBuild //execute scmdRuntime to build an appInfo
              $argTreeBuild //execute scmdRuntime to build an argTree
              runtime
           }""",
+      q"protected def getRuntime:ScmdRuntime = this.scmdRuntime",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       public_def_addValidation,

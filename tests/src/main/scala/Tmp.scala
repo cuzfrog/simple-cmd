@@ -49,13 +49,14 @@ object Tmp {
 
   def main(args: Array[String]): Unit = {
     val parsed = (new CatDef(args))
-      .withValidation(new CatValidation(_))
+      .withValidation(new CatValidation(_)).parsed
     println("-----------App info------------")
     println(parsed.appInfoString)
     println("-----------Arg tree------------")
     println(parsed.argTreeString)
     println("---------Parse result----------")
-
+    println(parsed.cat)
+    println(parsed.files)
   }
 }
 

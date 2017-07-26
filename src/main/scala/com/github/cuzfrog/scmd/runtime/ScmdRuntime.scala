@@ -8,6 +8,7 @@ import scala.reflect.ClassTag
 import scala.collection.mutable
 
 import scala.language.reflectiveCalls
+
 /**
   * Util/helper class to build scmd runtime classes that is instantiated within client class.
   *
@@ -261,11 +262,12 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val valueTpe = implicitly[ClassTag[T]]
     val argTpe = implicitly[ClassTag[A]]
 
+    println(s"Argument queried, name:$name with type:$valueTpe")
+
     def parsedNode[N <: Node : ClassTag]: Option[N] = this.getNode[N](name, parsedNodes)
     def checkNodeType(n: ValueNode): Unit = if (n.tpe != valueTpe)
       throw new AssertionError(s"Node's value type[${n.tpe}]" +
         s" is different from specified type[$valueTpe].")
-
 
     val argument: Argument[_] = argTpe.runtimeClass match {
       case rc if rc == classOf[Command] =>
@@ -273,7 +275,12 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         node.entity.copy(met = parsedNodes.get(name).nonEmpty)
       case rc if rc == classOf[Parameter[_]] =>
         val node = this.getNodeByName[ParamNode[_]](name)
-        checkNodeType(node)
+        if (node.isVariable) {
+          if (valueTpe.runtimeClass != classOf[List[_]]
+            && valueTpe.runtimeClass != classOf[Seq[_]]) {
+            throw new AssertionError(s"Variable param's value type is not List or Seq.$name")
+          }
+        } else checkNodeType(node)
         val value = parsedNode[ParamNode[_]] match {
           case None => Seq.empty[T]
           case Some(n) => n.value.asInstanceOf[Seq[T]]

@@ -83,3 +83,14 @@ private object ArgTree {
     recMkPrettyString(cmdNode)
   }
 }
+
+private object Node {
+  implicit def canFormPrettyString[N <: Node]: CanFormPrettyString[N] = {
+    case n: CmdNode => s"cmd:${n.entity.name}"
+    case n: ParamNode[_] =>
+      val ifVariable = if (n.isVariable) "..." else ""
+      s"param$ifVariable: ${n.entity.name}[${n.tpe}] = ${n.value}"
+    case n: OptNode[_] => s"opt: ${n.entity.name}[${n.tpe}] = ${n.value}"
+    case _: CmdEntryNode => s"cmdEntry"
+  }
+}

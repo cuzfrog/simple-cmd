@@ -23,8 +23,9 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
 
   import BacktrackingParser._
 
-  private[this] implicit val c: Context = new Context(argTree, args.map(categorize).toSeq)
-  private[this] var pathCursor: TryPath = TryPath(c.anchor(c.getCurrentCmdNode))
+  private[this] implicit val c: Context =
+    new Context(argTree, args.map(categorize)) with Contextlogging
+  private[this] var pathCursor: TryPath = TryPath(c.anchor(c.getCurrentCmdNode)) //first node
 
   /**
     * Parse args against client defined argTree,

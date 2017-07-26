@@ -27,14 +27,6 @@ private[runtime] trait ArgTreeUtils {
 
 
   implicit val nodeSeqCanFormPrettyString: CanFormPrettyString[Seq[Node]] = (a: Seq[Node]) => {
-    a.map {
-      case n: CmdNode => s"cmd:${n.entity.name}"
-      case n: ParamNode[_] =>
-        val ifVariable = if (n.isVariable) "..." else ""
-        s"param$ifVariable: ${n.entity.name}[${n.tpe}] = ${n.value}"
-      case n: OptNode[_] => s"opt: ${n.entity.name}[${n.tpe}] = ${n.value}"
-      case n: CmdEntryNode =>
-        throw new AssertionError(s"CmdEntryNode should not be parsed.$n")
-    }.mkString(System.lineSeparator)
+    a.map(_.prettyString).mkString(System.lineSeparator)
   }
 }

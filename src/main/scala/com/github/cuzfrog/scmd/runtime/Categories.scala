@@ -156,12 +156,12 @@ private object ParamOrCmd extends CateUtils {
   implicit val parser: Parser[ParamOrCmd, AnchorEither] = new Parser[ParamOrCmd, AnchorEither] {
     override def parse(a: ParamOrCmd)
                       (implicit c: Context): AnchorEither = {
-      info(s"Parse ParamOrCmd:${a.arg}")
       val arg = a.arg
 
       c.nextParamNode match {
         //there's still params to match:
         case Some(paramNode) =>
+          trace(s"Parse ParamOrCmd:${a.arg} -> param")
           val anchorsWithValue = if (paramNode.isVariable) {
             //variable/multiple args:
 
@@ -189,7 +189,9 @@ private object ParamOrCmd extends CateUtils {
 
           anchorsWithValue ++ possibleCmdAnchor
         //there's no params before, a cmd should be matched:
-        case None => this.consumeCmd(arg, c)
+        case None =>
+          trace(s"Parse ParamOrCmd:${a.arg} -> cmd")
+          this.consumeCmd(arg, c)
       }
     }
 

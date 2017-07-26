@@ -144,6 +144,11 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     this.synchronized(currentCmdNode.params.length <= paramCursor)
 }
 
+private object Context{
+  def apply(argTree: ArgTree, args: Seq[TypedArg[CateArg]]): Context =
+    new Context(argTree, args) with ContextLogging
+}
+
 private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)
 private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot

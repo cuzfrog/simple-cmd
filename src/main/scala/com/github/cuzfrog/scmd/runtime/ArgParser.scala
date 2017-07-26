@@ -23,8 +23,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
 
   import BacktrackingParser._
 
-  private[this] implicit val c: Context =
-    new Context(argTree, args.map(categorize)) with Contextlogging
+  private[this] implicit val c: Context = Context(argTree, args.map(categorize))
   private[this] var pathCursor: TryPath = TryPath(c.anchor(c.getCurrentCmdNode)) //first node
 
   /**
@@ -34,9 +33,15 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
   def parse: Seq[Node] = {
     val path = recProceed()
     val top = path.toTop
-    top.findFork match { //check if it's a single path through.
-      case Nil => top.convertTo[Seq[Node]]
-      case forks =>
+
+    top.convertTo[Seq[Node]]
+  }
+
+  private def checkIfUniquePath(path: TryPath): Unit = {
+    path.toTop.findUnsealedFork match { //check if it's a single path through.
+      case None => ()
+      case Some(p) =>
+        val forks = p.getBranches
         val arg = try {
           args(forks.head.anchor.contextSnapshot.argCursor)
         } catch {
@@ -63,7 +68,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
         ae match {
           //if return possible anchors:
           case Right(anchors) =>
-            val forks = anchors.map(TryPath.apply).map(pathCursor.pipeAddFork)
+            val forks = anchors.map(TryPath(_)).map(pathCursor.pipeAddFork)
             pathCursor = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
             recProceed()
@@ -80,7 +85,15 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
             }
         }
       //if complete:
-      case None => pathCursor
+      case None =>
+        pathCursor.complete //seal this path.
+        pathCursor.toTop.findUnsealedFork match{ //if there's another unsealed fork:
+          case None => pathCursor
+          case Some(path) =>
+            pathCursor = path
+            c.restore(path.anchor.contextSnapshot)
+            recProceed()
+        }
     }
   }
 

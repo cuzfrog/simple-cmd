@@ -30,6 +30,8 @@ package object scmd {
 
   /**
     * A placeholder to make parameters optional.
+    * This, is a method, can only be used as call-by-name parameter.
+    *
     * For client's simplicity, `Option` is not used.
     */
   private[scmd] def Empty[T]: T =

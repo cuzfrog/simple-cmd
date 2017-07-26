@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.Empty
 import com.github.cuzfrog.scmd.CanFormPrettyString
 
 import scala.annotation.tailrec
@@ -15,7 +16,7 @@ private[runtime] case class Anchor(node: Node, contextSnapshot: ContextSnapshot)
   *
   * Not thread-safe. It should be only accessed inside ArgParser.
   */
-private final case class TryPath(anchor: Anchor) {
+private class TryPath(argAnchor: => Anchor) {
   private var parentOpt: Option[TryPath] = None
   private val branches: mutable.ArrayBuffer[TryPath] = mutable.ArrayBuffer.empty
 
@@ -24,8 +25,12 @@ private final case class TryPath(anchor: Anchor) {
     this
   }
 
+  def anchor: Anchor = argAnchor
+
   /** Pipe a Path in and add it as a fork, return the same Path passed in. */
   def pipeAddFork(path: TryPath): TryPath = {
+    if (this.isComplete) throw new AssertionError("Completed path should not add fork." +
+      s"Of node: ${this.anchor.node.prettyString}")
     path.setParent(this)
     this.branches += path
     path
@@ -36,44 +41,86 @@ private final case class TryPath(anchor: Anchor) {
     *
     * @return an Option of unexplored Path.
     */
-  @tailrec
   def backtrack: Option[TryPath] = {
-    parentOpt match {
-      case Some(parent) =>
-        if (parent.branches.size < 1) {
-          throw new AssertionError("Forks have not been put into anchor.")
-        } else if (parent.branches.size == 1) {
-          parent.backtrack
-        } else { //forks > 1
-          parent.branches.remove(parent.branches.size - 1)
-          parent.branches.lastOption
-        }
-      case None => None
+    @tailrec
+    def recBacktrack(currentTop: TryPath): Option[TryPath] = {
+      parentOpt match {
+        case Some(parent) =>
+          if (parent.branches.size < 1) {
+            throw new AssertionError("Forks have not been put into anchor." +
+              "Children not in parent's branches." +
+              s"Of node: ${this.anchor.node.prettyString}")
+          } else if (parent.branches.size == 1) {
+            recBacktrack(parent)
+          } else { //forks > 1
+            parent.branches -= currentTop
+            parent.branches.lastOption
+          }
+        case None => None
+      }
     }
+    recBacktrack(this)
   }
 
   /** Return top parent of this path. If this is already at top, return this. */
   @inline
   def toTop: TryPath = TryPath.getTop(this)
 
-  /** From this, downstream, try to find a path that has more than one sub-branches. */
-  def findFork: Seq[TryPath] = {
-    this.branches match {
-      case arr if arr.isEmpty => Nil
-      case arr if arr.size == 1 => arr.head.findFork
-      case arr => arr map identity
+  /** From this, downstream, try to find an end path that is not complete. */
+  def findUnsealedFork: Option[TryPath] = {
+    if (this.isComplete) None
+    else {
+      this.branches match {
+        case arr if arr.isEmpty => Some(this) //end with empty, not complete
+        case arr => arr.flatMap(_.findUnsealedFork).headOption
+      }
     }
   }
 
-  /** From this, downstream, cut forks that are not complete(end with exception and not long enough). */
-  def prune: TryPath = {
+  def getBranches: Seq[TryPath] = this.branches map identity
 
+  /** From this, downstream,
+    * cut forks that end with exception and are not long enough. */
+  def prune: this.type = {
+
+    def recPrune = {
+      this.findUnsealedFork match {
+        case None =>
+        case Some(path) =>
+      }
+    }
+    ???
+    this
   }
 
   def nextHeadOption: Option[TryPath] = this.branches.headOption
+
+  /** Seal this path by adding a CompletePath to its branches. */
+  @throws[AssertionError]("when this path already has non-empty branches.")
+  def complete: this.type = {
+    if (this.branches.nonEmpty)
+      throw new AssertionError("Path to complete has non-empty branches." +
+        s"Of node: ${this.anchor.node.prettyString}")
+    this.branches += TryPath.CompletePath
+    this
+  }
+
+  /** Check recursively if this path is complete,
+    * by check if all its branches end with CompletePath. */
+  def isComplete: Boolean = {
+    this.branches match {
+      case arr if arr.isEmpty => false
+      case arr if arr.contains(TryPath.CompletePath) => true
+      case arr => arr.map(_.isComplete).forall(_ == true)
+    }
+  }
 }
 
 private object TryPath {
+
+  def apply(argAnchor: => Anchor): TryPath = new TryPath(argAnchor) with TryPathLogging
+
+  private case object CompletePath extends TryPath(Empty)
 
   implicit val convert2nodeSeq: Convertible[TryPath, Seq[Node]] = (a: TryPath) => {
     val top = a.toTop

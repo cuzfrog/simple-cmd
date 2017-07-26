@@ -1,8 +1,9 @@
-package com.github.cuzfrog.scmd.runtime
+package com.github.cuzfrog.scmd.runtime.logging
 
 import com.github.cuzfrog.scmd.internal.SimpleLogger
+import com.github.cuzfrog.scmd.runtime.{Anchor, CmdNode, Context, Node}
 
-private trait ContextLogging extends Context with SimpleLogger {
+private[runtime] trait ContextLogging extends Context with SimpleLogger {
   override implicit val loggerAgent = classOf[Context].getName
 
   abstract override def anchor(n: Node): Anchor = {
@@ -27,12 +28,3 @@ private trait ContextLogging extends Context with SimpleLogger {
 }
 
 
-private trait TryPathLogging extends TryPath with SimpleLogger {
-  override implicit val loggerAgent = classOf[TryPath].getName
-
-  override def complete: TryPathLogging.this.type = {
-    val thisPath = super.complete
-    debug(s"Path complete: ${thisPath.anchor.node.prettyString}")
-    thisPath
-  }
-}

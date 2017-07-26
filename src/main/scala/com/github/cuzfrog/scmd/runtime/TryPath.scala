@@ -2,6 +2,7 @@ package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd.Empty
 import com.github.cuzfrog.scmd.CanFormPrettyString
+import com.github.cuzfrog.scmd.runtime.logging.TryPathLogging
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -54,7 +55,7 @@ private class TryPath(argAnchor: => Anchor) {
             recBacktrack(parent)
           } else { //forks > 1
             parent.branches -= currentTop
-            parent.branches.lastOption
+            parent.branches.filter(!_.isComplete).lastOption
           }
         case None => None
       }
@@ -79,20 +80,24 @@ private class TryPath(argAnchor: => Anchor) {
 
   def getBranches: Seq[TryPath] = this.branches map identity
 
-  /** From this, downstream,
-    * cut forks that end with exception and are not long enough. */
-  def prune: this.type = {
-
-    def recPrune = {
-      this.findUnsealedFork match {
-        case None =>
-        case Some(path) =>
+  /** Remove end complete flag. And check if the path is unique.
+    * Return path with multiple branches. */
+  @inline
+  def pruneEndAndCheckUniqueness: Option[TryPath] = {
+    if (!this.isComplete) throw new AssertionError("Path not complete yet.")
+    def recPrune(path: TryPath): Option[TryPath] = {
+      path.branches match {
+        case arr if arr.contains(TryPath.CompletePath) =>
+          path.branches.clear()
+          None
+        case arr if arr.size == 1 => recPrune(arr.head)
+        case arr => Some(path)
       }
     }
-    ???
-    this
+    recPrune(this.toTop)
   }
 
+  /** Return headOption of sub-branches. */
   def nextHeadOption: Option[TryPath] = this.branches.headOption
 
   /** Seal this path by adding a CompletePath to its branches. */
@@ -128,8 +133,8 @@ private object TryPath {
     @tailrec
     def recConvert(p: TryPath, acc: Seq[Node]): Seq[Node] = {
       p.branches.headOption match {
-        case None => acc :+ p.anchor.node
-        case Some(path) => recConvert(path, acc :+ p.anchor.node)
+        case Some(path) if !p.isComplete => recConvert(path, acc :+ p.anchor.node)
+        case _ => acc :+ p.anchor.node
       }
     }
 
@@ -140,19 +145,21 @@ private object TryPath {
   implicit val canFormPrettyString: CanFormPrettyString[TryPath] = (a: TryPath) => {
     val top = a.toTop
 
-    def recMkPrettyString(p: TryPath): String = {
-      if (p.branches.isEmpty) {
-        p.anchor.node match {
-          case cmdNode: CmdNode => s"cmd  [${cmdNode.entity.name}]"
-          case paramNode: ParamNode[_] => s"param[${paramNode.entity.name}] - ${paramNode.value}"
-          case optNode: OptNode[_] => s"opt  [${optNode.entity.name}] - ${optNode.value}"
-          case cmdEntry: CmdEntryNode =>
-            throw new AssertionError(s"CmdEntry should not be in path:${cmdEntry.entity}")
-        }
-      } else p.branches.map(recMkPrettyString).mkString(System.lineSeparator)
+    def recMkPrettyString(p: TryPath, indent: String = ""): Seq[String] = {
+      val thisP = p.anchor.node match {
+        case cmdNode: CmdNode => s"${indent}cmd  [${cmdNode.entity.name}]"
+        case paramNode: ParamNode[_] => s"${indent}param[${paramNode.entity.name}] - ${paramNode.value}"
+        case optNode: OptNode[_] => s"${indent}opt  [${optNode.entity.name}] - ${optNode.value}"
+        case cmdEntry: CmdEntryNode =>
+          throw new AssertionError(s"CmdEntry should not be in path:${cmdEntry.entity}")
+      }
+      val subs=if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
+        p.branches.flatMap(p => recMkPrettyString(p, indent + " "))
+      } else Nil
+      thisP +: subs
     }
 
-    recMkPrettyString(top)
+    recMkPrettyString(top).mkString(System.lineSeparator)
   }
 
   /** Get top Path from any given Path. */

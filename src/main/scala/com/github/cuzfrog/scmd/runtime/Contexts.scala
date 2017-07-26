@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.runtime.logging.ContextLogging
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -117,12 +119,16 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   }
 
   def takeSnapshot: ContextSnapshot = this.synchronized {
-    ContextSnapshot(currentCmdNode, argCursor, paramCursor)
+    ContextSnapshot(currentCmdNode,
+      optsUpstreamLeft map identity,
+      argCursor, paramCursor)
   }
 
   /** Restore context to the state of a given snapshot. */
   def restore(snapshot: ContextSnapshot): Unit = this.synchronized {
     currentCmdNode = snapshot.cmdNode
+    optsUpstreamLeft.clear()
+    optsUpstreamLeft ++= snapshot.optsUpstreamLeft
     argCursor = snapshot.argCursor
     paramCursor = snapshot.paramCursor
   }
@@ -144,12 +150,13 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     this.synchronized(currentCmdNode.params.length <= paramCursor)
 }
 
-private object Context{
+private object Context {
   def apply(argTree: ArgTree, args: Seq[TypedArg[CateArg]]): Context =
     new Context(argTree, args) with ContextLogging
 }
 
-private case class ContextSnapshot(cmdNode: CmdNode, argCursor: Int, paramCursor: Int)
+private case class ContextSnapshot(cmdNode: CmdNode, optsUpstreamLeft: Seq[OptNode[_]],
+                                   argCursor: Int, paramCursor: Int)
 private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
 }

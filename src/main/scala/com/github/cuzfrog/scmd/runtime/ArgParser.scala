@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.internal.SimpleLogger
+
 import scala.annotation.tailrec
 
 
@@ -19,22 +21,20 @@ private object ArgParser {
   *
   * Not thread-safe. It should only be accessed inside ArgParser.
   */
-private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
+private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends SimpleLogger{
 
   import BacktrackingParser._
 
   private[this] implicit val c: Context = Context(argTree, args.map(categorize))
-  private[this] var pathCursor: TryPath = TryPath(c.anchor(c.getCurrentCmdNode)) //first node
 
   /**
     * Parse args against client defined argTree,
     * return a new tree containing value and consisting of only the right path.
     */
   def parse: Seq[Node] = {
-    val path = recProceed()
-    val top = path.toTop
-
-    top.convertTo[Seq[Node]]
+    val topPath: TryPath = TryPath(c.anchor(c.getCurrentCmdNode))
+    recProceed(topPath)
+    topPath.convertTo[Seq[Node]]
   }
 
   private def checkIfUniquePath(path: TryPath): Unit = {
@@ -62,42 +62,47 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) {
   }
 
   @tailrec
-  protected final def recProceed(): TryPath = {
-    proceedOne() match {
+  protected final def recProceed(currentPath: TryPath)(implicit c: Context): TryPath = {
+    proceedOne(c) match {
       case Some(ae) =>
         ae match {
           //if return possible anchors:
           case Right(anchors) =>
-            val forks = anchors.map(TryPath(_)).map(pathCursor.pipeAddFork)
-            pathCursor = forks.lastOption
+            val forks = anchors.map(TryPath(_)).map(currentPath.pipeAddFork)
+            val bottomPath = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
-            recProceed()
+            recProceed(bottomPath)
           //if this path is an end(exception occurred):
           case Left(e) =>
-            pathCursor.backtrack match {
+            currentPath.backtrack match {
               //found an unexplored fork:
               case Some(path) =>
-                pathCursor = path
                 c.restore(path.anchor.contextSnapshot)
-                recProceed()
-              //cannot backtrack to parent, parsing failed:
-              case None => throw e
+                recProceed(path)
+              //backtrack end:
+              case None =>
+                if (currentPath.toTop.isComplete) {
+                  println("Path:" + currentPath.prettyString)
+                  currentPath
+                }
+                else { //finally path is not complete, parsing failed:
+                  throw e
+                }
             }
         }
       //if complete:
       case None =>
-        pathCursor.complete //seal this path.
-        pathCursor.toTop.findUnsealedFork match{ //if there's another unsealed fork:
-          case None => pathCursor
+        currentPath.complete //seal this path.
+        currentPath.toTop.findUnsealedFork match { //if there's another unsealed fork:
+          case None => currentPath //all paths are sealed, return
           case Some(path) =>
-            pathCursor = path
             c.restore(path.anchor.contextSnapshot)
-            recProceed()
+            recProceed(path)
         }
     }
   }
 
-  private def proceedOne(): Option[AnchorEither] = {
+  private def proceedOne(implicit c: Context): Option[AnchorEither] = {
     if (c.isComplete) None
     else if (c.mandatoryLeftCnt > 0 && c.noArgLeft) {
       Some(ArgParseException("More args required", c))

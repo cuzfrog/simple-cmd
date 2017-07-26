@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.internal.SimpleLogger
+
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
@@ -154,6 +156,7 @@ private object ParamOrCmd extends CateUtils {
   implicit val parser: Parser[ParamOrCmd, AnchorEither] = new Parser[ParamOrCmd, AnchorEither] {
     override def parse(a: ParamOrCmd)
                       (implicit c: Context): AnchorEither = {
+      info(s"Parse ParamOrCmd:${a.arg}")
       val arg = a.arg
 
       c.nextParamNode match {
@@ -200,7 +203,7 @@ private object ParamOrCmd extends CateUtils {
   }
 }
 
-private sealed trait CateUtils {
+private sealed trait CateUtils extends SimpleLogger{
   protected implicit
   def seqValue2Right[L](in: Seq[Anchor]): Either[L, Seq[Anchor]] = Right(in)
 

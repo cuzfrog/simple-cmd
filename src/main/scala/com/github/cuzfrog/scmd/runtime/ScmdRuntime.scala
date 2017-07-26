@@ -99,7 +99,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
   private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
   private[this] val valiRefs = mutable.Map.empty[ValueNode, Function1[_,Unit]] //id -> func
-  private[this] val parsedNodes = mutable.Map.empty[String, Node] //name -> node
+  private[this] val parsedNodes = mutable.ListMap.empty[String, Node] //name -> node
 
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]

@@ -21,8 +21,8 @@ package object scmd {
 
   def appDefCustom(item: (String, String)*): Unit = ()
 
-  def validation[T](param: Parameter[T])(f: T => Unit): Unit = ()
-  def validation[T](opt: OptionArg[T])(f: T => Unit): Unit = ()
+  def validation[T](param: Parameter[T])(f: T => Unit): T => Unit = f
+  def validation[T](opt: OptionArg[T])(f: T => Unit): T => Unit = f
 
   //def validationMulti[A](args: A, f: A => Boolean): Unit = ()
 

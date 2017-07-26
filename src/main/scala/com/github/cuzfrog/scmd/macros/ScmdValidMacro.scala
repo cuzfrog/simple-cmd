@@ -24,7 +24,7 @@ private[scmd] class ScmdValidMacro extends ScmdMacro {
     val validations = TermValidation.collectValidation(stats)
 
     val addStats = validations.map { tv =>
-      q"${Term.Name(defClassName.value)}.addValidation(${Lit.String(tv.argName)},${tv.func})"
+      q"${Term.Name(defClassName.value)}.addValidation(${Lit.String(tv.argName)},${tv.term})"
     }
 
     q"""..$mods class $name ..$ctorMods (...$paramss){

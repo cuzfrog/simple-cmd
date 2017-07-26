@@ -59,7 +59,7 @@ sealed trait ScmdRuntime {
                    topOpts: Seq[Int],
                    cmdEntry: Int): this.type
 
-  def addValidation(name: String, func: (_) => Unit): Unit
+  def addValidation[T](name: String, func: T => Unit): Unit
   /** Convert string value to typed value and validate it with previously provided function. */
   def validate[T: ClassTag](valueNode: ValueNode)
                            (implicit typeEvidence: ArgTypeEvidence[T]): T
@@ -97,7 +97,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] var argTree: ArgTree = _
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
   private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
-  private[this] val valiRefs = mutable.Map.empty[ValueNode, (_) => Unit] //id -> func
+  private[this] val valiRefs = mutable.Map.empty[ValueNode, Function1[_,Unit]] //id -> func
   private[this] val parsedNodes = mutable.Map.empty[String, Node] //name -> node
 
   private def getEntity[T: ClassTag](e: Int): T =
@@ -210,7 +210,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def argTreeString: String = argTree.prettyString
   override def appInfoString: String = appInfo.prettyString
-  override def addValidation(name: String, func: (_) => Unit): Unit = {
+  override def addValidation[T](name: String, func: T => Unit): Unit = {
     nodeRefs.get(name) match {
       case Some(node: ValueNode) => valiRefs.put(node, func)
       case Some(node) =>
@@ -233,6 +233,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def parse(args: Seq[String]): Unit = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
     ArgParser.parse(argTree, args).foreach(n => parsedNodes.put(n.entity.name, n))
+    parsedNodes.foreach(println)
   }
   override def getNodeByName[N <: Node : ClassTag](name: String): N = {
     this.getNode[N](name, nodeRefs) match {

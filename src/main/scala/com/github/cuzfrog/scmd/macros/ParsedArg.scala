@@ -2,9 +2,11 @@ package com.github.cuzfrog.scmd.macros
 
 import scala.meta._
 
+import scala.collection.immutable
+
 private object ParsedArg {
   /** Generate fields of parsed arguments for newly created argDef class. */
-  def convertParsed(stat: Stat): Stat = stat match {
+  def convertParsed(stats: immutable.Seq[Stat]): immutable.Seq[Stat] = stats collect {
     case q"val $cmd:$_ = cmdDef(..$params)" =>
       q"""override val ${cmd.asInstanceOf[Pat.Var.Term]}: Command = {
             scmdRuntime.getArgumentWithValueByName[Boolean,Command](${Lit.String(cmd.syntax)})
@@ -19,7 +21,6 @@ private object ParsedArg {
             scmdRuntime
             .getArgumentWithValueByName[$tpe,OptionArg[$tpe]](${Lit.String(opt.syntax)})
          }"""
-    case other => other
   }
 
   private def stripTpe(tpe: Type): Type = tpe match {

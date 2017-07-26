@@ -26,14 +26,14 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
   import BacktrackingParser._
 
   private[this] implicit val c: Context = Context(argTree, args.map(categorize))
-
+  private[this] val topPath: TryPath = TryPath(c.anchor(c.getCurrentCmdNode))
   /**
     * Parse args against client defined argTree,
     * return a new tree containing value and consisting of only the right path.
     */
   def parse: Seq[Node] = {
-    val topPath: TryPath = TryPath(c.anchor(c.getCurrentCmdNode))
     recProceed(topPath)
+    trace(s"Parsed path:\n${topPath.prettyString}")
     topPath.convertTo[Seq[Node]]
   }
 
@@ -82,7 +82,6 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
               //backtrack end:
               case None =>
                 if (currentPath.toTop.isComplete) {
-                  println("Path:" + currentPath.prettyString)
                   currentPath
                 }
                 else { //finally path is not complete, parsing failed:

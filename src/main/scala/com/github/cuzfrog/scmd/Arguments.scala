@@ -40,15 +40,19 @@ OptionArg[+T] private[scmd](name: String,
 
 }
 
-sealed trait ArgValue[+T]
+sealed trait ArgValue[+T] {
+  def isVariable: Boolean
+}
 
 sealed trait SingleValue[+T] extends ArgValue[T] {
   def value: Option[T] = None
   def default: Option[T] = None
+  def isVariable: Boolean = false
 }
 sealed trait VariableValue[+T] extends ArgValue[T] {
   def value: Seq[T] = Nil
   def default: Seq[T] = Nil
+  def isVariable: Boolean = true
 }
 
 sealed trait Mandatory
@@ -167,12 +171,12 @@ private object ValueArgument {
     }
 }
 
-private object ArgValue{
-  def single[T](_default:Option[T]): ArgValue[T] = new SingleValue[T] {
+private object ArgValue {
+  def single[T](_default: Option[T]): ArgValue[T] = new SingleValue[T] {
     override def default: Option[T] = _default
     override def value: Option[T] = None
   }
-  def variable[T](_default:Seq[T]): ArgValue[T] = new VariableValue[T] {
+  def variable[T](_default: Seq[T]): ArgValue[T] = new VariableValue[T] {
     override def default: Seq[T] = _default
     override def value: Seq[T] = Nil
   }

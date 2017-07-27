@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.Defaults
-import com.github.cuzfrog.scmd.internal.RawArgMacro
+import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogger}
 import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.collection.immutable
@@ -15,7 +15,8 @@ private trait TermArg {
   def pos: Position
   def tpe: Type
 }
-private object TermArg {
+private object TermArg extends SimpleLogger{
+  override implicit val loggerLevel = SimpleLogger.Trace
   def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
 
@@ -28,6 +29,7 @@ private object TermArg {
                                    $TERM_DESCRIPTION = $description)"""
         TermCmd(term, pos)
       case (q"val $argName: $_ = $defName[$tpe](..$params)", pos) =>
+        debug(s"Collected type of $argName is [$tpe]")
         implicit val position = pos
         val description = extract[String](params).defnTerm
         val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory).defnTerm

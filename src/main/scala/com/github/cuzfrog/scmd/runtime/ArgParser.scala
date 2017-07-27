@@ -34,7 +34,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
   def parse: Seq[Node] = {
     recProceed(topPath, Seq())
     checkIfUniquePath(topPath)
-    trace(s"Parsed path:--------\n${topPath.prettyString}\n-------------Path end.")
+    trace(s"\nParsed path:--------\n${topPath.prettyString}\n-------------Path end.")
     topPath.convertTo[Seq[Node]]
   }
 

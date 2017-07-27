@@ -36,20 +36,20 @@ private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]
 private[runtime] sealed trait ValueNode extends Node {
   def value: Seq[String]
   def tpe: ClassTag[_] //specific data type, not includes Seq or List
-  def isVariable:Boolean = entity.isInstanceOf[SingleValue[_]]
 }
 
 private case class ParamNode[+T: ClassTag](entity: Parameter[T] with ArgValue[T],
                                            value: Seq[String])
   extends ValueNode with NodeTag[ParamNode[T]] {
   val tpe = implicitly[ClassTag[_]]
-
+  def isVariable: Boolean = entity.isVariable
 }
 
 private case class OptNode[+T: ClassTag](entity: OptionArg[T] with ArgValue[T],
                                          value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]] {
   val tpe = implicitly[ClassTag[_]]
+  def isVariable: Boolean = entity.isVariable
   //OptNode's equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {

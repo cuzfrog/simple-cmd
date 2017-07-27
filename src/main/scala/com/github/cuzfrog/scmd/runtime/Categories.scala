@@ -180,8 +180,8 @@ private object ParamOrCmd extends CateUtils {
       c.nextParamNode match {
         //there's still params to match:
         case Some(paramNode) =>
-          trace(s"Parse ParamOrCmd:${a.arg} -> param")
           val anchorsWithValue = if (paramNode.isVariable) {
+            trace(s"Parse ParamOrCmd:${a.arg} -> param...")
             //variable/multiple args:
 
             /** Pop args from context and create anchors along the way. */
@@ -200,7 +200,10 @@ private object ParamOrCmd extends CateUtils {
             recFork(firstAnchor, Seq(arg)) //current context state should point to last anchors.
           }
           //single arg:
-          else c.anchors(paramNode.copy(value = Seq(arg)))
+          else {
+            trace(s"Parse ParamOrCmd:${a.arg} -> param single")
+            c.anchors(paramNode.copy(value = Seq(arg)))
+          }
 
           val possibleCmdAnchor = if (!paramNode.entity.isMandatory) {
             this.consumeCmd(arg, c).right.toSeq.flatten

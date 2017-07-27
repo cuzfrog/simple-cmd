@@ -91,6 +91,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
                   currentPath
                 }
                 else { //finally path is not complete, parsing failed:
+                  if(exceptions.isEmpty) throw new AssertionError(s"Exception repository empty.")
                   throw exceptions.maxBy(_.contextSnapshot.argCursor)
                 }
             }

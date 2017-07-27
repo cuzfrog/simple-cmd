@@ -43,19 +43,21 @@ OptionArg[+T] private[scmd](name: String,
 sealed trait ArgValue[+T]
 
 sealed trait SingleValue[+T] extends ArgValue[T] {
-  def value: Option[T]
-  def default: Option[T]
+  def value: Option[T] = None
+  def default: Option[T] = None
 }
 sealed trait VariableValue[+T] extends ArgValue[T] {
-  def value: Seq[T]
-  def default: Seq[T]
+  def value: Seq[T] = Nil
+  def default: Seq[T] = Nil
 }
 
 sealed trait Mandatory
 
 private[scmd] object DummyCommand extends Command("")
-private[scmd] object DummyParameter extends Parameter("")
-private[scmd] object DummyOptionArt extends OptionArg("")
+private[scmd] object DummyParameterS extends Parameter("") with SingleValue[Nothing]
+private[scmd] object DummyParameterV extends Parameter("") with VariableValue[Nothing]
+private[scmd] object DummyOptionArgS extends OptionArg("") with SingleValue[Nothing]
+private[scmd] object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
 
 private object Command {
   implicit def toValue(in: Command): Boolean = in.met

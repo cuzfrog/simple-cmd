@@ -80,19 +80,20 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
           //if this path is an end(exception occurred):
           case Left(e) =>
             trace(s"Arg(${c.getCurrentArg}) parse failed with msg:${e.msg}")
+            val exceptionAcc = exceptions :+ e
             currentPath.backtrack match {
               //found an unexplored fork:
               case Some(path) =>
                 c.restore(path.anchor.contextSnapshot)
-                recProceed(path, exceptions :+ e)
+                recProceed(path, exceptionAcc)
               //backtrack end:
               case None =>
                 if (currentPath.toTop.isComplete) {
                   currentPath
                 }
                 else { //finally path is not complete, parsing failed:
-                  if(exceptions.isEmpty) throw new AssertionError(s"Exception repository empty.")
-                  throw exceptions.maxBy(_.contextSnapshot.argCursor)
+                  if(exceptionAcc.isEmpty) throw new AssertionError(s"Exception empty.")
+                  throw exceptionAcc.maxBy(_.contextSnapshot.argCursor)
                 }
             }
         }

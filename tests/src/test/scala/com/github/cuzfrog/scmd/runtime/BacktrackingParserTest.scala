@@ -23,13 +23,11 @@ class BacktrackingParserTest {
   @Test
   def test1(): Unit = {
     val args = Array.empty[String]
-    val result = new BacktrackingParserTestOne(argTree, args).parsedToPath
-    println(result.prettyString)
+    val result = new BacktrackingParserTestOne(argTree, args)
   }
 }
 
 
 private class BacktrackingParserTestOne(argTree: ArgTree, args: Array[String])
   extends BacktrackingParser(argTree, Array()) {
-  def parsedToPath: TryPath = this.recProceed()
 }

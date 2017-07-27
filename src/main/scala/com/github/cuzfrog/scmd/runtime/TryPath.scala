@@ -80,21 +80,20 @@ private class TryPath(argAnchor: Anchor) {
 
   def getBranches: Seq[TryPath] = this.branches map identity
 
-  /** Remove end complete flag. And check if the path is unique.
-    * Return path with multiple branches. */
+  /** Check if the path is unique. Return path with multiple branches. */
   @inline
-  def pruneEndAndCheckUniqueness: Option[TryPath] = {
+  def checkUniqueness: Option[TryPath] = {
+    println(this.toTop.prettyString)
     if (!this.isComplete) throw new AssertionError("Path not complete yet.")
-    def recPrune(path: TryPath): Option[TryPath] = {
+    @tailrec
+    def checkUniqueness(path: TryPath): Option[TryPath] = {
       path.branches match {
-        case arr if arr.contains(TryPath.CompletePath) =>
-          path.branches.clear()
-          None
-        case arr if arr.size == 1 => recPrune(arr.head)
+        case arr if arr.contains(TryPath.CompletePath) => None
+        case arr if arr.size == 1 => checkUniqueness(arr.head)
         case arr => Some(path)
       }
     }
-    recPrune(this.toTop)
+    checkUniqueness(this.toTop)
   }
 
   /** Return headOption of sub-branches. */

@@ -32,37 +32,41 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
     * return a new tree containing value and consisting of only the right path.
     */
   def parse: Seq[Node] = {
-    recProceed(topPath)
-    trace(s"Parsed path:\n${topPath.prettyString}")
+    recProceed(topPath, Seq())
+    checkIfUniquePath(topPath)
+    trace(s"Parsed path:--------\n${topPath.prettyString}\n-------------Path end.")
     topPath.convertTo[Seq[Node]]
   }
 
-  //  private def checkIfUniquePath(path: TryPath): Unit = {
-  //    path.toTop.findUnsealedFork match { //check if it's a single path through.
-  //      case None => ()
-  //      case Some(p) =>
-  //        val forks = p.getBranches
-  //        val arg = try {
-  //          args(forks.head.anchor.contextSnapshot.argCursor)
-  //        } catch {
-  //          case e: ArrayIndexOutOfBoundsException =>
-  //            throw new AssertionError("Arg cursor resides out the bounds of array.")
-  //        }
-  //
-  //        val msg = forks.map(_.anchor.node).map {
-  //          case cmdNode: CmdNode => cmdNode.entity.name
-  //          case paramNode: ParamNode[_] => paramNode.entity.name
-  //          case optNode: OptNode[_] =>
-  //            throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
-  //          case cmdEntry: CmdEntryNode =>
-  //            throw new AssertionError(s"CmdEntry should not be anchored.[$cmdEntry]")
-  //        }
-  //        throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString("|")}", c)
-  //    }
-  //  }
+    private def checkIfUniquePath(path: TryPath): Unit = {
+      path.toTop.checkUniqueness match { //check if it's a single path through.
+        case None => ()
+        case Some(p) =>
+          val forks = p.getBranches
+          val arg = try {
+            args(forks.head.anchor.contextSnapshot.argCursor)
+          } catch {
+            case e: ArrayIndexOutOfBoundsException =>
+              throw new AssertionError("Arg cursor resides out the bounds of array.")
+          }
+
+          val msg = forks.map(_.anchor.node).map {
+            case cmdNode: CmdNode => cmdNode.entity.name
+            case paramNode: ParamNode[_] => paramNode.entity.name
+            case optNode: OptNode[_] =>
+              throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
+            case cmdEntry: CmdEntryNode =>
+              throw new AssertionError(s"CmdEntry should not be anchored.[$cmdEntry]")
+          }
+          throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
+      }
+    }
+
 
   @tailrec
-  protected final def recProceed(currentPath: TryPath)(implicit c: Context): TryPath = {
+  protected final def recProceed(currentPath: TryPath,
+                                 exceptions: Seq[ArgParseException])
+                                (implicit c: Context): TryPath = {
     proceedOne(c) match {
       case Some(ae) =>
         ae match {
@@ -72,7 +76,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
             val forks = anchors.map(TryPath(_)).map(currentPath.pipeAddFork)
             val bottomPath = forks.lastOption
               .getOrElse(throw new AssertionError("Returned anchors should not be empty."))
-            recProceed(bottomPath)
+            recProceed(bottomPath, exceptions)
           //if this path is an end(exception occurred):
           case Left(e) =>
             trace(s"Arg(${c.getCurrentArg}) parse failed with msg:${e.msg}")
@@ -80,14 +84,14 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
               //found an unexplored fork:
               case Some(path) =>
                 c.restore(path.anchor.contextSnapshot)
-                recProceed(path)
+                recProceed(path, exceptions :+ e)
               //backtrack end:
               case None =>
                 if (currentPath.toTop.isComplete) {
                   currentPath
                 }
                 else { //finally path is not complete, parsing failed:
-                  throw e
+                  throw exceptions.maxBy(_.contextSnapshot.argCursor)
                 }
             }
         }
@@ -98,7 +102,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
           case None => currentPath //all paths are sealed, return
           case Some(path) =>
             c.restore(path.anchor.contextSnapshot)
-            recProceed(path)
+            recProceed(path, exceptions)
         }
     }
   }

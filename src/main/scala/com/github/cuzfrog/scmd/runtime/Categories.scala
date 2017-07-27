@@ -39,7 +39,7 @@ private object SingleOpts extends CateUtils {
       val cmdNode = c.getCurrentCmdNode
       val arg = a.arg
 
-      trace(s"parse SingleOpts ${a.arg}")
+      trace(s"parse SingleOpts $arg")
 
       val matchOpt =
         c.getUpstreamLeftOpts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
@@ -64,10 +64,10 @@ private object SingleOpts extends CateUtils {
                 if (boolNodes.size < boolSet.size) {
                   val badArgs =
                     boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
-                  ArgParseException(s"Boolean options:[$badArgs] not defined", c)
+                  ArgParseException(s"Boolean options: -$badArgs not defined", c)
                 }
                 else if (boolSet.size < bools.length) {
-                  ArgParseException(s"Duplicates in boolean options: $bools", c)
+                  ArgParseException(s"Duplicates in boolean options: -$bools", c)
                 }
                 else {
                   val optNodesWithValue = boolNodes.flatMap { n =>
@@ -78,7 +78,7 @@ private object SingleOpts extends CateUtils {
                 }
 
               case bad =>
-                ArgParseException(s"Boolean opts[$bad] contain unsupported letter", c)
+                ArgParseException(s"Boolean opts -$bad contain unsupported letter", c)
             }
 
           //found argDef for other types
@@ -89,8 +89,8 @@ private object SingleOpts extends CateUtils {
                 case ValueFolding(v) => v
                 case single if single.matches("""\w""") => c.nextArg.getOrElse(
                   throw ArgParseException(
-                    s"No value found for opt[$arg] with type[${otherTpe.name}].", c))
-                case bad => throw ArgParseException(s"Malformed opt[$bad]", c)
+                    s"No value found for opt -$arg with type[${otherTpe.name}].", c))
+                case bad => throw ArgParseException(s"Malformed opt -$bad", c)
               }
               c.anchors(optNode1.copy(value = Seq(value)))
             } catch {
@@ -98,7 +98,7 @@ private object SingleOpts extends CateUtils {
             }
         }
         case None =>
-          ArgParseException(s"Unknown opt[$arg]", c)
+          ArgParseException(s"Unknown opt -$arg", c)
       }
     }
   }
@@ -125,7 +125,7 @@ private object LongOpt extends CateUtils {
                   valueOpt match {
                     case Some(boolStr) => parseBoolStr(boolStr) match {
                       case Some(b) => c.anchors(optNode.copy(value = Seq(b)))
-                      case None => ArgParseException(s"Unknown bool literal: $arg", c)
+                      case None => ArgParseException(s"Unknown bool literal: -$arg", c)
                     }
                     case None =>
                       //logic not default boolean value
@@ -146,13 +146,13 @@ private object LongOpt extends CateUtils {
                     case Some(v) => c.anchors(optNode.copy(value = Seq(v)))
                     case None =>
                       ArgParseException(
-                        s"No value found for opt[$name] with type[${otherTpe.name}].", c)
+                        s"No value found for opt -$arg with type[${otherTpe.name}].", c)
                   }
               }
 
             case None =>
               trace(s"Parse LongOpt $arg -> not-matched.")
-              ArgParseException(s"Unknown option: $name", c)
+              ArgParseException(s"Unknown option: -$arg", c)
           }
         case bad => ArgParseException(s"Malformed option: $bad", c)
       }

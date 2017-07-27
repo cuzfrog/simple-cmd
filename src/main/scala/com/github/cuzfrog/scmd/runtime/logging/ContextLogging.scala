@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.runtime.logging
 
-import com.github.cuzfrog.scmd.internal.SimpleLogger
-import com.github.cuzfrog.scmd.runtime.{Anchor, CmdNode, Context, Node}
+import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogger}
+import com.github.cuzfrog.scmd.runtime.{Anchor, CmdNode, Context, Node, ParamNode}
 
 private[runtime] trait ContextLogging extends Context with SimpleLogger {
   override implicit val loggerAgent = classOf[Context].getName
@@ -20,11 +20,12 @@ private[runtime] trait ContextLogging extends Context with SimpleLogger {
     result
   }
 
-  //  abstract override def nextParamNode: Option[ParamNode[_]] = {
-  //    debug(s"Try next params. " +
-  //      s"current of cmdNode: ${getCurrentCmdNode.params.size}; cursor:$getParamCursor")
-  //    super.nextParamNode
-  //  }
+  @IgnoreLogging
+  abstract override def nextParamNode: Option[ParamNode[_]] = {
+    debug(s"Try next params. " +
+      s"current of cmdNode: ${getCurrentCmdNode.params.size}; cursor:$getParamCursor")
+    super.nextParamNode
+  }
 }
 
 

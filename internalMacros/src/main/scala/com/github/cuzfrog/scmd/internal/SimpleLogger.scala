@@ -70,6 +70,5 @@ private[scmd] object SimpleLogger {
       }
     }
   }
-
 }
 

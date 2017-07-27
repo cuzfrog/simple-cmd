@@ -3,6 +3,7 @@ package com.github.cuzfrog.scmd.runtime
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.cuzfrog.scmd
+import com.github.cuzfrog.scmd.runtime.logging.ScmdRuntimeLogging
 import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter, ValueArgument}
 
 import scala.collection.mutable
@@ -81,7 +82,7 @@ sealed trait ScmdRuntime {
   def parsedSeqString: String
 }
 object ScmdRuntime {
-  def create: ScmdRuntime = new ScmdRuntimeImpl
+  def create: ScmdRuntime = new ScmdRuntimeImpl with ScmdRuntimeLogging
 }
 
 /** Not Thread-safe. It is only executed privately inside @ScmdDef annotated class, at runtime. */

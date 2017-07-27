@@ -64,18 +64,16 @@ sealed trait ScmdRuntime {
 
   def addValidation[T](name: String, func: T => Unit): Unit
   /** Convert string value to typed value and validate it with previously provided function. */
-  def validate[T: ClassTag](valueNode: ValueNode)
-                           (implicit typeEvidence: ArgTypeEvidence[T]): Seq[T]
+  def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T]
 
-
+  /** Trigger final parsing. */
   def parse(args: Seq[String]): Unit
 
   /** Return not parsed node. */
   def getNodeByName[N <: Node : ClassTag](name: String): N
 
   def getArgumentWithValueByName
-  [T: ClassTag, A <: Argument[T] : ClassTag](name: String)
-                                            (implicit typeEvidence: ArgTypeEvidence[T]): A
+  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A
 
   def argTreeString: String
   def appInfoString: String
@@ -103,7 +101,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] var argTree: ArgTree = _
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
   private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
-  private[this] val valiRefs = mutable.Map.empty[ValueNode, Function1[_, Unit]] //id -> func
+  private[this] val valiRefs = mutable.Map.empty[ValueNode[_], Function1[_, Unit]] //id -> func
   private[this] val parsedNodes = mutable.LinkedHashMap.empty[String, Node] //name -> node
 
   private def getEntity[T: ClassTag](e: Int): T =
@@ -157,7 +155,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildParamNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Parameter[T] with ArgValue[T]](entity)
-    val a = ParamNode[T](entity = e, value = value)
+    val a = ParamNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]])
     repository.put(id, Box(a))
     nodeRefs.put(e.name, a)
     id
@@ -165,7 +163,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[OptionArg[T] with ArgValue[T]](entity)
-    val a = OptNode[T](entity = e, value = value)
+    val a = OptNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]])
     repository.put(id, Box(a))
     nodeRefs.put(e.name, a)
     id
@@ -212,16 +210,16 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def addValidation[T](name: String, func: T => Unit): Unit = {
     nodeRefs.get(name) match {
-      case Some(node: ValueNode) => valiRefs.put(node, func)
+      case Some(node: ValueNode[T@unchecked]) => valiRefs.put(node, func)
       case Some(node) =>
         throw new AssertionError(s"Node[$node] with name$name is not a value node" +
           s"(so not compatible with validation).")
       case None => throw new AssertionError(s"Cannot find node with name$name")
     }
   }
-  override def validate[T: ClassTag](valueNode: ValueNode)
-                                    (implicit typeEvidence: ArgTypeEvidence[T]): Seq[T] = {
+  override def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T] = {
     val tpe = implicitly[ClassTag[T]]
+    val typeEvidence = implicitly[ArgTypeEvidence[T]]
     if (tpe != valueNode.tpe)
       throw new AssertionError(s"Type of demanded value is different from node's")
     val typedValue = valueNode.value.map(typeEvidence.verify)
@@ -243,15 +241,16 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
   }
 
+  /** (private) Given name and type, query a node from a provided map. */
   private def getNode[N <: Node : ClassTag](name: String,
                                             refs: mutable.Map[String, Node]): Option[N] = {
     val tpe = implicitly[ClassTag[N]].runtimeClass
     val node: Option[Node] = refs.get(name).map {
       case cmdNode: CmdNode if tpe == classOf[CmdNode] => cmdNode
       case paramNode: ParamNode[_]
-        if tpe == classOf[ParamNode[_]] || tpe == classOf[ValueNode] => paramNode
+        if tpe == classOf[ParamNode[_]] || tpe == classOf[ValueNode[_]] => paramNode
       case optNode: OptNode[_]
-        if tpe == classOf[OptNode[_]] || tpe == classOf[ValueNode] => optNode
+        if tpe == classOf[OptNode[_]] || tpe == classOf[ValueNode[_]] => optNode
       case _: CmdEntryNode =>
         throw new AssertionError(s"CmdEntryNode has no name and should not be cached.")
       case bad =>
@@ -261,14 +260,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
 
   override def getArgumentWithValueByName
-  [T: ClassTag, A <: Argument[T] : ClassTag](name: String)
-                                            (implicit typeEvidence: ArgTypeEvidence[T]): A = {
+  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A = {
     if (parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
     val valueTpe = implicitly[ClassTag[T]]
     val argTpe = implicitly[ClassTag[A]]
 
+    /** Get parsed node by type. */
     def parsedNode[N <: Node : ClassTag]: Option[N] = this.getNode[N](name, parsedNodes)
-    def checkNodeType(n: ValueNode): Unit = if (n.tpe != valueTpe)
+    def checkNodeType(n: ValueNode[_]): Unit = if (n.tpe != valueTpe)
       throw new AssertionError(s"Node's value type[${n.tpe}]" +
         s" is different from specified type[$valueTpe].")
 
@@ -278,9 +277,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         node.entity.copy(met = parsedNodes.get(name).nonEmpty)
 
       case rc if rc == classOf[Parameter[_]] || rc == classOf[OptionArg[_]] =>
-        val node = this.getNodeByName[ValueNode](name)
+        val node = this.getNodeByName[ValueNode[_]](name)
         checkNodeType(node)
-        val value = parsedNode[ValueNode] match {
+        val value = parsedNode[ValueNode[T]] match {
           case None => Seq.empty[T]
           case Some(n) => this.validate[T](n)
         }

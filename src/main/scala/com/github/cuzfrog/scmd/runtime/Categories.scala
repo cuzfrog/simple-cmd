@@ -190,6 +190,8 @@ private object ParamOrCmd extends CateUtils {
               c.nextArgWithType[ParamOrCmd] match {
                 case Some(v) =>
                   val accValues = values :+ v
+                  debug("ParamNode type before/after evaluation:" +
+                    paramNode.tpe + "/" + paramNode.copy(value = accValues).tpe)
                   val newAnchor = c.anchors(paramNode.copy(value = accValues))
                   recFork(acc ++ newAnchor, accValues)
                 case None => acc

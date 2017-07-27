@@ -82,7 +82,6 @@ private class TryPath(argAnchor: Anchor) {
   /** Check if the path is unique. Return path with multiple branches. */
   @inline
   def checkUniqueness: Option[TryPath] = {
-    println(this.toTop.prettyString)
     if (!this.isComplete) throw new AssertionError("Path not complete yet.")
     @tailrec
     def checkUniqueness(path: TryPath): Option[TryPath] = {
@@ -148,9 +147,11 @@ private object TryPath {
 
     def recMkPrettyString(p: TryPath, indent: String = ""): Seq[String] = {
       val thisP = p.anchor.node match {
-        case cmdNode: CmdNode => s"${indent}cmd  [${cmdNode.entity.name}]"
-        case paramNode: ParamNode[_] => s"${indent}param[${paramNode.entity.name}] - ${paramNode.value}"
-        case optNode: OptNode[_] => s"${indent}opt  [${optNode.entity.name}] - ${optNode.value}"
+        case n: CmdNode => s"${indent}cmd  [${n.entity.name}]"
+        case n: ParamNode[_] =>
+          s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
+        case n: OptNode[_] =>
+          s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
         case cmdEntry: CmdEntryNode =>
           throw new AssertionError(s"CmdEntry should not be in path:${cmdEntry.entity}")
       }

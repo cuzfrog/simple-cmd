@@ -16,7 +16,7 @@ private trait TermArg {
   def tpe: Type
 }
 private object TermArg extends SimpleLogger{
-  override implicit val loggerLevel = SimpleLogger.Trace
+  override implicit val loggerLevel = SimpleLogger.Info
   def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
 

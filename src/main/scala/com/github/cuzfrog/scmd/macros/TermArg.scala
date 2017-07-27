@@ -16,24 +16,24 @@ private trait TermArg {
   def tpe: Type
 }
 private object TermArg {
-  def toTermArg(stat: Stat): TermArg = {
+  def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
 
-    implicit val pos = stat.pos
-
-    stat match {
-      case q"val $cmd: $_ = cmdDef(..$params)" =>
+    stats zip stats.map(_.pos) collect {
+      case (q"val $cmd: $_ = cmdDef(..$params)", pos) =>
+        implicit val position = pos
         val description = extract[String](params).defnTerm
         val term =
-          q"""runtime.buildCommand($TERM_NAME = ${Term.Name(cmd.syntax)},
+          q"""runtime.buildCommand($TERM_NAME = ${Lit.String(cmd.syntax)},
                                    $TERM_DESCRIPTION = $description)"""
         TermCmd(term, pos)
-      case q"val $argName: $_ = $defName[$tpe](..$params)" =>
+      case (q"val $argName: $_ = $defName[$tpe](..$params)", pos) =>
+        implicit val position = pos
         val description = extract[String](params).defnTerm
         val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory).defnTerm
         val abbr = extract[String](params).defnTerm
         val default = extract[Term.Arg](params).defnTerm
-        val name = Term.Name(argName.syntax)
+        val name = Lit.String(argName.syntax)
         defName match {
           case q"paramDef" =>
             val term =
@@ -71,15 +71,9 @@ private object TermArg {
   }
 
   private def singleValue(tpe: Type, default: Term): Term =
-    q"""new SingleValue[$tpe]{
-                    val value:Option[$tpe] = None
-                    val default:Option[$tpe] = $default
-                  }"""
-  private def variableValue(tpe:Type,default:Term):Term =
-    q"""new VariableValue[$tpe]{
-                    val value:Seq[$tpe] = Nil
-                    val default:Seq[$tpe] = $default
-                  }"""
+    q"""runtime.buildSingleValue[$tpe]($default)"""
+  private def variableValue(tpe: Type, default: Term): Term =
+    q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
 }
 
 private final case class TermCmd(term: Term, pos: Position) extends TermArg {val tpe = TYPE_NOTHING}

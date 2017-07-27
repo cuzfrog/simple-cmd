@@ -15,18 +15,18 @@ object Tmp {
 
     //val badParam = paramDef[String](description = "throw exception")
     val cat = cmdDef(description = "Concatenate contents of files.")
-    val files = paramDef[List[Path]](description = "Paths of files to concatenate.", isMandatory = true)
+    val files = paramDefVariable[Path](description = "Paths of files to concatenate.", isMandatory = true)
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
   }
 
   @ScmdValid
   class CatValidation(argDef: CatDef) {
-    validation(argDef.files) { files =>
-      if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
-      files.foreach { f =>
-        if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
-      }
-    }
+//    validation(argDef.files) { files =>
+//      if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
+//      files.foreach { f =>
+//        if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+//      }
+//    }
   }
 
 

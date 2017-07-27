@@ -3,11 +3,11 @@ package com.github.cuzfrog.scmd.runtime
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.cuzfrog.scmd
-import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter, SingleValue}
+import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter, ValueArgument}
 
-import scala.reflect.ClassTag
 import scala.collection.mutable
 import scala.language.reflectiveCalls
+import scala.reflect.ClassTag
 
 /**
   * Util/helper class to build scmd runtime classes that is instantiated within client class.
@@ -39,7 +39,10 @@ sealed trait ScmdRuntime {
                         isMandatory: Boolean = Defaults.isMandatory,
                         argValue: ArgValue[T]): Int
 
-  def buildParamNode[T](entity: Int, value: Seq[String]): Int
+  def buildSingleValue[T](_default: Option[T]): ArgValue[T]
+  def buildVariableValue[T](_default: Seq[T]): ArgValue[T]
+
+  def buildParamNode[T: ClassTag](entity: Int, value: Seq[String]): Int
 
   def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int
 
@@ -61,7 +64,7 @@ sealed trait ScmdRuntime {
   def addValidation[T](name: String, func: T => Unit): Unit
   /** Convert string value to typed value and validate it with previously provided function. */
   def validate[T: ClassTag](valueNode: ValueNode)
-                           (implicit typeEvidence: ArgTypeEvidence[T]): T
+                           (implicit typeEvidence: ArgTypeEvidence[T]): Seq[T]
 
 
   def parse(args: Seq[String]): Unit
@@ -69,7 +72,9 @@ sealed trait ScmdRuntime {
   /** Return not parsed node. */
   def getNodeByName[N <: Node : ClassTag](name: String): N
 
-  def getArgumentWithValueByName[T: ClassTag, A <: Argument[T] : ClassTag](name: String): A
+  def getArgumentWithValueByName
+  [T: ClassTag, A <: Argument[T] : ClassTag](name: String)
+                                            (implicit typeEvidence: ArgTypeEvidence[T]): A
 
   def argTreeString: String
   def appInfoString: String
@@ -142,7 +147,13 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.put(id, Box(a))
     id
   }
-  override def buildParamNode[T](entity: Int, value: Seq[String]): Int = {
+  override def buildSingleValue[T](_default: Option[T]): ArgValue[T] = {
+    ArgValue.single(_default)
+  }
+  override def buildVariableValue[T](_default: Seq[T]): ArgValue[T] = {
+    ArgValue.variable(_default)
+  }
+  override def buildParamNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Parameter[T] with ArgValue[T]](entity)
     val a = ParamNode[T](entity = e, value = value)
@@ -240,7 +251,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         if tpe == classOf[ParamNode[_]] || tpe == classOf[ValueNode] => paramNode
       case optNode: OptNode[_]
         if tpe == classOf[OptNode[_]] || tpe == classOf[ValueNode] => optNode
-      case cmdEntryNode: CmdEntryNode =>
+      case _: CmdEntryNode =>
         throw new AssertionError(s"CmdEntryNode has no name and should not be cached.")
       case bad =>
         throw new MatchError(s"Node of specified type[$tpe] has not specified name:$name.$bad")
@@ -249,7 +260,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
 
   override def getArgumentWithValueByName
-  [T: ClassTag, A <: Argument[T] : ClassTag](name: String): A = {
+  [T: ClassTag, A <: Argument[T] : ClassTag](name: String)
+                                            (implicit typeEvidence: ArgTypeEvidence[T]): A = {
     if (parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
     val valueTpe = implicitly[ClassTag[T]]
     val argTpe = implicitly[ClassTag[A]]
@@ -269,9 +281,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         checkNodeType(node)
         val value = parsedNode[ValueNode] match {
           case None => Seq.empty[T]
-          case Some(n) => this.validate(n)
+          case Some(n) => this.validate[T](n)
         }
-        scmd.merge(node.entity, value)
+        scmd.merge(node.entity.asInstanceOf[ValueArgument[T]], value)
     }
     argument.asInstanceOf[A]
   }

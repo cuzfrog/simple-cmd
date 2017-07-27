@@ -13,7 +13,7 @@ private object TermValidation {
           case q"$_.$n" => n
           case n => n
         }
-        TermValidation(q"validation($param) ($funcStats)", argName.syntax, pos)
+        TermValidation(q"validation($param)($funcStats)", argName.syntax, pos)
     }
     validations
   }

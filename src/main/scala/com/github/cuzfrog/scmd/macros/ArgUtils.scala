@@ -1,7 +1,8 @@
 package com.github.cuzfrog.scmd.macros
 
-import scala.meta._
+import com.github.cuzfrog.scmd.{OptionArg, Parameter}
 
+import scala.meta._
 import scala.collection.immutable
 
 private object ArgUtils {
@@ -12,17 +13,24 @@ private object ArgUtils {
             scmdRuntime.getArgumentWithValueByName[Boolean,Command](${Lit.String(cmd.syntax)})
           }"""
     case q"val $para:$_ = paramDef[$tpe](..$params)" =>
-      q"""override val ${para.asInstanceOf[Pat.Var.Term]}: Parameter[$tpe] = {
-            scmdRuntime
-            .getArgumentWithValueByName[$tpe,Parameter[$tpe]](${Lit.String(para.syntax)})
-          }"""
+      typedVal(para, tpe, classOf[Parameter[_]], isVariable = false)
     case q"val $opt:$_ = optDef[$tpe](..$params)" =>
-      q"""override val ${opt.asInstanceOf[Pat.Var.Term]}: OptionArg[$tpe] = {
-            scmdRuntime
-            .getArgumentWithValueByName[$tpe,OptionArg[$tpe]](${Lit.String(opt.syntax)})
-         }"""
+      typedVal(opt, tpe, classOf[OptionArg[_]], isVariable = false)
+    case q"val $para:$_ = paramDefVarible[$tpe](..$params)" =>
+      typedVal(para, tpe, classOf[Parameter[_]], isVariable = true)
+    case q"val $opt:$_ = optDefMultiple[$tpe](..$params)" =>
+      typedVal(opt, tpe, classOf[OptionArg[_]], isVariable = true)
   }
 
+  private def typedVal(argName: Pat, tpe: Type,
+                       argType: Class[_], isVariable: Boolean): Defn.Val = {
+    val name = Type.Name(argType.getSimpleName)
+    val argValue = if (isVariable) t"VariableValue[$tpe]" else t"SingleValue[$tpe]"
+    q"""override val ${argName.asInstanceOf[Pat.Var.Term]}: $name[$tpe] with $argValue = {
+          scmdRuntime
+          .getArgumentWithValueByName[$tpe,$name[$tpe] with $argValue](${Lit.String(argName.syntax)})
+        }"""
+  }
   //todo: convert camel case name to hyphen linked
 
   /** Scala meta generated fields need explicit types to inform IDE. */

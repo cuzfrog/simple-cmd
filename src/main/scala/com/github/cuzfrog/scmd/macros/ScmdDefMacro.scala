@@ -61,7 +61,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
             scmdRuntime.parse($argsParam)
             new ${Ctor.Ref.Name(name.value)}(...$termParamss){
               private[this] val scmdRuntime:ScmdRuntime = super.getRuntime
-              ..${ParsedArg.convertParsed(stats)}
+              ..${ArgUtils.convertParsed(stats)}
             }
           }"""
     }
@@ -87,7 +87,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd.runtime.ScmdRuntime
-          ..${stats.map(RawArg.addExplicitType)}
+          ..${stats.map(ArgUtils.addExplicitType)}
           ..$addMethods
         }"""
   }

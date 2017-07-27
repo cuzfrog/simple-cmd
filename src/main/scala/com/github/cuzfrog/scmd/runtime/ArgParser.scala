@@ -46,7 +46,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
           val arg = try {
             args(forks.head.anchor.contextSnapshot.argCursor)
           } catch {
-            case e: ArrayIndexOutOfBoundsException =>
+            case _: ArrayIndexOutOfBoundsException =>
               throw new AssertionError("Arg cursor resides out the bounds of array.")
           }
 

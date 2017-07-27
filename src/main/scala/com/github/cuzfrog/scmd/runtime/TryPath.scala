@@ -1,6 +1,5 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.Empty
 import com.github.cuzfrog.scmd.CanFormPrettyString
 import com.github.cuzfrog.scmd.runtime.logging.TryPathLogging
 

@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.SingleValue
 import com.github.cuzfrog.scmd.internal.SimpleLogger
 
 import scala.annotation.tailrec
@@ -71,7 +72,12 @@ private object SingleOpts extends CateUtils {
                 }
                 else {
                   val optNodesWithValue = boolNodes.flatMap { n =>
-                    val boolValue = n.entity.default.getOrElse(false).unary_!
+                    val boolValue = n.entity match {
+                      case s: SingleValue[Boolean@unchecked] => s.default.getOrElse(false).unary_!
+                      case m =>
+                        throw new AssertionError(s"Boolean value cannot be variable." +
+                          s" Node:${n.entity.name}")
+                    }
                     c.anchors(n.copy(value = Seq(boolValue)))
                   }
                   optNodesWithValue
@@ -129,9 +135,14 @@ private object LongOpt extends CateUtils {
                     }
                     case None =>
                       //logic not default boolean value
-                      val defaultB = optNode.entity.default match {
-                        case Some(b: Boolean) => b
-                        case _ => false //type boolean checked by ClassTag
+                      val defaultB = optNode.entity match {
+                        case s: SingleValue[Boolean@unchecked] => s.default match {
+                          case Some(b: Boolean) => b
+                          case _ => false //type boolean checked by ClassTag
+                        }
+                        case m =>
+                          throw new AssertionError(s"Boolean value cannot be variable." +
+                            s" Node:${optNode.entity.name}")
                       }
                       c.anchors(optNode.copy(value = Seq(defaultB.unary_!)))
                   }

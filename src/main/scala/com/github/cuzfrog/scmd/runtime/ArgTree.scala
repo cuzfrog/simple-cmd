@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, SingleValue}
+import com.github.cuzfrog.scmd.{ArgValue, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, SingleValue}
 
 import scala.reflect.ClassTag
 

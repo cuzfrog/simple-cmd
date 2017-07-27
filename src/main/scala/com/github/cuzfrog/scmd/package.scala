@@ -52,10 +52,18 @@ package object scmd {
     def prettyString: String = implicitly[CanFormPrettyString[A]].mkPrettyString(a)
   }
 
-  private[scmd] trait Fillable[A, S] {
-    def fillWith(a: A, stuff: S): A
+  private[scmd] trait CanMerge[A, S] {
+    def merge(a: A, stuff: S): A
   }
-  private[scmd] implicit class FillOps[A, S](in: A)(implicit ev: Fillable[A, S]) {
-    def fillWithStuff(stuff: S): A = ev.fillWith(in, stuff)
+  private[scmd] def merge[A, B](a: A, stuff: B)
+                               (implicit ev: CanMerge[A, B]): A = ev.merge(a, stuff)
+//  private[scmd] implicit class MergeOps[A, S](in: A)(implicit ev: CanMerge[A, S]) {
+//    def mergeWith(stuff: S): A = ev.merge(in, stuff)
+//  } //nested type cannot be inferred.
+
+  private[scmd] trait CanMix[A, B] {
+    def mix(a: A, _trait: B): A with B
   }
+  private[scmd] def mix[A, B](a: A, _trait: B)
+                             (implicit ev: CanMix[A, B]): A with B = ev.mix(a, _trait)
 }

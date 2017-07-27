@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{ArgValue, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, SingleValue}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, SingleValue}
 
 import scala.reflect.ClassTag
 
@@ -17,7 +17,7 @@ private final case class ArgTree(topParams: Seq[ParamNode[_]],
 }
 
 private sealed trait Node {
-  def entity: {val name: String}
+  def entity: Argument[_]
 }
 
 private case class CmdNode(entity: Command,
@@ -98,7 +98,9 @@ private object Node {
     case n: ParamNode[_] =>
       val ifVariable = if (n.isVariable) "..." else ""
       s"param$ifVariable: ${n.entity.name}[${n.tpe}] = ${n.value}"
-    case n: OptNode[_] => s"opt: ${n.entity.name}[${n.tpe}] = ${n.value}"
+    case n: OptNode[_] =>
+      val ifMultiple = if (n.isVariable) "..." else ""
+      s"opt$ifMultiple: ${n.entity.name}[${n.tpe}] = ${n.value}"
     case _: CmdEntryNode => s"cmdEntry"
   }
 }

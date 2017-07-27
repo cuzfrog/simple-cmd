@@ -1,8 +1,8 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.Defaults
 import com.github.cuzfrog.scmd.internal.RawArgMacro
 import com.github.cuzfrog.scmd.macros.Constants._
-import com.github.cuzfrog.scmd.{Command, CommandEntry, Defaults, OptionArg, Parameter}
 
 import scala.collection.immutable
 import scala.meta._
@@ -32,27 +32,54 @@ private object TermArg {
         val description = extract[String](params).defnTerm
         val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory).defnTerm
         val abbr = extract[String](params).defnTerm
-        val default = extract[Term.Arg](params)
+        val default = extract[Term.Arg](params).defnTerm
         val name = Term.Name(argName.syntax)
         defName match {
           case q"paramDef" =>
             val term =
               q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
                                                $TERM_DESCRIPTION = $description,
-                                               $TERM_IS_MANDATORY = $isMandatory)"""
+                                               $TERM_IS_MANDATORY = $isMandatory,
+                                               argValue = ${singleValue(tpe, default)})"""
+            TermParam(term, pos, tpe)
+          case q"paramDefVariable" =>
+            val term =
+              q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
+                                               $TERM_DESCRIPTION = $description,
+                                               $TERM_IS_MANDATORY = $isMandatory,
+                                               argValue = ${variableValue(tpe, default)})"""
             TermParam(term, pos, tpe)
           case q"optDef" =>
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
                                                $TERM_ABBREVIATION = $abbr,
                                                $TERM_DESCRIPTION = $description,
-                                               $TERM_IS_MANDATORY = $isMandatory)"""
+                                               $TERM_IS_MANDATORY = $isMandatory,
+                                               argValue = ${singleValue(tpe, default)})"""
             TermOpt(term, pos, tpe)
-          case q"paramDefVariable" => ???
+          case q"optDefMultiple" =>
+            val term =
+              q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
+                                               $TERM_ABBREVIATION = $abbr,
+                                               $TERM_DESCRIPTION = $description,
+                                               $TERM_IS_MANDATORY = $isMandatory,
+                                               argValue = ${variableValue(tpe, default)})"""
+            TermOpt(term, pos, tpe)
 
         }
     }
   }
+
+  private def singleValue(tpe: Type, default: Term): Term =
+    q"""new SingleValue[$tpe]{
+                    val value:Option[$tpe] = None
+                    val default:Option[$tpe] = $default
+                  }"""
+  private def variableValue(tpe:Type,default:Term):Term =
+    q"""new VariableValue[$tpe]{
+                    val value:Seq[$tpe] = Nil
+                    val default:Seq[$tpe] = $default
+                  }"""
 }
 
 private final case class TermCmd(term: Term, pos: Position) extends TermArg {val tpe = TYPE_NOTHING}
@@ -66,23 +93,9 @@ private final case class TermCommandEntry(term: Term,
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    if (a.tpe.syntax.count(_ == '[') > 1) abort(a.pos,
-      s"Nested type[${a.tpe}] is not supported. " +
-        "For variable argument, use Seq[YourType] or List[YourType]. ")
-    val (tpe, isVariable) = a.tpe match {
-      case t"Seq[$t]" => (t, true)
-      case t"List[$t]" => (t, true)
-      case t"Option[$t]" =>
-        abort(a.pos, s"[${a.tpe}]," +
-          s" Option is unnecessary, optional arg is wrapped with Option automatically.")
-      case t => (t, false)
-    }
-
     q"""runtime.buildParamNode[${a.tpe}](
             entity = ${a.term},
-            value = Nil,
-            isVariable = ${Lit.Boolean(isVariable)},
-            tpe = _root_.scala.reflect.ClassTag(classOf[$tpe])
+            value = Nil
         )"""
   }
 }

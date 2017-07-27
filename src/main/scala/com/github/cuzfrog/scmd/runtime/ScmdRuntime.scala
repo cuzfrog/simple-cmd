@@ -2,7 +2,8 @@ package com.github.cuzfrog.scmd.runtime
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter}
+import com.github.cuzfrog.scmd
+import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter, SingleValue}
 
 import scala.reflect.ClassTag
 import scala.collection.mutable
@@ -29,12 +30,14 @@ sealed trait ScmdRuntime {
 
   def buildParameter[T](name: String,
                         description: Option[String] = None,
-                        isMandatory: Boolean = Defaults.isMandatory): Int
+                        isMandatory: Boolean = Defaults.isMandatory,
+                        argValue: ArgValue[T]): Int
 
   def buildOptionArg[T](name: String,
                         abbr: Option[String] = None,
                         description: Option[String] = None,
-                        isMandatory: Boolean = Defaults.isMandatory): Int
+                        isMandatory: Boolean = Defaults.isMandatory,
+                        argValue: ArgValue[T]): Int
 
   def buildParamNode[T](entity: Int, value: Seq[String]): Int
 
@@ -124,23 +127,18 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def buildParameter[T](name: String,
                                  description: Option[String],
-                                 isMandatory: Boolean): Int = {
+                                 isMandatory: Boolean, argValue: ArgValue[T]): Int = {
     val id = idGen.getAndIncrement()
-    val a = Parameter[T](name = name,
-      description = description,
-      isMandatory = isMandatory)
+    val a = scmd.mix(Parameter[T](name, description, isMandatory), argValue)
     repository.put(id, Box(a))
     id
   }
   override def buildOptionArg[T](name: String,
                                  abbr: Option[String],
                                  description: Option[String],
-                                 isMandatory: Boolean): Int = {
+                                 isMandatory: Boolean, argValue: ArgValue[T]): Int = {
     val id = idGen.getAndIncrement()
-    val a = OptionArg[T](name = name,
-      abbr = abbr,
-      description = description,
-      isMandatory = isMandatory)
+    val a = scmd.mix(OptionArg[T](name, abbr, description, isMandatory), argValue)
     repository.put(id, Box(a))
     id
   }
@@ -238,8 +236,10 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val tpe = implicitly[ClassTag[N]].runtimeClass
     val node: Option[Node] = refs.get(name).map {
       case cmdNode: CmdNode if tpe == classOf[CmdNode] => cmdNode
-      case paramNode: ParamNode[_] if tpe == classOf[ParamNode[_]] => paramNode
-      case optNode: OptNode[_] if tpe == classOf[OptNode[_]] => optNode
+      case paramNode: ParamNode[_]
+        if tpe == classOf[ParamNode[_]] || tpe == classOf[ValueNode] => paramNode
+      case optNode: OptNode[_]
+        if tpe == classOf[OptNode[_]] || tpe == classOf[ValueNode] => optNode
       case cmdEntryNode: CmdEntryNode =>
         throw new AssertionError(s"CmdEntryNode has no name and should not be cached.")
       case bad =>
@@ -264,23 +264,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         val node = this.getNodeByName[CmdNode](name)
         node.entity.copy(met = parsedNodes.get(name).nonEmpty)
 
-      case rc if rc == classOf[Parameter[_]] =>
-        val node = this.getNodeByName[ParamNode[_]](name)
+      case rc if rc == classOf[Parameter[_]] || rc == classOf[OptionArg[_]] =>
+        val node = this.getNodeByName[ValueNode](name)
         checkNodeType(node)
-        val value = parsedNode[ParamNode[_]] match {
+        val value = parsedNode[ValueNode] match {
           case None => Seq.empty[T]
           case Some(n) => this.validate(n)
         }
-        node.asInstanceOf[ParamNode[T]].entity.fillWithStuff(value)
-
-      case rc if rc == classOf[OptionArg[_]] =>
-        val node = this.getNodeByName[OptNode[_]](name)
-        checkNodeType(node)
-        val value = parsedNode[OptNode[_]] match {
-          case None => Seq.empty[T]
-          case Some(n) => this.validate(n)
-        }
-        node.asInstanceOf[OptNode[T]].entity.fillWithStuff(value)
+        scmd.merge(node.entity, value)
     }
     argument.asInstanceOf[A]
   }

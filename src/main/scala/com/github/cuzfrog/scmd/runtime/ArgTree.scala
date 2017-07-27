@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, SingleValue}
 
 import scala.reflect.ClassTag
 
@@ -38,13 +38,18 @@ private[runtime] sealed trait ValueNode extends Node {
   def tpe: ClassTag[_] //specific data type, not includes Seq or List
 }
 
-private case class ParamNode[+T](entity: Parameter[T], value: Seq[String],
-                                 isVariable: Boolean, tpe: ClassTag[_])
-  extends ValueNode with NodeTag[ParamNode[T]]
+private case class ParamNode[+T: ClassTag](entity: Parameter[T] with ArgValue[T],
+                                           value: Seq[String])
+  extends ValueNode with NodeTag[ParamNode[T]] {
+  val tpe = implicitly[ClassTag[_]]
+  def isVariable:Boolean = entity.isInstanceOf[SingleValue]
+}
 
-private case class OptNode[+T: ClassTag](entity: OptionArg[T], value: Seq[String])
+private case class OptNode[+T: ClassTag](entity: OptionArg[T] with ArgValue[T],
+                                         value: Seq[String])
   extends ValueNode with NodeTag[OptNode[T]] {
   val tpe = implicitly[ClassTag[_]]
+  def isVariable:Boolean = entity.isInstanceOf[SingleValue]
   //OptNode's equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {

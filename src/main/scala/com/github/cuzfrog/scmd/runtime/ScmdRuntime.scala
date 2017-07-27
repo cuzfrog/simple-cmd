@@ -2,11 +2,10 @@ package com.github.cuzfrog.scmd.runtime
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.cuzfrog.scmd.{AppInfo, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter}
 
 import scala.reflect.ClassTag
 import scala.collection.mutable
-
 import scala.language.reflectiveCalls
 
 /**
@@ -30,17 +29,14 @@ sealed trait ScmdRuntime {
 
   def buildParameter[T](name: String,
                         description: Option[String] = None,
-                        isMandatory: Boolean = Defaults.isMandatory,
-                        default: Option[T] = None): Int
+                        isMandatory: Boolean = Defaults.isMandatory): Int
 
   def buildOptionArg[T](name: String,
                         abbr: Option[String] = None,
                         description: Option[String] = None,
-                        isMandatory: Boolean = Defaults.isMandatory,
-                        default: Option[T] = None): Int
+                        isMandatory: Boolean = Defaults.isMandatory): Int
 
-  def buildParamNode[T](entity: Int, value: Seq[String],
-                        isVariable: Boolean, tpe: ClassTag[_]): Int
+  def buildParamNode[T](entity: Int, value: Seq[String]): Int
 
   def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int
 
@@ -128,42 +124,37 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def buildParameter[T](name: String,
                                  description: Option[String],
-                                 isMandatory: Boolean,
-                                 default: Option[T]): Int = {
+                                 isMandatory: Boolean): Int = {
     val id = idGen.getAndIncrement()
     val a = Parameter[T](name = name,
       description = description,
-      isMandatory = isMandatory,
-      default = default)
+      isMandatory = isMandatory)
     repository.put(id, Box(a))
     id
   }
   override def buildOptionArg[T](name: String,
                                  abbr: Option[String],
                                  description: Option[String],
-                                 isMandatory: Boolean,
-                                 default: Option[T]): Int = {
+                                 isMandatory: Boolean): Int = {
     val id = idGen.getAndIncrement()
     val a = OptionArg[T](name = name,
       abbr = abbr,
       description = description,
-      isMandatory = isMandatory,
-      default = default)
+      isMandatory = isMandatory)
     repository.put(id, Box(a))
     id
   }
-  override def buildParamNode[T](entity: Int, value: Seq[String],
-                                 isVariable: Boolean, tpe: ClassTag[_]): Int = {
+  override def buildParamNode[T](entity: Int, value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
-    val e = getEntity[Parameter[T]](entity)
-    val a = ParamNode[T](entity = e, value = value, isVariable = isVariable, tpe)
+    val e = getEntity[Parameter[T] with ArgValue[T]](entity)
+    val a = ParamNode[T](entity = e, value = value)
     repository.put(id, Box(a))
     nodeRefs.put(e.name, a)
     id
   }
   override def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
-    val e = getEntity[OptionArg[T]](entity)
+    val e = getEntity[OptionArg[T] with ArgValue[T]](entity)
     val a = OptNode[T](entity = e, value = value)
     repository.put(id, Box(a))
     nodeRefs.put(e.name, a)
@@ -219,13 +210,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
   }
   override def validate[T: ClassTag](valueNode: ValueNode)
-                                    (implicit typeEvidence: ArgTypeEvidence[T]): T = {
+                                    (implicit typeEvidence: ArgTypeEvidence[T]): Seq[T] = {
     val tpe = implicitly[ClassTag[T]]
     if (tpe != valueNode.tpe)
       throw new AssertionError(s"Type of demanded value is different from node's")
-    val typedValue = typeEvidence.verify(valueNode.value)
+    val typedValue = valueNode.value.map(typeEvidence.verify)
     valiRefs.get(valueNode).foreach { basicValidationFunc =>
-      basicValidationFunc.asInstanceOf[T => Unit].apply(typedValue)
+      //basicValidationFunc.asInstanceOf[T => Unit].apply(typedValue)
+      //todo: validation func
     }
     typedValue
   }
@@ -271,27 +263,24 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
       case rc if rc == classOf[Command] =>
         val node = this.getNodeByName[CmdNode](name)
         node.entity.copy(met = parsedNodes.get(name).nonEmpty)
+
       case rc if rc == classOf[Parameter[_]] =>
         val node = this.getNodeByName[ParamNode[_]](name)
-        if (node.isVariable) {
-          if (valueTpe.runtimeClass != classOf[List[_]]
-            && valueTpe.runtimeClass != classOf[Seq[_]]) {
-            throw new AssertionError(s"Variable param's value type is not List or Seq.$name")
-          }
-        } else checkNodeType(node)
+        checkNodeType(node)
         val value = parsedNode[ParamNode[_]] match {
           case None => Seq.empty[T]
-          case Some(n) => n.value.asInstanceOf[Seq[T]]
+          case Some(n) => this.validate(n)
         }
-        node.entity.copy(value = value)
+        node.asInstanceOf[ParamNode[T]].entity.fillWithStuff(value)
+
       case rc if rc == classOf[OptionArg[_]] =>
         val node = this.getNodeByName[OptNode[_]](name)
         checkNodeType(node)
         val value = parsedNode[OptNode[_]] match {
           case None => Seq.empty[T]
-          case Some(n) => n.value.asInstanceOf[Seq[T]]
+          case Some(n) => this.validate(n)
         }
-        node.entity.copy(value = value)
+        node.asInstanceOf[OptNode[T]].entity.fillWithStuff(value)
     }
     argument.asInstanceOf[A]
   }

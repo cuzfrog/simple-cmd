@@ -26,6 +26,18 @@ package object macros {
     q"Command($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
   }
 
+  private[macros] trait OptionTermEv[T] {
+    def makeTerm(a: T): Term
+  }
+  private[macros] implicit def definableOption[T]: Definable[Option[T]] = {
+    case Some(s: String) => q"Option(${Lit.String(s)})"
+    case Some(s: Boolean) => q"Option(${Lit.Boolean(s)})"
+    case None => q"None"
+    case Some(s) => throw new IllegalArgumentException(s"Unsupported Option type.")
+  }
+
+  private[macros] implicit val definableBoolean: Definable[Boolean] = (a: Boolean) => Lit.Boolean(a)
+  private[macros] implicit val definableString: Definable[String] = (a: String) => Lit.String(a)
   //  implicit val definableCommandEntry: Definable[CommandEntry] = (a: CommandEntry) => {
   //    val name = Lit.String(a.name)
   //    val description = description2term(a.description)

@@ -27,6 +27,7 @@ private[scmd] object RawArgMacro {
     val actual = tpe.runtimeClass match {
       case rc if rc == classOf[String] => value collect { case Lit.String(v) => v }
       case rc if rc == classOf[Boolean] => value collect { case Lit.Boolean(v) => v }
+      case rc if rc == classOf[Term.Arg] => value
       case rc => throw new AssertionError(s"Type not coded for argDef def: $rc")
     }
     actual.map(_.asInstanceOf[T])

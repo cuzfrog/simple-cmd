@@ -1,7 +1,8 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.internal.RawArgMacro
 import com.github.cuzfrog.scmd.macros.Constants._
-import com.github.cuzfrog.scmd.{Command, CommandEntry, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{Command, CommandEntry, Defaults, OptionArg, Parameter}
 
 import scala.collection.immutable
 import scala.meta._
@@ -15,39 +16,41 @@ private trait TermArg {
   def tpe: Type
 }
 private object TermArg {
-  def raw2termArg(rawArg: RawArg): TermArg = {
-    val name = Lit.String(rawArg.arg.name)
-    val description = rawArg.arg.description match {
-      case Some(dscr) => q"Option(${Lit.String(dscr)})"
-      case None => q"None"
-    }
-    rawArg.arg match {
-      case _: Command =>
-        val term =
-          q"runtime.buildCommand($TERM_NAME = $name,$TERM_DESCRIPTION = $description)"
-        TermCmd(term, rawArg.pos)
-      case param: Parameter[_] =>
-        val isMandatory = Lit.Boolean(param.isMandatory)
-        val term =
-          q"""runtime.buildParameter[${rawArg.tpe}]($TERM_NAME = $name,
-                                     $TERM_DESCRIPTION = $description,
-                                     $TERM_IS_MANDATORY = $isMandatory)"""
-        TermParam(term, rawArg.pos, rawArg.tpe)
-      case opt: OptionArg[_] =>
-        val isMandatory = Lit.Boolean(opt.isMandatory)
-        val abbr = opt.abbr match {
-          case Some(s) => q"Option(${Lit.String(s)})"
-          case None => q"None"
-        }
-        val term =
-          q"""runtime.buildOptionArg[${rawArg.tpe}]($TERM_NAME = $name,
-                                       $TERM_ABBREVIATION = $abbr,
-                                       $TERM_DESCRIPTION = $description,
-                                       $TERM_IS_MANDATORY = $isMandatory)"""
-        TermOpt(term, rawArg.pos, rawArg.tpe)
+  def toTermArg(stat: Stat): TermArg = {
+    import RawArgMacro.extract
 
-      case _: CommandEntry =>
-        throw new AssertionError("CommandEntry will not be in a RawArg.")
+    implicit val pos = stat.pos
+
+    stat match {
+      case q"val $cmd: $_ = cmdDef(..$params)" =>
+        val description = extract[String](params).defnTerm
+        val term =
+          q"""runtime.buildCommand($TERM_NAME = ${Term.Name(cmd.syntax)},
+                                   $TERM_DESCRIPTION = $description)"""
+        TermCmd(term, pos)
+      case q"val $argName: $_ = $defName[$tpe](..$params)" =>
+        val description = extract[String](params).defnTerm
+        val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory).defnTerm
+        val abbr = extract[String](params).defnTerm
+        val default = extract[Term.Arg](params)
+        val name = Term.Name(argName.syntax)
+        defName match {
+          case q"paramDef" =>
+            val term =
+              q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
+                                               $TERM_DESCRIPTION = $description,
+                                               $TERM_IS_MANDATORY = $isMandatory)"""
+            TermParam(term, pos, tpe)
+          case q"optDef" =>
+            val term =
+              q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
+                                               $TERM_ABBREVIATION = $abbr,
+                                               $TERM_DESCRIPTION = $description,
+                                               $TERM_IS_MANDATORY = $isMandatory)"""
+            TermOpt(term, pos, tpe)
+          case q"paramDefVariable" => ???
+
+        }
     }
   }
 }

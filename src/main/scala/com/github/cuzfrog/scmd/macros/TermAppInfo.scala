@@ -49,21 +49,14 @@ private object TermAppInfo {
 
       val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
       q"""runtime.addAppInfo(
-          name = ${a.name.toTerm},
-          shortDescription = ${a.shortDescription.toTerm},
-          fullDescription = ${a.fullDescription.toTerm},
-          version = ${a.version.toTerm},
-          license = ${a.license.toTerm},
-          author = ${a.author.toTerm},
+          name = ${a.name.defnTerm},
+          shortDescription = ${a.shortDescription.defnTerm},
+          fullDescription = ${a.fullDescription.defnTerm},
+          version = ${a.version.defnTerm},
+          license = ${a.license.defnTerm},
+          author = ${a.author.defnTerm},
           custom = Seq(..$customTerm)
          )"""
-    }
-
-    private implicit class OptionTermOps(in: Option[String]) {
-      def toTerm: Term = in match {
-        case Some(s) => q"Option(${Lit.String(s)})"
-        case None => q"None"
-      }
     }
   }
 }

@@ -8,9 +8,17 @@ package object scmd {
                   isMandatory: Boolean = false,
                   default: => T = Empty): Parameter[T] = DummyParameter
 
+  def paramDefVariable[T](description: String = "",
+                          isMandatory: Boolean = false,
+                          default: => T = Empty): Parameter[T] = DummyParameter
+
   def optDef[T](abbr: String = "",
                 description: String = "",
                 default: => T = Empty): OptionArg[T] = DummyOptionArt
+
+  def optDefMultiple[T](abbr: String = "",
+                        description: String = "",
+                        default: => T = Empty): OptionArg[T] = DummyOptionArt
 
   def appDef(name: String,
              shortDescription: String = "",

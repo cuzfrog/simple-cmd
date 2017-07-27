@@ -28,13 +28,12 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     val appInfoBuild = TermAppInfo.collectAppInfo(stats).term
 
     /**
-      * A RawArg is macro time instance of arg definition.
       * A TermArg is macro time term of arg Node.
       *
       * This step collects arg defs from source code, checking syntax,
       * then turn them into Node terms.
       */
-    val argDefs = RawArg.collectRawArg(stats).map(TermArg.raw2termArg)
+    val argDefs = stats.map(TermArg.toTermArg)
 
     /**
       * ArgTree represents structure of user defined args.

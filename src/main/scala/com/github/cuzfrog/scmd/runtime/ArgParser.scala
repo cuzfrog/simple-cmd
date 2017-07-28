@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.language.reflectiveCalls
 
 private object ArgParser {
-  def parse(argTree: ArgTree, args: Seq[String]): Seq[Node] = {
+  def parse(argTree: ArgTree, args: Seq[String]): Seq[(Node, ContextSnapshot)] = {
     new BacktrackingParser(argTree, args).parse
   }
 }
@@ -31,36 +31,36 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
     * Parse args against client defined argTree,
     * return a new tree containing value and consisting of only the right path.
     */
-  def parse: Seq[Node] = {
+  def parse: Seq[(Node, ContextSnapshot)] = {
     recProceed(topPath, Seq())
     checkIfUniquePath(topPath)
     trace(s"\nParsed path:--------\n${topPath.prettyString}\n-------------Path end.")
-    topPath.convertTo[Seq[Node]]
+    topPath.convertTo[Seq[(Node, ContextSnapshot)]]
   }
 
-    private def checkIfUniquePath(path: TryPath): Unit = {
-      path.toTop.checkUniqueness match { //check if it's a single path through.
-        case None => ()
-        case Some(p) =>
-          val forks = p.getBranches
-          val arg = try {
-            args(forks.head.anchor.contextSnapshot.argCursor)
-          } catch {
-            case _: ArrayIndexOutOfBoundsException =>
-              throw new AssertionError("Arg cursor resides out the bounds of array.")
-          }
+  private def checkIfUniquePath(path: TryPath): Unit = {
+    path.toTop.checkUniqueness match { //check if it's a single path through.
+      case None => ()
+      case Some(p) =>
+        val forks = p.getBranches
+        val arg = try {
+          args(forks.head.anchor.contextSnapshot.argCursor)
+        } catch {
+          case _: ArrayIndexOutOfBoundsException =>
+            throw new AssertionError("Arg cursor resides out the bounds of array.")
+        }
 
-          val msg = forks.map(_.anchor.node).map {
-            case cmdNode: CmdNode => cmdNode.entity.name
-            case paramNode: ParamNode[_] => paramNode.entity.name
-            case optNode: OptNode[_] =>
-              throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
-            case cmdEntry: CmdEntryNode =>
-              throw new AssertionError(s"CmdEntry should not be anchored.[$cmdEntry]")
-          }
-          throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
-      }
+        val msg = forks.map(_.anchor.node).map {
+          case cmdNode: CmdNode => cmdNode.entity.name
+          case paramNode: ParamNode[_] => paramNode.entity.name
+          case optNode: OptNode[_] =>
+            throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
+          case cmdEntry: CmdEntryNode =>
+            throw new AssertionError(s"CmdEntry should not be anchored.[$cmdEntry]")
+        }
+        throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
     }
+  }
 
 
   @tailrec
@@ -92,7 +92,7 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
                   currentPath
                 }
                 else { //finally path is not complete, parsing failed:
-                  if(exceptionAcc.isEmpty) throw new AssertionError(s"Exception empty.")
+                  if (exceptionAcc.isEmpty) throw new AssertionError(s"Exception empty.")
                   throw exceptionAcc.maxBy(_.contextSnapshot.argCursor)
                 }
             }

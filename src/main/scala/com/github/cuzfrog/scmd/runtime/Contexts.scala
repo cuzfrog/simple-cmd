@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
   * ArgTree needs to be immutable.
   */
 private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
-  require(args.nonEmpty,"Context construct failed because of empty args.")
+  require(args.nonEmpty, "Context construct failed because of empty args.")
   @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
   /** Parameter is ordered. */
   private[this] var paramCursor: Int = 0
@@ -124,7 +124,9 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def takeSnapshot: ContextSnapshot = this.synchronized {
     ContextSnapshot(currentCmdNode,
       optsUpstreamLeft map identity,
-      argCursor, paramCursor)
+      argCursor,
+      this.getCurrentArg.rude,
+      paramCursor)
   }
 
   /** Restore context to the state of a given snapshot. */
@@ -158,8 +160,11 @@ private object Context {
     new Context(argTree, args) with ContextLogging
 }
 
-private case class ContextSnapshot(cmdNode: CmdNode, optsUpstreamLeft: Seq[OptNode[_]],
-                                   argCursor: Int, paramCursor: Int)
+private case class ContextSnapshot(cmdNode: CmdNode,
+                                   optsUpstreamLeft: Seq[OptNode[_]],
+                                   argCursor: Int,
+                                   rudeArg: String,
+                                   paramCursor: Int)
 private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
 }

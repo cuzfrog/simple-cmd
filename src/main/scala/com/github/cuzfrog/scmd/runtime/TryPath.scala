@@ -12,7 +12,7 @@ import scala.collection.mutable
 private[runtime] case class Anchor(node: Node, contextSnapshot: ContextSnapshot)
 
 /**
-  * Paths represent a tree of any possible parsing trail.
+  * Paths represent a tree of any possible parsing trail. With context snapshot preserved.
   *
   * Not thread-safe. It should be only accessed inside ArgParser.
   */
@@ -122,24 +122,27 @@ private object TryPath {
 
   def apply(argAnchor: => Anchor): TryPath = new TryPath(argAnchor) with TryPathLogging
 
-  private case object CompletePath extends TryPath(null){
+  private case object CompletePath extends TryPath(null) {
     override def anchor: Anchor =
       throw new UnsupportedOperationException(s"CompletePath's anchor is empty.")
   }
 
-  implicit val convert2nodeSeq: Convertible[TryPath, Seq[Node]] = (a: TryPath) => {
-    val top = a.toTop
+  implicit val convert2nodeSeq: Convertible[TryPath, Seq[(Node, ContextSnapshot)]] =
+    (a: TryPath) => {
+      val top = a.toTop
 
-    @tailrec
-    def recConvert(p: TryPath, acc: Seq[Node]): Seq[Node] = {
-      p.branches.headOption match {
-        case Some(path) if path != CompletePath => recConvert(path, acc :+ p.anchor.node)
-        case _ => acc :+ p.anchor.node
+      @tailrec
+      def recConvert(p: TryPath, acc: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
+        val elem = (p.anchor.node, p.anchor.contextSnapshot)
+        p.branches.headOption match {
+          case Some(path) if path != CompletePath =>
+            recConvert(path, acc :+ elem)
+          case _ => acc :+ elem
+        }
       }
-    }
 
-    recConvert(top, Seq())
-  }
+      recConvert(top, Seq())
+    }
 
 
   implicit val canFormPrettyString: CanFormPrettyString[TryPath] = (a: TryPath) => {
@@ -155,7 +158,7 @@ private object TryPath {
         case cmdEntry: CmdEntryNode =>
           throw new AssertionError(s"CmdEntry should not be in path:${cmdEntry.entity}")
       }
-      val subs=if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
+      val subs = if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
         p.branches.flatMap(p => recMkPrettyString(p, indent + " "))
       } else Nil
       thisP +: subs

@@ -63,8 +63,6 @@ sealed trait ScmdRuntime {
                    cmdEntry: Int): this.type
 
   def addValidation[T](name: String, func: T => Unit): Unit
-  /** Convert string value to typed value and validate it with previously provided function. */
-  def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T]
 
   /** Trigger final parsing. Return parsed nodes. */
   def parse(args: Seq[String]): Seq[String]
@@ -103,6 +101,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
   private[this] val valiRefs = mutable.Map.empty[ValueNode[_], Function1[_, Unit]] //id -> func
   private[this] val parsedNodes = mutable.LinkedHashMap.empty[String, Node] //name -> node
+  private[this] val parsedContextSnapshots = mutable.Map.empty[Node, ContextSnapshot]
 
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]
@@ -217,22 +216,13 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
       case None => throw new AssertionError(s"Cannot find node with name$name")
     }
   }
-  override def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T] = {
-    val tpe = implicitly[ClassTag[T]]
-    val typeEvidence = implicitly[ArgTypeEvidence[T]]
-    if (tpe != valueNode.tpe)
-      throw new AssertionError(s"Type of demanded value is different from node's")
-    val typedValue = valueNode.value.map(typeEvidence.verify).toList
-    //todo: move basic validation to context.
-    valiRefs.get(valueNode).foreach { basicValidationFunc =>
-      if(valueNode.isVariable) basicValidationFunc.asInstanceOf[List[T] => Unit].apply(typedValue)
-      else typedValue.foreach(basicValidationFunc.asInstanceOf[T => Unit].apply)
-    }
-    typedValue
-  }
   override def parse(args: Seq[String]): Seq[String] = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
-    parsedNodes ++= ArgParser.parse(argTree, args).map(n => n.entity.name -> n)
+    ArgParser.parse(argTree, args).map {
+      case (node, cs) =>
+        parsedNodes.put(node.entity.name, node)
+        parsedContextSnapshots.put(node, cs)
+    }
     parsedNodes.keys.toSeq
   }
   override def getNodeByName[N <: Node : ClassTag](name: String): N = {
@@ -281,9 +271,12 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
       case rc if rc == classOf[Parameter[_]] || rc == classOf[OptionArg[_]] =>
         val node = this.getNodeByName[ValueNode[_]](name)
         checkNodeType(node)
-        val value = parsedNode[ValueNode[T]] match {
+        val value: Seq[T] = parsedNode[ValueNode[T]] match {
           case None => Seq.empty[T]
-          case Some(n) => this.validate[T](n)
+          case Some(n) =>
+            val cs = parsedContextSnapshots
+              .getOrElse(n, throw new AssertionError("ContextSnapshot should company parsed node. "))
+            Validator.validate(n, cs, valiRefs.get(n))
         }
         scmd.merge(node.entity.asInstanceOf[ValueArgument[T]], value)
     }

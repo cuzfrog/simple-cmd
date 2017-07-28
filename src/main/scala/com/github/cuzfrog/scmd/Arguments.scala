@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd
 
-import scala.reflect.ClassTag
-
 /**
   * Exposed to macros for basic validation, so need to put in this package.
   */

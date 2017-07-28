@@ -27,10 +27,6 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
     result
   }
 
-  abstract override def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T] = {
-    debug(s"Validate node:${valueNode.prettyString}")
-    super.validate(valueNode)
-  }
   @IgnoreLogging
   abstract override def parse(args: Seq[String]): Seq[String] = {
     val result = super.parse(args)

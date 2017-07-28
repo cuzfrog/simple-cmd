@@ -62,7 +62,7 @@ private[scmd] object DummyOptionArgS extends OptionArg("") with SingleValue[Noth
 private[scmd] object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
 
 private object Command {
-  implicit def toValue(in: Command): Boolean = in.met
+
 }
 
 private object Parameter {

@@ -159,24 +159,21 @@ private object OptionArg {
 private object ValueArgument {
   implicit def mergeValue
   [T, V <: ArgValue[T]]: CanMerge[ValueArgument[T], Seq[T]] =
-    new CanMerge[ValueArgument[T], Seq[T]] {
-      override def merge(a: ValueArgument[T],
-                         stuff: Seq[T]): ValueArgument[T] with V = {
-        val result = a match {
-          case p: Parameter[T] => merge(p, stuff)
-          case o: OptionArg[T] => merge(o, stuff)
-        }
-        result.asInstanceOf[ValueArgument[T] with V]
+    (a: ValueArgument[T], stuff: Seq[T]) => {
+      val result = a match {
+        case p: Parameter[T] => merge(p, stuff)
+        case o: OptionArg[T] => merge(o, stuff)
       }
+      result.asInstanceOf[ValueArgument[T] with V]
     }
 }
 
 private object ArgValue {
-  def single[T](_default: Option[T]): ArgValue[T] = new SingleValue[T] {
+  private[scmd] def single[T](_default: Option[T]): ArgValue[T] = new SingleValue[T] {
     override def default: Option[T] = _default
     override def value: Option[T] = None
   }
-  def variable[T](_default: Seq[T]): ArgValue[T] = new VariableValue[T] {
+  private[scmd] def variable[T](_default: Seq[T]): ArgValue[T] = new VariableValue[T] {
     override def default: Seq[T] = _default
     override def value: Seq[T] = Nil
   }

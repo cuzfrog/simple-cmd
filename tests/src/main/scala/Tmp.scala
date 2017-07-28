@@ -1,7 +1,6 @@
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import com.github.cuzfrog.scmd._
-
 
 object Tmp {
 
@@ -21,12 +20,13 @@ object Tmp {
 
   @ScmdValid
   class CatValidation(argDef: CatDef) {
-//    validation(argDef.files) { files =>
-//      if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
-//      files.foreach { f =>
-//        if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
-//      }
-//    }
+    validation(argDef.files) { files =>
+      if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
+      files.foreach { f =>
+        println(s"Print in validation func:$f")
+        if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+      }
+    }
   }
 
 
@@ -54,9 +54,11 @@ object Tmp {
     println(conf.appInfoString)
     println("-----------Arg tree------------")
     println(conf.argTreeString)
-    println("---------Parse result----------")
-    conf.parse
+    val parsed: CatDef = conf.parsed
+    println("---------Parsed node sequence:----------")
     println(conf.parsedSeqString)
+    println("---------Parsed values:----------")
+    println(parsed.files)
   }
 }
 

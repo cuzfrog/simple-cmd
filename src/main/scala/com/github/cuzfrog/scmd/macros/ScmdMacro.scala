@@ -1,10 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.ScmdDef
-
 import scala.collection.immutable
 import scala.meta._
-import scala.reflect.ClassTag
 
 /**
   * Macro implementation interface.
@@ -22,6 +19,12 @@ private[scmd] object MacroUtil {
     defn match {
       case q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }" =>
         macroImpl.expand(mods, name, ctorMods, paramss, stats)
+      case Term.Block(
+      Seq(q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }",
+      companion: Defn.Object)) =>
+        Term.Block(
+          immutable.Seq(macroImpl.expand(mods, name, ctorMods, paramss, stats), companion)
+        )
       case _ =>
         abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class.")
     }

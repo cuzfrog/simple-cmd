@@ -34,23 +34,32 @@ private case class CmdEntryNode(entity: CommandEntry,
 private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]
 
 private[runtime] sealed trait ValueNode[T] extends Node {
+  def entity: Argument[T] with ArgValue[T]
   def value: Seq[String]
   def tpe: ClassTag[_] //specific data type, not includes Seq or List
   //tpe needs to be put in constructor parameter, .copy removes type info.
+  def isVariable: Boolean = entity.isVariable
+  override def hashCode(): Int = entity.hashCode * 3 + 17
 }
 
 private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
                                 value: Seq[String], tpe: ClassTag[_])
   extends ValueNode[T] with NodeTag[ParamNode[T]] {
-  def isVariable: Boolean = entity.isVariable
+  //equality depends on its entity's. Value is stripped off for parsing quick comparing.
+  override def equals(obj: scala.Any): Boolean = {
+    if (!this.canEqual(obj)) return false
+    obj.asInstanceOf[ParamNode[_]].entity == this.entity
+  }
+  override def canEqual(that: Any): Boolean = that match {
+    case _: ParamNode[_] => true
+    case _ => false
+  }
 }
 
 private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
                               value: Seq[String], tpe: ClassTag[_])
   extends ValueNode[T] with NodeTag[OptNode[T]] {
-  def isVariable: Boolean = entity.isVariable
-  //OptNode's equality depends on its entity's. Value is stripped off for parsing quick comparing.
-  override def hashCode(): Int = entity.hashCode * 3 + 17
+  //equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false
     obj.asInstanceOf[OptNode[_]].entity == this.entity

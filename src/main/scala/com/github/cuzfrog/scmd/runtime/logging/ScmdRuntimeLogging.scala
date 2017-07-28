@@ -2,7 +2,7 @@ package com.github.cuzfrog.scmd.runtime.logging
 
 import com.github.cuzfrog.scmd.{ArgValue, Argument}
 import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogger}
-import com.github.cuzfrog.scmd.runtime.{ArgTypeEvidence, ScmdRuntime, ScmdRuntimeImpl}
+import com.github.cuzfrog.scmd.runtime.{ArgTypeEvidence, Node, ScmdRuntime, ScmdRuntimeImpl, ValueNode}
 
 import scala.reflect.ClassTag
 
@@ -15,10 +15,28 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
     super.buildParamNode[T](entity, value)
   }
 
-  abstract override def getArgumentWithValueByName
+  abstract override def addValidation[T](name: String, func: (T) => Unit): Unit = {
+    debug(s"Add validation for arg:$name, func:$func")
+    super.addValidation(name, func)
+  }
+
+  @IgnoreLogging
+  abstract override def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A = {
-    val result = super.getArgumentWithValueByName[T, A](name)
+    val result = super.getEvaluatedArgumentByName[T, A](name)
     debug(s"Get evaluated Argument(${result.name}) of type[${implicitly[ClassTag[T]]}]] by name:$name")
+    result
+  }
+
+  abstract override def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T] = {
+    debug(s"Validate node:${valueNode.prettyString}")
+    super.validate(valueNode)
+  }
+
+  @IgnoreLogging
+  abstract override def parse(args: Seq[String]): Seq[String] = {
+    val result = super.parse(args)
+    debug(s"Try to parse arguments:${args.mkString(" ")}, result:${result.mkString(",")}")
     result
   }
 }

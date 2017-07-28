@@ -66,13 +66,13 @@ sealed trait ScmdRuntime {
   /** Convert string value to typed value and validate it with previously provided function. */
   def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T]): Seq[T]
 
-  /** Trigger final parsing. */
-  def parse(args: Seq[String]): Unit
+  /** Trigger final parsing. Return parsed nodes. */
+  def parse(args: Seq[String]): Seq[String]
 
   /** Return not parsed node. */
   def getNodeByName[N <: Node : ClassTag](name: String): N
 
-  def getArgumentWithValueByName
+  def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A
 
   def argTreeString: String
@@ -222,16 +222,18 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val typeEvidence = implicitly[ArgTypeEvidence[T]]
     if (tpe != valueNode.tpe)
       throw new AssertionError(s"Type of demanded value is different from node's")
-    val typedValue = valueNode.value.map(typeEvidence.verify)
+    val typedValue = valueNode.value.map(typeEvidence.verify).toList
+    //todo: move basic validation to context.
     valiRefs.get(valueNode).foreach { basicValidationFunc =>
-      //basicValidationFunc.asInstanceOf[T => Unit].apply(typedValue)
-      //todo: validation func
+      if(valueNode.isVariable) basicValidationFunc.asInstanceOf[List[T] => Unit].apply(typedValue)
+      else typedValue.foreach(basicValidationFunc.asInstanceOf[T => Unit].apply)
     }
     typedValue
   }
-  override def parse(args: Seq[String]): Unit = {
+  override def parse(args: Seq[String]): Seq[String] = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
     parsedNodes ++= ArgParser.parse(argTree, args).map(n => n.entity.name -> n)
+    parsedNodes.keys.toSeq
   }
   override def getNodeByName[N <: Node : ClassTag](name: String): N = {
     this.getNode[N](name, nodeRefs) match {
@@ -259,7 +261,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     node.map(_.asInstanceOf[N])
   }
 
-  override def getArgumentWithValueByName
+  override def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A = {
     if (parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
     val valueTpe = implicitly[ClassTag[T]]

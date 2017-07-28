@@ -60,7 +60,6 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
       q"""def parsed: $name = {
             scmdRuntime.parse($argsParam)
             new ${Ctor.Ref.Name(name.value)}(...$termParamss){
-              private[this] val scmdRuntime:ScmdRuntime = super.getRuntime
               ..${ArgUtils.convertParsed(stats)}
             }
           }"""
@@ -74,7 +73,6 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
              $argTreeBuild //execute scmdRuntime to build an argTree
              runtime
           }""",
-      q"protected def getRuntime:ScmdRuntime = this.scmdRuntime",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",

@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd.SingleValue
-import com.github.cuzfrog.scmd.internal.SimpleLogger
+import com.github.cuzfrog.scmd.internal.SimpleLogging
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
@@ -229,7 +229,7 @@ private object ParamOrCmd extends CateUtils {
   }
 }
 
-private sealed trait CateUtils extends SimpleLogger {
+private sealed trait CateUtils extends SimpleLogging {
   protected implicit
   def seqValue2Right[L](in: Seq[Anchor]): Either[L, Seq[Anchor]] = Right(in)
 

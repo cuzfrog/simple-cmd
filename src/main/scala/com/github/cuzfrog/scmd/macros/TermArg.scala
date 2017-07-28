@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.Defaults
-import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogger}
+import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
 import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.collection.immutable
@@ -15,8 +15,8 @@ private trait TermArg {
   def pos: Position
   def tpe: Type
 }
-private object TermArg extends SimpleLogger{
-  override implicit val loggerLevel = SimpleLogger.Info
+private object TermArg extends SimpleLogging{
+  override implicit val loggerLevel = SimpleLogging.Info
   def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
 

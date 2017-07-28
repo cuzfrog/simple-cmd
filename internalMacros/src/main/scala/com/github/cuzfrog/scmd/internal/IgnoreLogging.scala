@@ -31,7 +31,7 @@ private[scmd] class IgnoreLogging extends StaticAnnotation {
           """
         }
       case _ =>
-        abort("@IgnoreLogging can only used on AOP abstract override def")
+        abort("@IgnoreLogging can only be used on override def with super callable.")
     }
   }
 }

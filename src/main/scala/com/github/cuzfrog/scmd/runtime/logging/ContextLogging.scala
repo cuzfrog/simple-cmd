@@ -1,9 +1,9 @@
 package com.github.cuzfrog.scmd.runtime.logging
 
-import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogger}
+import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogging}
 import com.github.cuzfrog.scmd.runtime.{Anchor, CmdNode, Context, Node, ParamNode}
 
-private[runtime] trait ContextLogging extends Context with SimpleLogger {
+private[runtime] trait ContextLogging extends Context with SimpleLogging {
   override implicit val loggerAgent = classOf[Context].getName
 
   abstract override def anchor(n: Node): Anchor = {

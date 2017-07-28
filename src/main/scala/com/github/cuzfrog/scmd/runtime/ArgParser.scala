@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.internal.SimpleLogger
+import com.github.cuzfrog.scmd.internal.SimpleLogging
 
 import scala.annotation.tailrec
 import scala.language.reflectiveCalls
@@ -21,7 +21,7 @@ private object ArgParser {
   *
   * Not thread-safe. It should only be accessed inside ArgParser.
   */
-private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends SimpleLogger {
+private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends SimpleLogging {
 
   import BacktrackingParser._
 

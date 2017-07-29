@@ -65,6 +65,7 @@ private[scmd] object DummyParameterVM extends Parameter("") with VariableValue[N
 private[scmd] object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
 private[scmd] object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
 
+//todo: use macros to eliminate boilerplate:
 private object Parameter {
   private[scmd] implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =
     (a: Parameter[T], stuff: Seq[T]) => {
@@ -93,19 +94,36 @@ private object Parameter {
 
   private def createParam[T](name: String, description: Option[String],
                              isMandatory: Boolean, _value: Option[T], _default: Option[T]) = {
-    new Parameter[T](name = name, description = description, isMandatory = isMandatory)
-      with SingleValue[T] {
-      override def value: Option[T] = _value
-      override def default: Option[T] = _default
+    if (isMandatory) {
+      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
+        with SingleValue[T] with Mandatory {
+        override def value: Option[T] = _value
+        override def default: Option[T] = _default
+      }
+    } else {
+      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
+        with SingleValue[T] {
+        override def value: Option[T] = _value
+        override def default: Option[T] = _default
+      }
     }
   }
   private def createParam[T](name: String, description: Option[String],
                              isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = {
-    new Parameter[T](name = name, description = description, isMandatory = isMandatory)
-      with VariableValue[T] {
-      override def value: Seq[T] = _value
-      override def default: Seq[T] = _default
+    if (isMandatory) {
+      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
+        with VariableValue[T] with Mandatory {
+        override def value: Seq[T] = _value
+        override def default: Seq[T] = _default
+      }
+    } else {
+      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
+        with VariableValue[T] {
+        override def value: Seq[T] = _value
+        override def default: Seq[T] = _default
+      }
     }
+
   }
 }
 
@@ -138,19 +156,37 @@ private object OptionArg {
 
   private def createOpt[T](name: String, abbr: Option[String], description: Option[String],
                            isMandatory: Boolean, _value: Option[T], _default: Option[T]) = {
-    new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
-      with SingleValue[T] {
-      override def value: Option[T] = _value
-      override def default: Option[T] = _default
+    if (isMandatory) {
+      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
+        with SingleValue[T] with Mandatory {
+        override def value: Option[T] = _value
+        override def default: Option[T] = _default
+      }
+    } else {
+      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
+        with SingleValue[T] {
+        override def value: Option[T] = _value
+        override def default: Option[T] = _default
+      }
     }
+
   }
   private def createOpt[T](name: String, abbr: Option[String], description: Option[String],
                            isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = {
-    new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
-      with VariableValue[T] {
-      override def value: Seq[T] = _value
-      override def default: Seq[T] = _default
+    if (isMandatory) {
+      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
+        with VariableValue[T] with Mandatory {
+        override def value: Seq[T] = _value
+        override def default: Seq[T] = _default
+      }
+    } else {
+      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
+        with VariableValue[T] {
+        override def value: Seq[T] = _value
+        override def default: Seq[T] = _default
+      }
     }
+
   }
 }
 

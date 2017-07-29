@@ -8,6 +8,6 @@ object ValueConversionTest {
   val a:Parameter[Int] with SingleValue[Int] = ???
   val b:Parameter[Int] with SingleValue[Int] with Mandatory = ???
 
-  val av = a.value
-  val bv = b.value
+//  val av = a.value
+//  val bv = b.value
 }

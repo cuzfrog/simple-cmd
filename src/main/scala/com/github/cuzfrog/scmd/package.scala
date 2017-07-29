@@ -2,50 +2,6 @@ package com.github.cuzfrog
 
 package object scmd {
 
-  final def cmdDef(description: String = ""): Command = DummyCommand
-
-  final def paramDef[T](description: String = "",
-                  isMandatory: Boolean = false,
-                  default: => T = Empty): Parameter[T] with SingleValue[T] = DummyParameterS
-
-  final def paramDefVariable[T](description: String = "",
-                          isMandatory: Boolean = false,
-                          default: => T = Empty): Parameter[T] with VariableValue[T] = DummyParameterV
-
-  final def optDef[T](abbr: String = "",
-                description: String = "",
-                default: => T = Empty): OptionArg[T] with SingleValue[T] = DummyOptionArgS
-
-  final def optDefMultiple[T](abbr: String = "",
-                        description: String = "",
-                        default: => T = Empty): OptionArg[T] with VariableValue[T] = DummyOptionArgV
-
-  final def appDef(name: String,
-             shortDescription: String = "",
-             fullDescription: String = "",
-             version: String = "",
-             license: String = "",
-             author: String = ""): Unit = ()
-
-  def appDefCustom(item: (String, String)*): Unit = ()
-
-
-  def validation[T](arg: SingleValue[T])(f: T => Unit): T => Unit = f
-  def validation[T](arg: VariableValue[T])(f: List[T] => Unit): List[T] => Unit = f
-
-  //def validationMulti[A](args: A, f: A => Boolean): Unit = ()
-
-  //private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
-
-  /**
-    * A placeholder to make parameters optional.
-    * This, is a method, can only be used as call-by-name parameter.
-    *
-    * For client's simplicity, `Option` is not used.
-    */
-  private[scmd] def Empty[T]: T =
-    throw new IllegalArgumentException("Empty default value called. See scmd.Empty.")
-
   private[scmd] trait CanFormPrettyString[A] {
     def mkPrettyString(a: A): String
   }
@@ -71,4 +27,12 @@ package object scmd {
     def mixWith(_trait: B): A = ev.mix(in, _trait)
   }
 
+  /**
+    * A placeholder to make parameters optional.
+    * This, is a method, can only be used as call-by-name parameter.
+    *
+    * For client's simplicity, `Option` is not used.
+    */
+  private[scmd] def Empty[T]: T =
+    throw new IllegalArgumentException("Empty default value called. See scmd.Empty.")
 }

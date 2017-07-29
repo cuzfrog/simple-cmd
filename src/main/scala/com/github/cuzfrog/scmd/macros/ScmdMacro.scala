@@ -6,7 +6,7 @@ import scala.meta._
 /**
   * Macro implementation interface.
   */
-private[scmd] trait ScmdMacro {
+private trait ScmdMacro {
   def expand(mods: immutable.Seq[Mod],
              name: Type.Name,
              ctorMods: immutable.Seq[Mod],
@@ -14,8 +14,15 @@ private[scmd] trait ScmdMacro {
              stats: immutable.Seq[Stat]): Stat
 }
 
-private[scmd] object MacroUtil {
-  def apply(macroImpl: ScmdMacro, defn: Tree): Stat = {
+object MacroUtil {
+  def apply(implName: String, defn: Tree): Stat = {
+
+    val macroImpl: ScmdMacro = implName match {
+      case "Def" => new ScmdDefMacro
+      case "Valid" => new ScmdValidMacro
+      case bad => throw new AssertionError(s"No such ScmdMacro implementation:$bad")
+    }
+
     defn match {
       case q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }" =>
         macroImpl.expand(mods, name, ctorMods, paramss, stats)

@@ -18,7 +18,7 @@ private object AppInfo {
     * Order of namespaces is kept. Order is controlled by custom names.
     * Namespace in custom has priority. Value in basic names has priority.
     */
-  implicit val canFormPrettyString: CanFormPrettyString[AppInfo] = (a: AppInfo) => {
+  private[scmd] implicit val canFormPrettyString: CanFormPrettyString[AppInfo] = (a: AppInfo) => {
     val basics: Seq[(String, String)] = a.combineBasics
     val filledCustom = a.custom.map {
       case (n, v) => basics.collectFirst { case (bn, bv) if bn == n => bv } match {

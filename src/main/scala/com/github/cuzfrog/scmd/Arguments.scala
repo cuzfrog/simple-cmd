@@ -61,10 +61,6 @@ private[scmd] object DummyParameterV extends Parameter("") with VariableValue[No
 private[scmd] object DummyOptionArgS extends OptionArg("") with SingleValue[Nothing]
 private[scmd] object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
 
-private object Command {
-
-}
-
 private object Parameter {
   private[scmd] implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =
     (a: Parameter[T], stuff: Seq[T]) => {

@@ -5,7 +5,7 @@ import com.github.cuzfrog.scmd.macros.Constants._
 import scala.collection.immutable
 import scala.meta._
 
-private[scmd] class ScmdDefMacro extends ScmdMacro {
+private class ScmdDefMacro extends ScmdMacro {
 
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
@@ -85,6 +85,7 @@ private[scmd] class ScmdDefMacro extends ScmdMacro {
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd.runtime.ScmdRuntime
+          import $TERM_pkg_scmd._
           ..${stats.map(ArgUtils.addExplicitType)}
           ..$addMethods
         }"""

@@ -2,9 +2,9 @@ package com.github.cuzfrog.scmd.runtime
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.cuzfrog.scmd
+
 import com.github.cuzfrog.scmd.runtime.logging.ScmdRuntimeLogging
-import com.github.cuzfrog.scmd.{AppInfo, ArgValue, Argument, Command, CommandEntry, Defaults, OptionArg, Parameter, ValueArgument}
+import com.github.cuzfrog.scmd._
 
 import scala.collection.mutable
 import scala.language.reflectiveCalls
@@ -132,7 +132,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                                  description: Option[String],
                                  isMandatory: Boolean, argValue: ArgValue[T]): Int = {
     val id = idGen.getAndIncrement()
-    val a = scmd.mix(Parameter[T](name, description, isMandatory), argValue)
+    val a = mix(Parameter[T](name, description, isMandatory), argValue)
     repository.put(id, Box(a))
     id
   }
@@ -141,7 +141,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                                  description: Option[String],
                                  isMandatory: Boolean, argValue: ArgValue[T]): Int = {
     val id = idGen.getAndIncrement()
-    val a = scmd.mix(OptionArg[T](name, abbr, description, isMandatory), argValue)
+    val a = mix(OptionArg[T](name, abbr, description, isMandatory), argValue)
     repository.put(id, Box(a))
     id
   }
@@ -278,7 +278,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
               .getOrElse(n, throw new AssertionError("ContextSnapshot should company parsed node. "))
             Validator.validate(n, cs, valiRefs.get(n))
         }
-        scmd.merge(node.entity.asInstanceOf[ValueArgument[T]], value)
+        merge(node.entity.asInstanceOf[ValueArgument[T]], value)
     }
     argument.asInstanceOf[A]
   }

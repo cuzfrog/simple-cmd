@@ -1,6 +1,6 @@
 import java.nio.file.{Path, Paths}
 
-import com.github.cuzfrog.scmd._
+import scmd._
 
 object Tmp {
 
@@ -32,7 +32,7 @@ object Tmp {
 
   class CatRoute(argDef: CatDef) {
 
-    import ScmdRouteDSL._
+    import scmdRouteDSL._
 
     val route =
       cmd(argDef.cat) {
@@ -46,6 +46,7 @@ object Tmp {
 
   }
 
+  import scmdValueConverter._
 
   def main(args: Array[String]): Unit = {
     val conf = (new CatDef(args))
@@ -58,7 +59,7 @@ object Tmp {
     println("---------Parsed node sequence:----------")
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
-    println(parsed.files)
+    println(parsed.files.value)
   }
 }
 

@@ -4,7 +4,7 @@ import scala.collection.immutable
 import scala.meta._
 
 
-private[scmd] class ScmdValidMacro extends ScmdMacro {
+private class ScmdValidMacro extends ScmdMacro {
   final def expand(mods: immutable.Seq[Mod],
                    name: Type.Name,
                    ctorMods: immutable.Seq[Mod],

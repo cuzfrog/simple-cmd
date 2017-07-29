@@ -23,22 +23,13 @@ object ScmdValueImplicitConversion {
   //           optVM same as above
 }
 
-sealed trait LowLevelImplicitsOfScmdValueConverter {
-  sealed trait ValueConvertible[T, A <: Argument[T], R] {
-    def convert(a: A): R
-  }
-
-  implicit def paramS2value[T]: ValueConvertible[T, Parameter[T] with SingleValue[T], Option[T]] =
-    new ValueConvertible[T, Parameter[T] with SingleValue[T], Option[T]] {
-      override def convert(a: Parameter[T] with SingleValue[T]): Option[T] = a.value
-    }
-}
-
-
+/**
+  * Provide explicit method to get value of Argument.
+  */
 object ScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
-  
+
   implicit final class ValueConversionOps
-  [T, A <: Argument[T], R](arg: A)(implicit ev: ValueConvertible[T, A, R]) {
+  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R], ev1: A <:< Argument[T]) {
     def value: R = ev.convert(arg)
   }
 
@@ -53,8 +44,35 @@ object ScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
       override def convert(a: Parameter[T] with SingleValue[T] with Mandatory): T = a.value.get
     }
 
-  //  implicit final class ValueConversionOptionOps
-  //  [T, A <: Argument[T] with SingleValue[T], R](arg: A)(implicit ev: ValueConvertible[T, A, R]) {
-  //    def valueOption: R = ev.convert(arg)
-  //  }
+  implicit def optSM2value[T]: ValueConvertible
+    [T, OptionArg[T] with SingleValue[T] with Mandatory, T] =
+    new ValueConvertible[T, OptionArg[T] with SingleValue[T] with Mandatory, T] {
+      override def convert(a: OptionArg[T] with SingleValue[T] with Mandatory): T = a.value.get
+    }
+}
+
+sealed trait LowLevelImplicitsOfScmdValueConverter {
+  sealed trait ValueConvertible[T, -A, +R] {
+    def convert(a: A): R
+  }
+
+  implicit def paramS2value[T]: ValueConvertible[T, Parameter[T] with SingleValue[T], Option[T]] =
+    new ValueConvertible[T, Parameter[T] with SingleValue[T], Option[T]] {
+      override def convert(a: Parameter[T] with SingleValue[T]): Option[T] = a.value
+    }
+
+  implicit def paramV2value[T]: ValueConvertible[T, Parameter[T] with VariableValue[T], Seq[T]] =
+    new ValueConvertible[T, Parameter[T] with VariableValue[T], Seq[T]] {
+      override def convert(a: Parameter[T] with VariableValue[T]): Seq[T] = a.value
+    }
+
+  implicit def optS2value[T]: ValueConvertible[T, OptionArg[T] with SingleValue[T], Option[T]] =
+    new ValueConvertible[T, OptionArg[T] with SingleValue[T], Option[T]] {
+      override def convert(a: OptionArg[T] with SingleValue[T]): Option[T] = a.value
+    }
+
+  implicit def optV2value[T]: ValueConvertible[T, OptionArg[T] with VariableValue[T], Seq[T]] =
+    new ValueConvertible[T, OptionArg[T] with VariableValue[T], Seq[T]] {
+      override def convert(a: OptionArg[T] with VariableValue[T]): Seq[T] = a.value
+    }
 }

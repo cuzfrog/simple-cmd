@@ -1,12 +1,17 @@
 package com.github.cuzfrog.scmd.macros.argutils
 
 import com.github.cuzfrog.scmd.Defaults
-import com.github.cuzfrog.scmd.internal.RawArgMacro
+import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
 
 import scala.collection.immutable
 import scala.meta._
 
-private object ConvertParsedImpl {
+/**
+  * Macro implementation to convert client def class statements.
+  */
+private object ConvertParsedImpl extends SimpleLogging{
+  override protected val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
+
   def convertParsed(stats: immutable.Seq[Stat]): immutable.Seq[Stat] = {
     stats collect {
       case q"val $cmd:$_ = cmdDef(..$params)" =>
@@ -33,6 +38,7 @@ private object ConvertParsedImpl {
     } else {
       t"$arg[$tpe] with $argValue[$tpe]"
     }
+    debug(s"GetEvaluatedArument $argName of type[$composedTpe]")
     q"""override val ${argName.asInstanceOf[Pat.Var.Term]}: $composedTpe = {
           scmdRuntime.getEvaluatedArgumentByName[$tpe,$composedTpe](${Lit.String(argName.syntax)})
         }"""

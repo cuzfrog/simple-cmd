@@ -24,7 +24,7 @@ object Tmp {
       if (files.isEmpty) throw new AssertionError("List should not be empty, because it's mandatory.")
       files.foreach { f =>
         println(s"Print in validation func:$f")
-        if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+        //if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
       }
     }
   }

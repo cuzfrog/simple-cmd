@@ -14,6 +14,7 @@ trait Api {
 
   final def optDef[T](abbr: String = "",
                       description: String = "",
+                      isMandatory: Boolean = false,
                       default: => T = Empty): OptionArg[T] with SingleValue[T] = DummyOptionArgS
 
   final def optDefMultiple[T](abbr: String = "",

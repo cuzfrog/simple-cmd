@@ -12,10 +12,9 @@ import scala.reflect.ClassTag
 
 /**
   * Util/helper class to build scmd runtime classes that is instantiated within client class.
-  *
-  * To privatize/capsulate other scmd classes for not to pollute client workspace.
-  *
-  * This is the only public class exposed to client.
+  * <br><br>
+  * This is a public class exposed to client,
+  * to privatize/encapsulate other scmd classes for not to pollute client workspace.
   */
 sealed trait ScmdRuntime {
   def addAppInfo(name: Option[String] = None,
@@ -70,6 +69,20 @@ sealed trait ScmdRuntime {
   /** Return not parsed node. */
   def getNodeByName[N <: Node : ClassTag](name: String): N
 
+  /**
+    * Key method to return parsed/evaluated argument to client def class.
+    *
+    * Validation is done before returning.
+    * String values of cmd args have been converted into typed values within validation.
+    *
+    * @see [[com.github.cuzfrog.scmd.runtime.ArgTypeEvidence]]<br>
+    *      [[com.github.cuzfrog.scmd.macros.argutils.ConvertParsedImpl]]<br>
+    *      [[com.github.cuzfrog.scmd.runtime.Validator]]
+    * @param name the name of the argument, String.
+    * @tparam T the value type of the argument, retained by macro.
+    * @tparam A the Argument type, delivered by macro.
+    * @return an evaluated Argument.
+    */
   def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A
 

@@ -60,6 +60,10 @@ private[scmd] object DummyParameterS extends Parameter("") with SingleValue[Noth
 private[scmd] object DummyParameterV extends Parameter("") with VariableValue[Nothing]
 private[scmd] object DummyOptionArgS extends OptionArg("") with SingleValue[Nothing]
 private[scmd] object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
+private[scmd] object DummyParameterSM extends Parameter("") with SingleValue[Nothing] with Mandatory
+private[scmd] object DummyParameterVM extends Parameter("") with VariableValue[Nothing] with Mandatory
+private[scmd] object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
+private[scmd] object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
 
 private object Parameter {
   private[scmd] implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =

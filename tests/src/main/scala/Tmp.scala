@@ -59,7 +59,8 @@ object Tmp {
     println("---------Parsed node sequence:----------")
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
-    println(parsed.files.value)
+    val files = parsed.files.value
+    println(files)
   }
 }
 

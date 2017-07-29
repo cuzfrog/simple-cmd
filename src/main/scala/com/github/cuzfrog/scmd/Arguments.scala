@@ -9,13 +9,13 @@ sealed trait Argument[+T] {
 }
 
 
-case class
+sealed case class
 Command private[scmd](name: String,
                       description: Option[String] = None,
                       private[scmd] val met: Boolean = false) extends Argument[Nothing]
 
 
-case class
+sealed case class
 CommandEntry private[scmd](name: String,
                            description: Option[String] = None,
                            //subCmds: immutable.Seq[Command],
@@ -23,14 +23,14 @@ CommandEntry private[scmd](name: String,
 
 sealed trait ValueArgument[+T] extends Argument[T]
 
-case class
+sealed case class
 Parameter[+T] private[scmd](name: String,
                             description: Option[String] = None,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
 }
 
 
-case class
+sealed case class
 OptionArg[+T] private[scmd](name: String,
                             abbr: Option[String] = None,
                             description: Option[String] = None,
@@ -39,18 +39,18 @@ OptionArg[+T] private[scmd](name: String,
 }
 
 sealed trait ArgValue[+T] {
-  def isVariable: Boolean
+  private[scmd] def isVariable: Boolean
 }
 
 sealed trait SingleValue[+T] extends ArgValue[T] {
-  def value: Option[T] = None
-  def default: Option[T] = None
-  def isVariable: Boolean = false
+  private[scmd] def value: Option[T] = None
+  private[scmd] def default: Option[T] = None
+  private[scmd] def isVariable: Boolean = false
 }
 sealed trait VariableValue[+T] extends ArgValue[T] {
-  def value: Seq[T] = Nil
-  def default: Seq[T] = Nil
-  def isVariable: Boolean = true
+  private[scmd] def value: Seq[T] = Nil
+  private[scmd] def default: Seq[T] = Nil
+  private[scmd] def isVariable: Boolean = true
 }
 
 sealed trait Mandatory
@@ -66,7 +66,7 @@ private object Command {
 }
 
 private object Parameter {
-  implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =
+  private[scmd] implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =
     (a: Parameter[T], stuff: Seq[T]) => {
       val result = a match {
         case arg: SingleValue[T@unchecked] =>
@@ -78,7 +78,7 @@ private object Parameter {
       result.asInstanceOf[Parameter[T]]
     }
 
-  implicit def mixValueTrait
+  private[scmd] implicit def mixValueTrait
   [T, V <: ArgValue[T]]: CanMix[Parameter[T], V] =
     (a: Parameter[T], stuff: V) => {
       val result = stuff match {
@@ -110,7 +110,7 @@ private object Parameter {
 }
 
 private object OptionArg {
-  implicit def mergeValue[T]: CanMerge[OptionArg[T], Seq[T]] =
+  private[scmd] implicit def mergeValue[T]: CanMerge[OptionArg[T], Seq[T]] =
     (a: OptionArg[T], stuff: Seq[T]) => {
       val result = a match {
         case arg: SingleValue[T@unchecked] =>
@@ -122,7 +122,7 @@ private object OptionArg {
       result.asInstanceOf[OptionArg[T]]
     }
 
-  implicit def mixValueTrait
+  private[scmd] implicit def mixValueTrait
   [T, V <: ArgValue[T], A <: ValueArgument[T]]: CanMix[OptionArg[T], V] =
     (a: OptionArg[T], stuff: V) => {
       val result = stuff match {

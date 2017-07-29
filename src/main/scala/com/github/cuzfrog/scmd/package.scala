@@ -2,25 +2,25 @@ package com.github.cuzfrog
 
 package object scmd {
 
-  def cmdDef(description: String = ""): Command = DummyCommand
+  final def cmdDef(description: String = ""): Command = DummyCommand
 
-  def paramDef[T](description: String = "",
+  final def paramDef[T](description: String = "",
                   isMandatory: Boolean = false,
                   default: => T = Empty): Parameter[T] with SingleValue[T] = DummyParameterS
 
-  def paramDefVariable[T](description: String = "",
+  final def paramDefVariable[T](description: String = "",
                           isMandatory: Boolean = false,
                           default: => T = Empty): Parameter[T] with VariableValue[T] = DummyParameterV
 
-  def optDef[T](abbr: String = "",
+  final def optDef[T](abbr: String = "",
                 description: String = "",
                 default: => T = Empty): OptionArg[T] with SingleValue[T] = DummyOptionArgS
 
-  def optDefMultiple[T](abbr: String = "",
+  final def optDefMultiple[T](abbr: String = "",
                         description: String = "",
                         default: => T = Empty): OptionArg[T] with VariableValue[T] = DummyOptionArgV
 
-  def appDef(name: String,
+  final def appDef(name: String,
              shortDescription: String = "",
              fullDescription: String = "",
              version: String = "",
@@ -37,8 +37,6 @@ package object scmd {
 
   //private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
 
-  private def compileTimeEmpty: Nothing =
-    throw new IllegalAccessError("Must be used within @ScmdDef annotated classes.")
   /**
     * A placeholder to make parameters optional.
     * This, is a method, can only be used as call-by-name parameter.

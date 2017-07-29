@@ -1,6 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.Constants._
+import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
 
 import scala.collection.immutable
 import scala.meta._

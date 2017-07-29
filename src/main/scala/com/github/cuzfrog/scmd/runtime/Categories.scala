@@ -170,7 +170,7 @@ private object LongOpt extends CateUtils {
     }
   }
 }
-
+//todo: convert camel case name to hyphen linked
 private object ParamOrCmd extends CateUtils {
   implicit val parser: Parser[ParamOrCmd, AnchorEither] = new Parser[ParamOrCmd, AnchorEither] {
     override def parse(a: ParamOrCmd)

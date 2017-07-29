@@ -41,14 +41,14 @@ trait Api {
 object MetaApi {
   final def cmdDef: Command = DummyCommand
 
-  final def paramDef[T]: Parameter[T] with SingleValue[T] = DummyParameterS
-  final def paramDefM[T]: Parameter[T] with SingleValue[T] with Mandatory = DummyParameterSM
-  final def paramDefVariable[T]: Parameter[T] with VariableValue[T] = DummyParameterV
-  final def paramDefVariableM[T]: Parameter[T] with VariableValue[T] with Mandatory = DummyParameterVM
+  final def ParameterSingleValue[T]: Parameter[T] with SingleValue[T] = DummyParameterS
+  final def ParameterSingleValueMandatory[T]: Parameter[T] with SingleValue[T] with Mandatory = DummyParameterSM
+  final def ParameterVariableValue[T]: Parameter[T] with VariableValue[T] = DummyParameterV
+  final def ParameterVariableValueMandatory[T]: Parameter[T] with VariableValue[T] with Mandatory = DummyParameterVM
 
-  final def optDef[T]: OptionArg[T] with SingleValue[T] = DummyOptionArgS
-  final def optDefM[T]: OptionArg[T] with SingleValue[T] with Mandatory = DummyOptionArgSM
-  final def optDefVariable[T]: OptionArg[T] with VariableValue[T] = DummyOptionArgV
-  final def optDefVariableM[T]: OptionArg[T] with VariableValue[T] with Mandatory = DummyOptionArgVM
+  final def OptionArgSingleValue[T]: OptionArg[T] with SingleValue[T] = DummyOptionArgS
+  final def OptionArgSingleValueMandatory[T]: OptionArg[T] with SingleValue[T] with Mandatory = DummyOptionArgSM
+  final def OptionArgVariableValue[T]: OptionArg[T] with VariableValue[T] = DummyOptionArgV
+  final def OptionArgVariableValueMandatory[T]: OptionArg[T] with VariableValue[T] with Mandatory = DummyOptionArgVM
 }
 

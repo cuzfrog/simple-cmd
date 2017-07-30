@@ -15,6 +15,15 @@ private final case class TermArgTree(topParams: immutable.Seq[TermParam],
                                      topOpts: immutable.Seq[TermOpt],
                                      cmdEntry: TermCommandEntry)
 
+private object TermTree {
+  def collectTreeDefDsl(stats: immutable.Seq[Stat]): immutable.Seq[Term.Arg] = {
+    stats.collect{
+      case q"argTreeDef(..$params)" => params
+    }.flatten
+  }
+}
+
+
 private object TermCmdNode {
   implicit val definable: Definable[TermCmdNode] = (a: TermCmdNode) => recDefine(a)
 
@@ -22,7 +31,7 @@ private object TermCmdNode {
     val entity = q"entity = ${a.cmd.term}"
     val params = q"params = $TERM_immutable.Seq(..${a.params.map(_.defnTerm)})"
     val opts = q"opts = $TERM_immutable.Seq(..${a.opts.map(_.defnTerm)})"
-    val parent = a.parent match{
+    val parent = a.parent match {
       case Some(p) => q"parent = Option(${p.defnTerm})"
       case None => q"parent = None"
     }

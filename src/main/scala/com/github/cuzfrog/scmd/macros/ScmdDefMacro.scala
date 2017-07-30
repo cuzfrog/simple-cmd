@@ -40,13 +40,19 @@ private class ScmdDefMacro extends ScmdMacro {
       * ArgTree represents structure of user defined args.
       * A TermArgTree is a premature ArgTree consisting of Terms, Which contains the topological information.
       *
-      * This step build an TermArgTree by the order of user-defined args in source code,
-      * then turn it into a single macro-reify-ready Term.
+      * This step build an TermArgTree, then turn it into a single macro-reify-ready Term.
       *
       * This step needs a ScmdRuntime instance to execute.
       * ScmdRuntime serves as a runtime agent to instantiate and encapsulate all needed scmd classes.
       */
-    val argTreeBuild = TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
+    val argTreeBuild = TermTree.collectTreeDefDsl(stats) match {
+      case Nil =>
+        /* by the order of user-defined args in source code */
+        TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
+      case dslParams =>
+        /* by tree def dsl */
+        TreeBuilder.buildArgTreeByDSL(argDefs, dslParams).defnTerm
+    }
 
 
     /** Method expose to validation class for runtime manipulation. */

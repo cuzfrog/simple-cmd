@@ -19,9 +19,11 @@ object Tmp {
 
     import scmdTreeDefDSL._
 
-    cat(
-      files & newLine,
-      newLine
+    argTreeDef(
+      cat(
+        files & newLine,
+        newLine
+      )
     )
 
   }

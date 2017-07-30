@@ -10,7 +10,7 @@ private object TreeBuilder {
     * Build a flat tree from arg definition by source code order.
     *
     * @param argDefs arg definition list from source code with original order.
-    * @return A flat TermArgTree with at most one CmdEntryNode to first level sub-commands.
+    * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
     */
   @inline
   def buildArgTreeByIdx(argDefs: immutable.Seq[TermArg]): TermArgTree = {
@@ -32,6 +32,7 @@ private object TreeBuilder {
         val topLevelOpts = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1)).collect {
           case opt: TermOpt => opt
           case param: TermParam =>
+            //todo: top level param before commands be parsed as common param of each command.
             abort(param.pos, s"Parameter[${param.term.syntax}] cannot be defined before first command.")
         }
         val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
@@ -45,9 +46,14 @@ private object TreeBuilder {
   /**
     * Build tree from DSL.
     *
-    * @return
+    * @return A TermArgTree shaped by dsl.
     */
-  def buildArgTreeByDSL(): TermArgTree = ???
+  def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
+                        dslParams: immutable.Seq[Term.Arg]): TermArgTree = {
+
+
+    ???
+  }
 }
 
 private object NodeBuilder {
@@ -82,3 +88,4 @@ private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTerm
     case Some(last) => last.seal :+ this.build
   }
 }
+

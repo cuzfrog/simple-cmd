@@ -6,6 +6,7 @@ package com.github.cuzfrog.scmd
 sealed trait Argument[+T] {
   def name: String
   def description: Option[String]
+  def symbol: scala.Symbol = scala.Symbol(name)
 }
 
 

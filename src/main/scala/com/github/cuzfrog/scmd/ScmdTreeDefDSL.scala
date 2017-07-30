@@ -2,15 +2,33 @@ package com.github.cuzfrog.scmd
 
 object ScmdTreeDefDSL {
 
-  implicit class CommandTreeDefOps(a: Command) {
+  /** Entry to define a argument tree. */
+  final def argTreeDef(subArg: Argument[_], moreSubArg: Argument[_]*): Unit = ()
+
+  implicit final class CommandTreeDefOps(a: Command) {
     def apply(subArg: Argument[_], moreSubArg: Argument[_]*): Command = a
   }
 
-  implicit class ArgumentTreeDefOps[A, T](a: A)(implicit ev: A <:< Argument[T]) {
-    /** One of (mutually excluded) */
-    def |(that: Argument[_]): A = a
+  implicit final class ArgumentTreeDefOps(a: ValueArgument[_]) {
+    /** One of (mutually exclusive) */
+    def |(that: ValueArgument[_]): ValueArgument[_] with MutuallyExclusive =
+      a.asInstanceOf[ValueArgument[_] with MutuallyExclusive]
 
-    /** Both of */
-    def &(that: Argument[_]): A = a
+    /** Both of (mutually inclusive) */
+    def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyInclusive =
+      a.asInstanceOf[ValueArgument[_] with MutuallyInclusive]
   }
+
+  implicit final class MutuallyExclusiveOps(a: ValueArgument[_] with MutuallyExclusive) {
+    /** One of (mutually exclusive) */
+    def |(that: ValueArgument[_]): ValueArgument[_] with MutuallyExclusive = a
+  }
+
+  implicit final class MutuallyInclusiveOps(a: ValueArgument[_] with MutuallyInclusive) {
+    /** Both of (mutually inclusive) */
+    def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyInclusive = a
+  }
+
+  sealed trait MutuallyExclusive
+  sealed trait MutuallyInclusive
 }

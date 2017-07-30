@@ -1,5 +1,5 @@
 import com.github.cuzfrog.scmd.macros.MacroUtil
-import com.github.cuzfrog.scmd.{ScmdApi, ScmdRouteDSL, ScmdValueConverter, ScmdValueImplicitConversion}
+import com.github.cuzfrog.scmd.{ScmdApi, ScmdRouteDSL, ScmdTreeDefDSL, ScmdValueConverter, ScmdValueImplicitConversion}
 
 import scala.annotation.StaticAnnotation
 import scala.meta._
@@ -9,6 +9,7 @@ import scala.meta._
   */
 object scmd extends ScmdApi {
 
+  final val scmdTreeDefDSL: ScmdTreeDefDSL.type = ScmdTreeDefDSL
   final val scmdRouteDSL: ScmdRouteDSL.type = ScmdRouteDSL
   final val scmdValueImplicitConversion: ScmdValueImplicitConversion.type = ScmdValueImplicitConversion
   final val scmdValueConverter: ScmdValueConverter.type = ScmdValueConverter

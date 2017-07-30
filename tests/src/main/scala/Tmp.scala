@@ -16,6 +16,14 @@ object Tmp {
     val cat = cmdDef(description = "Concatenate contents of files.")
     val files = paramDefVariable[Path](description = "Paths of files to concatenate.", isMandatory = true)
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
+
+    import scmdTreeDefDSL._
+
+    cat(
+      files & newLine,
+      newLine
+    )
+
   }
 
   @ScmdValid

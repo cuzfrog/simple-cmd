@@ -21,7 +21,7 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
   }
   @IgnoreLogging
   abstract override def getEvaluatedArgumentByName
-  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A = {
+  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A = {
     val result = super.getEvaluatedArgumentByName[T, A](name)
     debug(s"Get evaluated Argument(${result.name}) of type[${implicitly[ClassTag[T]]}]] by name:$name")
     result

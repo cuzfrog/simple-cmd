@@ -15,11 +15,11 @@ private trait ScmdMacro {
 }
 
 object MacroUtil {
-  def apply(implName: String, defn: Tree): Stat = {
+  def apply(implName: scala.Symbol, defn: Tree): Stat = {
 
     val macroImpl: ScmdMacro = implName match {
-      case "Def" => new ScmdDefMacro
-      case "Valid" => new ScmdValidMacro
+      case 'Def => new ScmdDefMacro
+      case 'Valid => new ScmdValidMacro
       case bad => throw new AssertionError(s"No such ScmdMacro implementation:$bad")
     }
 

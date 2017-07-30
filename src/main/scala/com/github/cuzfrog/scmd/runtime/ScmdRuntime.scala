@@ -66,8 +66,6 @@ sealed trait ScmdRuntime {
   /** Trigger final parsing. Return parsed nodes. */
   def parse(args: Seq[String]): Seq[String]
 
-  /** Return not parsed node. */
-  def getNodeByName[N <: Node : ClassTag](name: String): N
 
   /**
     * Key method to return parsed/evaluated argument to client def class.
@@ -78,13 +76,13 @@ sealed trait ScmdRuntime {
     * @see [[com.github.cuzfrog.scmd.runtime.ArgTypeEvidence]]<br>
     *      [[com.github.cuzfrog.scmd.macros.argutils.ConvertParsedImpl]]<br>
     *      [[com.github.cuzfrog.scmd.runtime.Validator]]
-    * @param name the name of the argument, String.
+    * @param name the name of the argument.
     * @tparam T the value type of the argument, retained by macro.
     * @tparam A the Argument type, delivered by macro.
     * @return an evaluated Argument.
     */
   def getEvaluatedArgumentByName
-  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A
+  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A
 
   def argTreeString: String
   def appInfoString: String
@@ -111,9 +109,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] var appInfo: AppInfo = _
   private[this] var argTree: ArgTree = _
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
-  private[this] val nodeRefs = mutable.Map.empty[String, Node] //name -> node
+  private[this] val nodeRefs = mutable.Map.empty[scala.Symbol, Node] //name -> node
   private[this] val valiRefs = mutable.Map.empty[ValueNode[_], Function1[_, Unit]] //id -> func
-  private[this] val parsedNodes = mutable.LinkedHashMap.empty[String, Node] //name -> node
+  private[this] val parsedNodes = mutable.LinkedHashMap.empty[scala.Symbol, Node] //name -> node
   private[this] val parsedContextSnapshots = mutable.Map.empty[Node, ContextSnapshot]
 
   private def getEntity[T: ClassTag](e: Int): T =
@@ -169,7 +167,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val e = getEntity[Parameter[T] with ArgValue[T]](entity)
     val a = ParamNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]])
     repository.put(id, Box(a))
-    nodeRefs.put(e.name, a)
+    nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
   override def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
@@ -177,7 +175,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val e = getEntity[OptionArg[T] with ArgValue[T]](entity)
     val a = OptNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]])
     repository.put(id, Box(a))
-    nodeRefs.put(e.name, a)
+    nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
   override def buildCmdEntryNode(entity: Int, children: Seq[Int]): Int = {
@@ -207,7 +205,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val se = getEntity[CmdEntryNode](subCmdEntry)
     val a = CmdNode(e, p, o, pa, se)
     repository.put(id, Box(a))
-    nodeRefs.put(e.name, a)
+    nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
   override def buildArgTree(topParams: Seq[Int],
@@ -221,7 +219,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     this
   }
   override def addValidation[T](name: String, func: T => Unit): Unit = {
-    nodeRefs.get(name) match {
+    nodeRefs.get(scala.Symbol(name)) match {
       case Some(node: ValueNode[T@unchecked]) => valiRefs.put(node, func)
       case Some(node) =>
         throw new AssertionError(s"Node[$node] with name$name is not a value node" +
@@ -233,12 +231,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
     ArgParser.parse(argTree, args).map {
       case (node, cs) =>
-        parsedNodes.put(node.entity.name, node)
+        parsedNodes.put(scala.Symbol(node.entity.name), node)
         parsedContextSnapshots.put(node, cs)
     }
-    parsedNodes.keys.toSeq
+    parsedNodes.keys.toSeq.map(_.name)
   }
-  override def getNodeByName[N <: Node : ClassTag](name: String): N = {
+
+  /** Return not parsed node. */
+  private def getNodeByName[N <: Node : ClassTag](name: scala.Symbol): N = {
     this.getNode[N](name, nodeRefs) match {
       case Some(n) => n
       case None =>
@@ -247,8 +247,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
 
   /** (private) Given name and type, query a node from a provided map. */
-  private def getNode[N <: Node : ClassTag](name: String,
-                                            refs: mutable.Map[String, Node]): Option[N] = {
+  private def getNode[N <: Node : ClassTag](name: scala.Symbol,
+                                            refs: mutable.Map[scala.Symbol, Node]): Option[N] = {
     val tpe = implicitly[ClassTag[N]].runtimeClass
     val node: Option[Node] = refs.get(name).map {
       case cmdNode: CmdNode if tpe == classOf[CmdNode] => cmdNode
@@ -265,7 +265,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
 
   override def getEvaluatedArgumentByName
-  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: String): A = {
+  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A = {
     if (parsedNodes.isEmpty) throw new AssertionError("Parsed node empty before query by name.")
     val valueTpe = implicitly[ClassTag[T]]
     val argTpe = implicitly[ClassTag[A]]

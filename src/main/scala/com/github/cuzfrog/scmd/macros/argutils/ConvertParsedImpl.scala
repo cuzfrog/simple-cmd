@@ -16,7 +16,8 @@ private object ConvertParsedImpl extends SimpleLogging{
     stats collect {
       case q"val $cmd:$_ = cmdDef(..$params)" =>
         q"""override val ${cmd.asInstanceOf[Pat.Var.Term]}: Command = {
-            scmdRuntime.getEvaluatedArgumentByName[Boolean,Command](${Lit.String(cmd.syntax)})
+            scmdRuntime.getEvaluatedArgumentByName
+            [Boolean,Command](${Lit.Symbol(scala.Symbol(cmd.syntax))})
           }"""
       case stat@q"val $para:$_ = paramDef[$tpe](..$params)" =>
         typedVal(para, Types.parameter, tpe, Types.singleValue, params, stat)
@@ -40,7 +41,8 @@ private object ConvertParsedImpl extends SimpleLogging{
     }
     debug(s"GetEvaluatedArument $argName of type[$composedTpe]")
     q"""override val ${argName.asInstanceOf[Pat.Var.Term]}: $composedTpe = {
-          scmdRuntime.getEvaluatedArgumentByName[$tpe,$composedTpe](${Lit.String(argName.syntax)})
+          scmdRuntime.getEvaluatedArgumentByName
+          [$tpe,$composedTpe](${Lit.Symbol(scala.Symbol(argName.syntax))})
         }"""
   }
 }

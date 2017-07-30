@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd
 
-trait Api {
+trait ScmdApi {
   // --------------------- Def methods ----------------------
   final def cmdDef(description: String = ""): Command = DummyCommand
 

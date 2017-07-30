@@ -1,13 +1,13 @@
 import com.github.cuzfrog.scmd.macros.MacroUtil
-import com.github.cuzfrog.scmd.{Api, ScmdRouteDSL, ScmdValueConverter, ScmdValueImplicitConversion}
+import com.github.cuzfrog.scmd.{ScmdApi, ScmdRouteDSL, ScmdValueConverter, ScmdValueImplicitConversion}
 
 import scala.annotation.StaticAnnotation
 import scala.meta._
 
 /**
-  * Api stub to import scmd.
+  * ScmdApi stub to import scmd.
   */
-object scmd extends Api {
+object scmd extends ScmdApi {
 
   final val scmdRouteDSL: ScmdRouteDSL.type = ScmdRouteDSL
   final val scmdValueImplicitConversion: ScmdValueImplicitConversion.type = ScmdValueImplicitConversion
@@ -16,12 +16,12 @@ object scmd extends Api {
   // --------------------- Macro Annotations ----------------------
   final class ScmdDef extends StaticAnnotation {
     inline def apply(defn: Any): Any = meta {
-      MacroUtil("Def", defn)
+      MacroUtil('Def, defn)
     }
   }
   final class ScmdValid extends StaticAnnotation {
     inline def apply(defn: Any): Any = meta {
-      MacroUtil("Valid", defn)
+      MacroUtil('Valid, defn)
     }
   }
 }

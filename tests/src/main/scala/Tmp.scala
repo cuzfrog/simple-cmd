@@ -21,7 +21,7 @@ object Tmp {
 
     argTreeDef(
       cat(
-        files & newLine,
+        files & newLine & files,
         newLine
       )
     )

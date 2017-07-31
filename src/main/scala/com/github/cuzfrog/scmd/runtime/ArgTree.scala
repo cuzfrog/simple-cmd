@@ -27,7 +27,7 @@ private case class CmdNode(entity: Command,
                            subCmdEntry: CmdEntryNode) extends Node
 
 private case class CmdEntryNode(entity: CommandEntry,
-                                children: Seq[CmdNode]) extends Node {
+                                children: Seq[CmdNode]) {
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 

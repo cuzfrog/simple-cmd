@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.Argument
+
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
@@ -51,7 +53,9 @@ private object TreeBuilder {
   def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
                         dslParams: immutable.Seq[Term.Arg]): TermArgTree = {
 
+    val builder = new DslTermNodeBuilder(argDefs, dslParams)
 
+    println(dslParams)
     ???
   }
 }
@@ -89,3 +93,48 @@ private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTerm
   }
 }
 
+private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
+                                       dslParams: immutable.Seq[Term.Arg]) {
+
+
+  def recResolve(cmdTerm: Option[Term], params: immutable.Seq[Term.Arg]): TermCmdNode = {
+    val singleArgs: immutable.Seq[TermArg] = params.collect {
+      case Term.Name(argName) => queryArg(argName) match {
+        case Some(termArg) => termArg
+        case None => notDefined(argName)
+      }
+    }
+    val groupArgs: immutable.Seq[(Limitation, Seq[TermArg])] = params.collect {
+      case Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))) =>
+        val relationSeq = recInfix2seq(subs)
+          .map(argName => queryArg(argName).getOrElse(notDefined(argName)))
+        val limitation = Limitation.fromOperator(operator)
+        limitation -> relationSeq
+    }
+
+    val subCmdEntry = {
+      val cmdEntryTerm = q"scmdRuntime.buildCmdEntry(true)"
+      val childrTermCmdNode = params.collect {
+        case q"$cmd(..$subParams)" => recResolve(Some(cmd), subParams)
+      }
+      TermCommandEntry(cmdEntryTerm, childrTermCmdNode)
+    }
+
+    ???
+  }
+
+  @tailrec
+  private def recInfix2seq(subTerm: Term,
+                           acc: immutable.Seq[String] = immutable.Seq()): immutable.Seq[String] =
+    subTerm match {
+      case Term.Name(argName) => argName +: acc
+      case Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(argName)))
+        if operator == "&" || operator == "|" => recInfix2seq(subs, argName +: acc)
+      case bad => throw new IllegalArgumentException(s"Tree DSL cannot be parsed: $bad")
+    }
+
+  private def queryArg(name: String): Option[TermArg] = argDefs.find(_.name == name)
+
+  private def notDefined(name: String): Nothing =
+    throw new IllegalArgumentException(s"Arg in Tree DSL not defined yet:$name")
+}

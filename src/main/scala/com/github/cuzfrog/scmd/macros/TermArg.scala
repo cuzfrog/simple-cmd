@@ -11,11 +11,12 @@ import scala.meta._
   * Created by cuz on 7/14/17.
   */
 private trait TermArg {
+  def name: String
   def term: Term
   def pos: Position
   def tpe: Type
 }
-private object TermArg extends SimpleLogging{
+private object TermArg extends SimpleLogging {
   override implicit val loggerLevel = SimpleLogging.Info
   def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
@@ -27,7 +28,7 @@ private object TermArg extends SimpleLogging{
         val term =
           q"""runtime.buildCommand($TERM_NAME = ${Lit.String(cmd.syntax)},
                                    $TERM_DESCRIPTION = $description)"""
-        TermCmd(term, pos)
+        TermCmd(cmd.syntax, term, pos)
       case (q"val $argName: $_ = $defName[$tpe](..$params)", pos) =>
         debug(s"Collected type of $argName is [$tpe]")
         implicit val position = pos
@@ -43,14 +44,14 @@ private object TermArg extends SimpleLogging{
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatory,
                                                argValue = ${singleValue(tpe, default)})"""
-            TermParam(term, pos, tpe)
+            TermParam(argName.syntax, term, pos, tpe)
           case q"paramDefVariable" =>
             val term =
               q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatory,
                                                argValue = ${variableValue(tpe, default)})"""
-            TermParam(term, pos, tpe)
+            TermParam(argName.syntax, term, pos, tpe)
           case q"optDef" =>
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
@@ -58,7 +59,7 @@ private object TermArg extends SimpleLogging{
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatory,
                                                argValue = ${singleValue(tpe, default)})"""
-            TermOpt(term, pos, tpe)
+            TermOpt(argName.syntax, term, pos, tpe)
           case q"optDefMultiple" =>
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
@@ -66,7 +67,7 @@ private object TermArg extends SimpleLogging{
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatory,
                                                argValue = ${variableValue(tpe, default)})"""
-            TermOpt(term, pos, tpe)
+            TermOpt(argName.syntax, term, pos, tpe)
 
         }
     }
@@ -78,14 +79,15 @@ private object TermArg extends SimpleLogging{
     q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
 }
 
-private final case class TermCmd(term: Term, pos: Position) extends TermArg {val tpe = TYPE_NOTHING}
-private final case class TermParam(term: Term, pos: Position, tpe: Type) extends TermArg
-private final case class TermOpt(term: Term, pos: Position, tpe: Type) extends TermArg
-private final case class TermCommandEntry(term: Term,
-                                          children: immutable.Seq[TermCmdNode]) extends TermArg {
-  val pos: Position = Position.None
-  val tpe: Type = TYPE_NOTHING
-}
+private sealed trait TermValueArg extends TermArg
+private final
+case class TermCmd(name: String, term: Term, pos: Position) extends TermArg {val tpe = TYPE_NOTHING}
+private final
+case class TermParam(name: String, term: Term, pos: Position, tpe: Type) extends TermValueArg
+private final
+case class TermOpt(name: String, term: Term, pos: Position, tpe: Type) extends TermValueArg
+private final
+case class TermCommandEntry(term: Term, children: immutable.Seq[TermCmdNode])
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {

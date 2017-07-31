@@ -5,24 +5,44 @@ import com.github.cuzfrog.scmd.macros.Constants._
 import scala.collection.immutable
 import scala.meta._
 
-private final case class TermCmdNode(cmd: TermCmd,
-                                     params: immutable.Seq[TermParam],
-                                     opts: immutable.Seq[TermOpt],
-                                     parent: Option[TermCmdNode],
-                                     subCmdEntry: TermCommandEntry)
+private final
+case class TermCmdNode(cmd: TermCmd,
+                       params: immutable.Seq[TermParam],
+                       opts: immutable.Seq[TermOpt],
+                       parent: Option[TermCmdNode],
+                       subCmdEntry: TermCommandEntry,
+                       limitations: immutable.Seq[(Limitation, immutable.Seq[String])] = Nil)
 
-private final case class TermArgTree(topParams: immutable.Seq[TermParam],
-                                     topOpts: immutable.Seq[TermOpt],
-                                     cmdEntry: TermCommandEntry)
+private final
+case class TermArgTree(topParams: immutable.Seq[TermParam],
+                       topOpts: immutable.Seq[TermOpt],
+                       cmdEntry: TermCommandEntry,
+                       topLimitations: immutable.Seq[(Limitation, immutable.Seq[String])] = Nil,
+                       globalLimitations: immutable.Seq[(Limitation, immutable.Seq[String])] = Nil)
 
 private object TermTree {
   def collectTreeDefDsl(stats: immutable.Seq[Stat]): immutable.Seq[Term.Arg] = {
-    stats.collect{
+    stats.collect {
       case q"argTreeDef(..$params)" => params
     }.flatten
   }
 }
 
+/**
+  * Mutual relationship among value arguments. Defined in tree DSL.
+  *
+  * @see [[com.github.cuzfrog.scmd.ScmdTreeDefDSL]]
+  */
+private sealed trait Limitation
+private object Limitation {
+  def fromOperator(operator: String): Limitation = operator match {
+    case "|" => MutuallyExclusive
+    case "&" => MutuallyDependent
+    case bad => throw new IllegalArgumentException(s"Illegal limitation operator:$bad")
+  }
+  case object MutuallyExclusive extends Limitation
+  case object MutuallyDependent extends Limitation
+}
 
 private object TermCmdNode {
   implicit val definable: Definable[TermCmdNode] = (a: TermCmdNode) => recDefine(a)

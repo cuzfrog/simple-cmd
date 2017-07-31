@@ -17,10 +17,7 @@ Command private[scmd](name: String,
 
 
 sealed case class
-CommandEntry private[scmd](name: String,
-                           description: Option[String] = None,
-                           //subCmds: immutable.Seq[Command],
-                           isMandatory: Boolean = Defaults.isMandatory) extends Argument[Nothing]
+CommandEntry private[scmd](isMandatory: Boolean = Defaults.isMandatory)
 
 sealed trait ValueArgument[+T] extends Argument[T]
 

@@ -39,6 +39,8 @@ sealed trait ScmdRuntime {
                         isMandatory: Boolean = Defaults.isMandatory,
                         argValue: ArgValue[T]): Int
 
+  def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int
+
   def buildSingleValue[T](_default: Option[T]): ArgValue[T]
   def buildVariableValue[T](_default: Seq[T]): ArgValue[T]
 
@@ -156,6 +158,12 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.put(id, Box(a))
     id
   }
+  override def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int = {
+    val id = idGen.getAndIncrement()
+    val a = CommandEntry(isMandatory)
+    repository.put(id, Box(a))
+    id
+  }
   override def buildSingleValue[T](_default: Option[T]): ArgValue[T] = {
     ArgValue.single(_default)
   }
@@ -188,7 +196,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def defaultCommandEntry: Int = {
     val id = idGen.getAndIncrement()
-    val a = CommandEntry("")
+    val a = CommandEntry()
     repository.put(id, Box(a))
     id
   }

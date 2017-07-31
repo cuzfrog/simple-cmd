@@ -9,17 +9,20 @@ object ScmdTreeDefDSL {
                       (implicit runtime: ScmdRuntime): Unit = {
 
     def recResolve(subArgs: Seq[ArgGroup]): Unit = {
-      subArgs.map {
-        case ArgBox(arg) =>
-        case CmdGroup(cmd, subs) =>
 
-          recResolve(subs)
-        case vg: ValueGroup with MutuallyExclusive =>
-        case vg: ValueGroup with MutuallyDependent =>
-        case vg: ValueGroup => throw new AssertionError("Value group not generated with mutual relationship.")
-      }
+//      subArgs.map {
+//        case ArgBox(arg) => arg match{
+//          case a:Command => //runtime.buildCommand()
+//          case a:Parameter[_] =>
+//        }
+//        case CmdGroup(cmd, subs) =>
+//
+//          recResolve(subs)
+//        case vg: ValueGroup with MutuallyExclusive =>
+//        case vg: ValueGroup with MutuallyDependent =>
+//        case vg: ValueGroup => throw new AssertionError("Value group not generated with mutual relationship.")
+//      }
     }
-
 
   }
 
@@ -56,9 +59,9 @@ object ScmdTreeDefDSL {
   }
 
   sealed trait ArgGroup
-  sealed case class CmdGroup private(cmd: Command, subArgs: Seq[ArgGroup]) extends ArgGroup
-  sealed case class ValueGroup private(valueArgs: Seq[ValueArgument[_]]) extends ArgGroup
-  sealed case class ArgBox private(entity: Argument[_]) extends ArgGroup
+  sealed case class CmdGroup private[scmd](cmd: Command, subArgs: Seq[ArgGroup]) extends ArgGroup
+  sealed case class ValueGroup private[scmd](valueArgs: Seq[ValueArgument[_]]) extends ArgGroup
+  sealed case class ArgBox private[scmd](entity: Argument[_]) extends ArgGroup
   private object ArgBox {
     implicit def box(entity: Argument[_]): ArgBox = ArgBox(entity)
   }

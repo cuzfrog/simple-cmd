@@ -1,34 +1,67 @@
 package com.github.cuzfrog.scmd
 
+import com.github.cuzfrog.scmd.runtime.ScmdRuntime
+
 object ScmdTreeDefDSL {
 
-  /** Entry to define a argument tree. */
-  final def argTreeDef(subArg: Argument[_], moreSubArg: Argument[_]*): Unit = ()
+  /** Entry to define g argument tree. */
+  final def argTreeDef(subArg: ArgGroup, moreSubArg: ArgGroup*)
+                      (implicit runtime: ScmdRuntime): Unit = {
+
+    def recResolve(subArgs: Seq[ArgGroup]): Unit = {
+      subArgs.map {
+        case ArgBox(arg) =>
+        case CmdGroup(cmd, subs) =>
+
+          recResolve(subs)
+        case vg: ValueGroup with MutuallyExclusive =>
+        case vg: ValueGroup with MutuallyDependent =>
+        case vg: ValueGroup => throw new AssertionError("Value group not generated with mutual relationship.")
+      }
+    }
+
+
+  }
 
   implicit final class CommandTreeDefOps(a: Command) {
-    def apply(subArg: Argument[_], moreSubArg: Argument[_]*): Command = a
+    def apply(subArg: ArgGroup, moreSubArg: ArgGroup*): CmdGroup = {
+      new CmdGroup(a, subArg +: moreSubArg)
+    }
   }
 
-  implicit final class ArgumentTreeDefOps(a: ValueArgument[_]) {
+  //implicit final def valueArgument2Group(a: ValueArgument[_]): ArgGroup = new ArgGroup(a, Seq())
+
+  implicit final class ValueArgumentOps(a: ValueArgument[_]) {
+    def |(that: ValueArgument[_]): ValueGroup with MutuallyExclusive = {
+      new ValueGroup(Seq(a, that)) with MutuallyExclusive
+    }
+
+    def &(that: ValueArgument[_]): ValueGroup with MutuallyDependent = {
+      new ValueGroup(Seq(a, that)) with MutuallyDependent
+    }
+  }
+
+  implicit final class MutuallyExclusiveOps(g: ValueGroup with MutuallyExclusive) {
     /** One of (mutually exclusive) */
-    def |(that: ValueArgument[_]): ValueArgument[_] with MutuallyExclusive =
-      a.asInstanceOf[ValueArgument[_] with MutuallyExclusive]
+    def |(that: ValueArgument[_]): ValueGroup with MutuallyExclusive = {
+      new ValueGroup(g.valueArgs :+ that) with MutuallyExclusive
+    }
+  }
 
+  implicit final class MutuallyDependentOps(g: ValueGroup with MutuallyDependent) {
     /** Both of (mutually inclusive) */
-    def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyInclusive =
-      a.asInstanceOf[ValueArgument[_] with MutuallyInclusive]
+    def &(that: ValueArgument[_]): ValueGroup with MutuallyDependent = {
+      new ValueGroup(g.valueArgs :+ that) with MutuallyDependent
+    }
   }
 
-  implicit final class MutuallyExclusiveOps(a: ValueArgument[_] with MutuallyExclusive) {
-    /** One of (mutually exclusive) */
-    def |(that: ValueArgument[_]): ValueArgument[_] with MutuallyExclusive = a
+  sealed trait ArgGroup
+  sealed case class CmdGroup private(cmd: Command, subArgs: Seq[ArgGroup]) extends ArgGroup
+  sealed case class ValueGroup private(valueArgs: Seq[ValueArgument[_]]) extends ArgGroup
+  sealed case class ArgBox private(entity: Argument[_]) extends ArgGroup
+  private object ArgBox {
+    implicit def box(entity: Argument[_]): ArgBox = ArgBox(entity)
   }
-
-  implicit final class MutuallyInclusiveOps(a: ValueArgument[_] with MutuallyInclusive) {
-    /** Both of (mutually inclusive) */
-    def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyInclusive = a
-  }
-
   sealed trait MutuallyExclusive
-  sealed trait MutuallyInclusive
+  sealed trait MutuallyDependent
 }

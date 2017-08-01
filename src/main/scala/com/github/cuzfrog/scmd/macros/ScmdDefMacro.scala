@@ -50,7 +50,7 @@ private class ScmdDefMacro extends ScmdMacro {
       TermTree.collectTreeDefDsl(stats) match {
         case Nil =>
           /* by the order of user-defined args in source code */
-          TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
+          TreeBuilder.buildArgTreeByIdx(argDefs, globalMutualLimitations).defnTerm
         case dslParams =>
           /* by tree def dsl */
           TreeBuilder.buildArgTreeByDSL(argDefs, dslParams, globalMutualLimitations).defnTerm

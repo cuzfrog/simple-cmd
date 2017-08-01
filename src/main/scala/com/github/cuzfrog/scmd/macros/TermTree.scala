@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.Limitation
 import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.collection.immutable
@@ -33,21 +34,7 @@ private object TermTree {
   }
 }
 
-/**
-  * Mutual relationship among value arguments. Defined in tree DSL.
-  *
-  * @see [[com.github.cuzfrog.scmd.ScmdTreeDefDSL]]
-  */
-private sealed trait Limitation
-private object Limitation {
-  def fromOperator(operator: String): Limitation = operator match {
-    case "|" => MutuallyExclusive
-    case "&" => MutuallyDependent
-    case bad => throw new IllegalArgumentException(s"Illegal limitation operator:$bad")
-  }
-  case object MutuallyExclusive extends Limitation
-  case object MutuallyDependent extends Limitation
-}
+
 
 private object TermCmdNode {
   implicit val definable: Definable[TermCmdNode] = (a: TermCmdNode) => recDefine(a)

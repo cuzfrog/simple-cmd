@@ -7,6 +7,8 @@ import com.github.cuzfrog.scmd.macros.Constants._
 import scala.collection.immutable
 import scala.meta._
 
+//todo: add positions.
+
 /**
   * Created by cuz on 7/14/17.
   */
@@ -17,21 +19,21 @@ private trait TermArg {
   def tpe: Type
 }
 private object TermArg extends SimpleLogging {
-  override implicit val loggerLevel = SimpleLogging.Info
+  override implicit val loggerLevel = SimpleLogging.Trace
   def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
 
-    stats zip stats.map(_.pos) collect {
-      case (q"val $cmd: $_ = cmdDef(..$params)", pos) =>
-        implicit val position = pos
+    stats collect {
+      case q"val $cmd: $_ = cmdDef(..$params)" =>
+        implicit val pos = cmd.pos
         val description = extract[String](params).defnTerm
         val term =
           q"""runtime.buildCommand($TERM_NAME = ${Lit.String(cmd.syntax)},
                                    $TERM_DESCRIPTION = $description)"""
         TermCmd(cmd.syntax, term, pos)
-      case (q"val $argName: $_ = $defName[$tpe](..$params)", pos) =>
-        debug(s"Collected type of $argName is [$tpe]")
-        implicit val position = pos
+      case q"val $argName: $_ = $defName[$tpe](..$params)" =>
+        debug(s"Collected $defName: $argName[$tpe]")
+        implicit val pos = argName.pos
         val description = extract[String](params).defnTerm
         val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory).defnTerm
         val abbr = extract[String](params).defnTerm
@@ -53,6 +55,7 @@ private object TermArg extends SimpleLogging {
                                                argValue = ${variableValue(tpe, default)})"""
             TermParam(argName.syntax, term, pos, tpe)
           case q"optDef" =>
+            debug(s"Collected opt: $name")
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
                                                $TERM_ABBREVIATION = $abbr,
@@ -70,6 +73,9 @@ private object TermArg extends SimpleLogging {
             TermOpt(argName.syntax, term, pos, tpe)
 
         }
+      case stat@q"val $argName: $_ = $defName(..$params)"
+        if defName.syntax.contains("Def") =>
+        abort(s"No type found for argument def: $stat")
     }
   }
 

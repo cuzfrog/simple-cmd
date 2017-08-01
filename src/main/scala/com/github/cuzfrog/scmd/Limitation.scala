@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd
 
-import scala.collection.immutable
-
 /**
   * Mutual relationship among value arguments. Defined in tree DSL.
   *

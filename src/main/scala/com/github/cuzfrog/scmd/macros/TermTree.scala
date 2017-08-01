@@ -34,8 +34,6 @@ private object TermTree {
   }
 }
 
-
-
 private object TermCmdNode {
   implicit val definable: Definable[TermCmdNode] = (a: TermCmdNode) => recDefine(a)
 

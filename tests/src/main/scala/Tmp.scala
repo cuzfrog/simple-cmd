@@ -1,6 +1,6 @@
 import java.nio.file.{Path, Paths}
 
-import scmd._
+import Scmd._
 
 object Tmp {
 

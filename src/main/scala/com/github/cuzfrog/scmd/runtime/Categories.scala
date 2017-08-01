@@ -30,79 +30,80 @@ private case class LongOpt(arg: String) extends CateArg
 /** Param or Cmd with no prefix "-". */
 private case class ParamOrCmd(arg: String) extends CateArg
 
-
+/**
+  * Option with single hyphen -
+  * e.g. -p -P
+  * -p=1234
+  * folded -pwj = p+w+j  p,w,j must all be boolean.
+  * multi-char -Pn  Pn is a single option abbreviation.
+  */
 private object SingleOpts extends CateUtils {
-  private val EqualLitertal = """\w=(\w+)""".r
-  private val ValueFolding = """\w([^\=]{1}.*)""".r
+  private val EqualLitertal = """(\w+)\=(\w+)""".r
+  private val ValueFolding = """(\w)([^\=]{1}.*)""".r
 
   implicit val parser: Parser[SingleOpts, AnchorEither] = new Parser[SingleOpts, AnchorEither] {
     override def parse(a: SingleOpts)(implicit c: Context): AnchorEither = {
-      val cmdNode = c.getCurrentCmdNode
       val arg = a.arg
 
-      trace(s"parse SingleOpts $arg")
-
       val matchOpt =
-        c.getUpstreamLeftOpts.find(_.entity.abbr.exists(_.head == arg.head)) //match first letter
+        c.getUpstreamLeftOpts.find(_.entity.abbr.exists(abbr => abbr == arg.take(abbr.length))) //match first letter
       matchOpt match {
-        case Some(optNode1) => optNode1.tpe match {
-          //found argDef for type Boolean
-          case ClassTag.Boolean =>
-            arg match {
-              //arg=literal
-              case EqualLitertal(bool) =>
-                parseBoolStr(bool) match {
-                  case Some(b) => c.anchors(optNode1.copy(value = Seq(b)))
-                  case None => ArgParseException(s"Unknown bool literal: $bool", c)
-                }
-
-              //folded letters
-              case bools if bools.matches("""\w+""") =>
-                val boolSet = bools.split("").toSet
-                /** Nodes with optDefs matched with args with type Boolean. */
-                val boolNodes = cmdNode.opts.collectWithType[OptNode[Boolean]]
-                  .filter(n => n.entity.abbr.exists(boolSet.contains))
-                if (boolNodes.size < boolSet.size) {
-                  val badArgs =
-                    boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
-                  ArgParseException(s"Boolean options: -$badArgs not defined", c)
-                }
-                else if (boolSet.size < bools.length) {
-                  ArgParseException(s"Duplicates in boolean options: -$bools", c)
-                }
-                else {
-                  val optNodesWithValue = boolNodes.flatMap { n =>
-                    val boolValue = n.entity match {
-                      case s: SingleValue[Boolean@unchecked] => s.default.getOrElse(false).unary_!
-                      case m =>
-                        throw new AssertionError(s"Boolean value cannot be variable." +
-                          s" Node:${n.entity.name}")
-                    }
-                    c.anchors(n.copy(value = Seq(boolValue)))
+        case Some(optNode1) =>
+          trace(s"parse SingleOpts $arg matched -> ${optNode1.entity.name}[${optNode1.tpe}]")
+          optNode1.tpe match {
+            //found argDef for type Boolean
+            case ClassTag.Boolean =>
+              arg match {
+                //arg=literal
+                case EqualLitertal(argAbbr, bool) if optNode1.entity.abbr.contains(argAbbr) =>
+                  parseBoolStr(bool) match {
+                    case Some(b) => c.anchors(optNode1.copy(value = Seq(b)))
+                    case None => ArgParseException(s"Unknown bool literal: $bool", c)
                   }
-                  optNodesWithValue
-                }
+                //multichar single abbr
+                case bool if optNode1.entity.abbr.contains(bool) =>
+                  c.anchors(optNode1.copy(value = Seq(extractBooleanValue(optNode1))))
+                //folded letters
+                case bools if bools.matches("""\w+""") =>
+                  val boolSet = bools.split("").toSet
+                  /** Nodes with optDefs matched with args with type Boolean. */
+                  val boolNodes = c.getUpstreamLeftOpts.collectWithType[OptNode[Boolean]]
+                    .filter(n => n.entity.abbr.exists(boolSet.contains))
+                  if (boolNodes.size < boolSet.size) {
+                    val badArgs =
+                      boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
+                    ArgParseException(s"Boolean options: -$badArgs not defined", c)
+                  }
+                  else if (boolSet.size < bools.length) {
+                    ArgParseException(s"Duplicates in boolean options: -$bools", c)
+                  }
+                  else {
+                    val optNodesWithValue = boolNodes.flatMap { n =>
+                      c.anchors(n.copy(value = Seq(extractBooleanValue(n))))
+                    }
+                    optNodesWithValue
+                  }
 
-              case bad =>
-                ArgParseException(s"Boolean opts -$bad contain unsupported letter", c)
-            }
-
-          //found argDef for other types
-          case otherTpe =>
-            try {
-              val value = arg match {
-                case EqualLitertal(v) => v
-                case ValueFolding(v) => v
-                case single if single.matches("""\w""") => c.nextArg.getOrElse(
-                  throw ArgParseException(
-                    s"No value found for opt -$arg with type[${otherTpe.name}].", c))
-                case bad => throw ArgParseException(s"Malformed opt -$bad", c)
+                case bad =>
+                  ArgParseException(s"Boolean opts -$bad contain unsupported letter", c)
               }
-              c.anchors(optNode1.copy(value = Seq(value)))
-            } catch {
-              case e: ArgParseException => e
-            }
-        }
+
+            //found argDef for other types
+            case otherTpe =>
+              try {
+                val value = arg match {
+                  case EqualLitertal(_, v) => v
+                  case ValueFolding(argAbbr, v) if optNode1.entity.abbr.contains(argAbbr) => v
+                  case single if optNode1.entity.abbr.contains(single) => c.nextArg.getOrElse(
+                    throw ArgParseException(
+                      s"No value found for opt -$arg with type[${otherTpe.name}].", c))
+                  case bad => throw ArgParseException(s"Malformed opt -$bad", c)
+                }
+                c.anchors(optNode1.copy(value = Seq(value)))
+              } catch {
+                case e: ArgParseException => e
+              }
+          }
         case None =>
           ArgParseException(s"Unknown opt -$arg", c)
       }
@@ -115,7 +116,6 @@ private object LongOpt extends CateUtils {
 
   implicit val parser: Parser[LongOpt, AnchorEither] = new Parser[LongOpt, AnchorEither] {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
-      val cmdNode = c.getCurrentCmdNode
       val arg = a.arg
 
       arg match {
@@ -134,17 +134,7 @@ private object LongOpt extends CateUtils {
                       case None => ArgParseException(s"Unknown bool literal: -$arg", c)
                     }
                     case None =>
-                      //logic not default boolean value
-                      val defaultB = optNode.entity match {
-                        case s: SingleValue[Boolean@unchecked] => s.default match {
-                          case Some(b: Boolean) => b
-                          case _ => false //type boolean checked by ClassTag
-                        }
-                        case m =>
-                          throw new AssertionError(s"Boolean value cannot be variable." +
-                            s" Node:${optNode.entity.name}")
-                      }
-                      c.anchors(optNode.copy(value = Seq(defaultB.unary_!)))
+                      c.anchors(optNode.copy(value = Seq(extractBooleanValue(optNode))))
                   }
 
                 //arg def of other type
@@ -245,4 +235,17 @@ private sealed trait CateUtils extends SimpleLogging {
   }
 
   protected implicit def boolean2string(b: Boolean): String = b.toString
+
+  /** Trigger logic not of default boolean value. */
+  protected def extractBooleanValue(n: OptNode[_]): Boolean = {
+    if (n.tpe != ClassTag.Boolean)
+      throw new AssertionError(s"Function extractBooleanValue can only used on boolean type," +
+        s" node:${n.entity.name}")
+    n.entity match {
+      case s: SingleValue[Boolean@unchecked] => s.default.getOrElse(false).unary_!
+      case _ =>
+        throw new AssertionError(s"Boolean value cannot be variable." +
+          s" Node:${n.entity.name}")
+    }
+  }
 }

@@ -19,7 +19,7 @@ private trait TermArg {
   def tpe: Type
 }
 private object TermArg extends SimpleLogging {
-  override implicit val loggerLevel = SimpleLogging.Trace
+  override implicit val loggerLevel = SimpleLogging.Info
   def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
 
@@ -36,7 +36,11 @@ private object TermArg extends SimpleLogging {
         implicit val pos = argName.pos
         val description = extract[String](params).defnTerm
         val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory).defnTerm
-        val abbr = extract[String](params).defnTerm
+        val abbr = extract[String](params).map {
+          case ab if ab.matches("""\w+""") => ab
+          case bad => abort(pos, s"Opt abbreviation can only contain letter:$bad")
+        }.defnTerm
+
         val default = extract[Term.Arg](params).defnTerm
         val name = Lit.String(argName.syntax)
         defName match {
@@ -55,7 +59,6 @@ private object TermArg extends SimpleLogging {
                                                argValue = ${variableValue(tpe, default)})"""
             TermParam(argName.syntax, term, pos, tpe)
           case q"optDef" =>
-            debug(s"Collected opt: $name")
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
                                                $TERM_ABBREVIATION = $abbr,

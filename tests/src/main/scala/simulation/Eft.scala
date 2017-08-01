@@ -4,30 +4,28 @@ import java.io.File
 
 import Scmd._
 
-private object Cp {
+private object Eft {
   @ScmdDef
-  private class CpDef(args: Seq[String]) {
+  private class EftDef(args: Seq[String]) {
     val SRC = paramDefVariable[File](isMandatory = true)
     val DEST = paramDef[File](isMandatory = true)
     val recursive = optDef[Boolean](abbr = "R")
   }
 
   @ScmdValid
-  private class CpValidation(cpDef: CpDef) {
-    validation(cpDef.SRC) { files =>
-      files.foreach(f => if (!f.exists) println(s"(Cp Simulation) Exception: $f not exists."))
-    }
+  private class EftValidation(cpDef: EftDef) {
+
   }
 
   def main(args: Array[String]): Unit = {
-    val conf = (new CpDef(args))
-      .withValidation(new CpValidation(_))
+    val conf = (new EftDef(args))
+      .withValidation(new EftValidation(_))
     println("-----------App info------------")
     println(conf.appInfoString)
     println("-----------Arg tree------------")
     println(conf.argTreeString)
     println("---------Parsed node sequence:----------")
-    val parsed: CpDef = conf.parsed
+    val parsed: EftDef = conf.parsed
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
   }

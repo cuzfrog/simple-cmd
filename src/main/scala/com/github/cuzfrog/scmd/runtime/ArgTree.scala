@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, ValueArgument}
 
 import scala.reflect.ClassTag
 
@@ -32,11 +32,12 @@ private case class CmdEntryNode(entity: CommandEntry,
 private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]
 
 private[runtime] sealed trait ValueNode[T] extends Node {
-  def entity: Argument[T] with ArgValue[T]
+  def entity: ValueArgument[T] with ArgValue[T]
   def value: Seq[String]
   def tpe: ClassTag[_] //specific data type, not includes Seq or List
   //tpe needs to be put in constructor parameter, .copy removes type info.
   def isVariable: Boolean = entity.isVariable
+  def isMandatory: Boolean = entity.isMandatory
   override def hashCode(): Int = entity.hashCode * 3 + 17
 }
 
@@ -74,15 +75,22 @@ private object ArgTree {
     val NEW_LINE = System.lineSeparator
     val cmdNode = a.toTopNode
 
+    def variableOrMandatory(n: ValueNode[_]): (String, String) = {
+      val ifVariable = if (n.isVariable) "..." else ""
+      val ifMandatory = if (n.isMandatory) "(Mandatory)" else "(Optional)"
+      (ifVariable, ifMandatory)
+    }
+
     def recMkPrettyString(cmdNode: CmdNode, indent: String = ""): String = {
       val cmd = indent + cmdNode.entity.name
-      val params =
-        cmdNode.params.map { n =>
-          val ifVariable = if (n.isVariable) "..." else ""
-          s"$indent+-param$ifVariable: ${n.entity.name}[${n.tpe}] = ${n.value}"
-        }
-      val opts =
-        cmdNode.opts.map(n => s"$indent+-opt: ${n.entity.name}[${n.tpe}] = ${n.value}")
+      val params = cmdNode.params.map { n =>
+        val (ifVariable, ifMandatory) = variableOrMandatory(n)
+        s"$indent+-param$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory"
+      }
+      val opts = cmdNode.opts.map { n =>
+        val (ifVariable, ifMandatory) = variableOrMandatory(n)
+        s"$indent+-opt$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory"
+      }
       val subCmds =
         cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
       val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")

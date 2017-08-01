@@ -19,7 +19,9 @@ Command private[scmd](name: String,
 sealed case class
 CommandEntry private[scmd](isMandatory: Boolean = Defaults.isMandatory)
 
-sealed trait ValueArgument[+T] extends Argument[T]
+sealed trait ValueArgument[+T] extends Argument[T] {
+  def isMandatory: Boolean
+}
 
 sealed case class
 Parameter[+T] private[scmd](name: String,

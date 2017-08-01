@@ -12,19 +12,19 @@ object Tmp {
       "Organization" -> "com.github.cuzfrog",
       "null" -> null)
 
-    //val badParam = paramDef[String](description = "throw exception")
+    val sharedParam = paramDef[String](description = "this should be shared by cmds below.")
     val cat = cmdDef(description = "Concatenate contents of files.")
     val files = paramDefVariable[Path](description = "Paths of files to concatenate.", isMandatory = true)
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
 
-    import scmdTreeDefDSL._
-
-    argTreeDef(
-      cat(
-        files & newLine & files,
-        newLine
-      )
-    )
+//    import scmdTreeDefDSL._
+//
+//    argTreeDef(
+//      cat(
+//        files & newLine & files,
+//        newLine
+//      )
+//    )
 
   }
 

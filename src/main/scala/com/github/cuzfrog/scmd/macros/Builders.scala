@@ -29,14 +29,14 @@ private object TreeBuilder {
         TermArgTree(params, opts, TermCommandEntry.default)
       case Some(cmd1) =>
         import idxDefs.indexOf
-        val topLevelOpts = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1)).collect {
-          case opt: TermOpt => opt
-          case param: TermParam =>
-            //todo: top level param before commands be parsed as common param of each command.
-            abort(param.pos, s"Parameter[${param.term.syntax}] cannot be defined before first command.")
-        }
+        val topLevelValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
+
+        val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt }
+        /** param defs above first cmd will be shared by all cmd as their first param. */
+        val topLevelParam = topLevelValueArgs.collect { case param: TermParam => param }
+
         val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
-        val builder = NodeBuilder.newIdxTermBuilder(cmd1)
+        val builder = NodeBuilder.newIdxTermBuilder(cmd1, topLevelParam)
 
         val commands = recAdd(builder, tail).seal
         TermArgTree(Nil, topLevelOpts, TermCommandEntry.defaultWithCmdNodes(commands))
@@ -59,10 +59,26 @@ private object TreeBuilder {
 }
 
 private object NodeBuilder {
-  def newIdxTermBuilder(cmd: TermCmd): IdxTermNodeBuilder = {
-    new IdxTermNodeBuilder(cmd, None)
+  /**
+    * Create a new index term builder.
+    *
+    * @param cmd1 the first cmd occurred in argument defs.
+    * @param sharedParams the params defined above the first cmd,
+    *                     they are meant to be shared by all cmd as prior params.
+    */
+  def newIdxTermBuilder(cmd1: TermCmd,
+                        sharedParams: immutable.Seq[TermParam]): IdxTermNodeBuilder = {
+    new IdxTermNodeBuilder(cmd1, sharedParams, None)
   }
 
+  /**
+    * Create a new dsl builder.
+    *
+    * @param argDefs argument defs list that is parsed by macros earlier,
+    *                used to query argument info.
+    * @param dslStats tree def DSL statements collected.
+    * @param globalLimitationsStats global mutual limitation statements collected.
+    */
   def newDslTermBuilder(argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): DslTermNodeBuilder =
@@ -70,13 +86,15 @@ private object NodeBuilder {
 }
 
 /** Not thread-safe */
-private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTermNodeBuilder]) {
+private final class IdxTermNodeBuilder(cmd: TermCmd,
+                                       sharedParams: immutable.Seq[TermParam],
+                                       lastSibling: Option[IdxTermNodeBuilder]) {
 
-  private[this] var params: immutable.Seq[TermParam] = immutable.Seq.empty
+  private[this] var params: immutable.Seq[TermParam] = sharedParams
   private[this] var opts: immutable.Seq[TermOpt] = immutable.Seq.empty
 
   def add(arg: TermArg): IdxTermNodeBuilder = arg match {
-    case cmd: TermCmd => new IdxTermNodeBuilder(cmd, Option(this))
+    case cmd: TermCmd => new IdxTermNodeBuilder(cmd, sharedParams, Option(this))
     case param: TermParam => this.params :+= param; this
     case opt: TermOpt => this.opts :+= opt; this
   }
@@ -87,7 +105,6 @@ private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTerm
     TermCmdNode(cmd, params, opts, subCmdEntry = TermCommandEntry.default)
   }
 
-  @inline
   def seal: immutable.Seq[TermCmdNode] = lastSibling match {
     case None => immutable.Seq(this.build)
     case Some(last) => last.seal :+ this.build

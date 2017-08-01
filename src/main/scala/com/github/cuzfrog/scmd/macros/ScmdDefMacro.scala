@@ -45,13 +45,16 @@ private class ScmdDefMacro extends ScmdMacro {
       * This step needs a ScmdRuntime instance to execute.
       * ScmdRuntime serves as a runtime agent to instantiate and encapsulate all needed scmd classes.
       */
-    val argTreeBuild = TermTree.collectTreeDefDsl(stats) match {
-      case Nil =>
-        /* by the order of user-defined args in source code */
-        TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
-      case dslParams =>
-        /* by tree def dsl */
-        TreeBuilder.buildArgTreeByDSL(argDefs, dslParams).defnTerm
+    val argTreeBuild = {
+      val globalMutualLimitations = TermTree.collectArgGlobalLimitations(stats)
+      TermTree.collectTreeDefDsl(stats) match {
+        case Nil =>
+          /* by the order of user-defined args in source code */
+          TreeBuilder.buildArgTreeByIdx(argDefs).defnTerm
+        case dslParams =>
+          /* by tree def dsl */
+          TreeBuilder.buildArgTreeByDSL(argDefs, dslParams, globalMutualLimitations).defnTerm
+      }
     }
 
 

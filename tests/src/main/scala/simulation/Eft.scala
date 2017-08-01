@@ -11,6 +11,7 @@ private object Eft {
     //arg tree is inferred by order below:
     val port = optDef[Int](abbr = "p", description = "manually specify tcp port to use")
     val debug = optDef[Boolean](description = "debug mode")
+    val printCode = optDef[Boolean](description = "print connction address as hex string")
     val remoteAddress = paramDef[String](description = "address of remote node for connection.")
 
     val push = cmdDef(

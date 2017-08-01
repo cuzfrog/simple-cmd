@@ -119,9 +119,11 @@ private object LongOpt extends CateUtils {
       val arg = a.arg
 
       arg match {
-        case EqualLiteral(name, e_Value) =>
+        case EqualLiteral(argName, e_Value) =>
           val valueOpt = Option(e_Value).map(_.drop(1))
-          val matchOpt = c.getUpstreamLeftOpts.find(_.entity.name == name)
+          val matchOpt = c.getUpstreamLeftOpts.find { n =>
+            n.entity.name == argName || n.entity.hyphenName == argName
+          }
           matchOpt match {
             case Some(optNode) =>
               trace(s"Parse LongOpt $arg -> matched [${optNode.tpe}]")
@@ -160,7 +162,6 @@ private object LongOpt extends CateUtils {
     }
   }
 }
-//todo: convert camel case name to hyphen linked
 private object ParamOrCmd extends CateUtils {
   implicit val parser: Parser[ParamOrCmd, AnchorEither] = new Parser[ParamOrCmd, AnchorEither] {
     override def parse(a: ParamOrCmd)

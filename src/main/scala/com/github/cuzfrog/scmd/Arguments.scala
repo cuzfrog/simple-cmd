@@ -35,7 +35,7 @@ OptionArg[+T] private[scmd](name: String,
                             abbr: Option[String] = None,
                             description: Option[String] = None,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
-
+  final def hyphenName: String = OptionArg.camelCase2hyphen(name)
 }
 
 sealed trait ArgValue[+T] {
@@ -186,7 +186,21 @@ private object OptionArg {
         override def default: Seq[T] = _default
       }
     }
+  }
 
+  @inline
+  private def camelCase2hyphen(camelCase: String): String = {
+    var lastUpper: Boolean = true //ignore first char
+    camelCase.flatMap { char =>
+      if (char.isUpper && !lastUpper) {
+        lastUpper = true
+        Seq('-', char.toLower)
+      }
+      else {
+        if (char.isLower) lastUpper = false
+        Seq(char.toLower)
+      }
+    }
   }
 }
 

@@ -58,6 +58,7 @@ private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
 private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
                               value: Seq[String], tpe: ClassTag[_])
   extends ValueNode[T] with NodeTag[OptNode[T]] {
+
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false

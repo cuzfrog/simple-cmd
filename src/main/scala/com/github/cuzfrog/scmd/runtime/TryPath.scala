@@ -155,8 +155,6 @@ private object TryPath {
           s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
         case n: OptNode[_] =>
           s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
-        case cmdEntry: CmdEntryNode =>
-          throw new AssertionError(s"CmdEntry should not be in path:${cmdEntry.entity}")
       }
       val subs = if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
         p.branches.flatMap(p => recMkPrettyString(p, indent + " "))

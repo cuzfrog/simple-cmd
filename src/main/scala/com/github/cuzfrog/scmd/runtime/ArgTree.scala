@@ -8,7 +8,6 @@ private final case class ArgTree(topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
                                  cmdEntry: CmdEntryNode) {
   def toTopNode: CmdNode = CmdNode(
-    parent = None,
     params = topParams,
     opts = topOpts,
     subCmdEntry = cmdEntry,
@@ -23,7 +22,6 @@ private sealed trait Node {
 private case class CmdNode(entity: Command,
                            params: Seq[ParamNode[_]],
                            opts: Seq[OptNode[_]],
-                           parent: Option[CmdNode],
                            subCmdEntry: CmdEntryNode) extends Node
 
 private case class CmdEntryNode(entity: CommandEntry,

@@ -83,7 +83,7 @@ private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTerm
   //non-defensive
   private def build: TermCmdNode = {
     //these CmdNodes are flat at level1 (level0 is the top)
-    TermCmdNode(cmd, params, opts, parent = None, subCmdEntry = TermCommandEntry.default)
+    TermCmdNode(cmd, params, opts, subCmdEntry = TermCommandEntry.default)
   }
 
   @inline
@@ -97,30 +97,58 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
                                        dslParams: immutable.Seq[Term.Arg]) {
 
 
-  def recResolve(cmdTerm: Option[Term], params: immutable.Seq[Term.Arg]): TermCmdNode = {
-    val singleArgs: immutable.Seq[TermArg] = params.collect {
-      case Term.Name(argName) => queryArg(argName) match {
-        case Some(termArg) => termArg
+
+  private def recResolve(termCmdOpt: Option[TermCmd],
+                         paramDefs: immutable.Seq[Term.Arg]): TermCmdNode = {
+    val singleArgs: immutable.Seq[(TermArg, Int)] = paramDefs.zipWithIndex.collect {
+      case (Term.Name(argName), idx) => queryArg(argName) match {
+        case Some(termArg) => termArg -> idx
         case None => notDefined(argName)
       }
     }
-    val groupArgs: immutable.Seq[(Limitation, Seq[TermArg])] = params.collect {
-      case Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))) =>
-        val relationSeq = recInfix2seq(subs)
-          .map(argName => queryArg(argName).getOrElse(notDefined(argName)))
-        val limitation = Limitation.fromOperator(operator)
-        limitation -> relationSeq
-    }
+    val groupArgs: immutable.Seq[(Limitation, immutable.Seq[TermArg], Int)] =
+      paramDefs.zipWithIndex.collect {
+        case (Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))), idx) =>
+          val relationSeq = recInfix2seq(subs)
+            .map(argName => queryArg(argName).getOrElse(notDefined(argName)))
+          val limitation = Limitation.fromOperator(operator)
+          (limitation, relationSeq, idx)
+      }
+
+    val termArgs =
+      (singleArgs.map { case (termArg, idx) => immutable.Seq(termArg) -> idx } ++
+        groupArgs.map { case (limitation, relationSeq, idx) => relationSeq -> idx })
+        .sortBy(_._2).flatMap { case (termArg, idx) => termArg }
+
+    val duplicates = termArgs.groupBy(t => t)
+      .collect { case (termArg, seq) if seq.size > 1 => termArg }
+    if (duplicates.nonEmpty)
+      abort(dslParams.head.pos,
+        s"Duplicates of arguments:${duplicates.mkString(",")} in tree definition.")
+
 
     val subCmdEntry = {
       val cmdEntryTerm = q"scmdRuntime.buildCmdEntry(true)"
-      val childrTermCmdNode = params.collect {
-        case q"$cmd(..$subParams)" => recResolve(Some(cmd), subParams)
+      val childrTermCmdNode = paramDefs.collect {
+        case q"$cmd(..$subParams)" =>
+          val cmdName = cmd.syntax
+          val termCmd = queryArg(cmdName) match {
+            case Some(tc: TermCmd) => tc
+            case _ => notDefined(cmdName)
+          }
+          recResolve(Some(termCmd), subParams)
       }
       TermCommandEntry(cmdEntryTerm, childrTermCmdNode)
     }
-
-    ???
+    TermCmdNode(
+      cmd = termCmdOpt.getOrElse(TermCmd.dummy),
+      params = termArgs.collect { case a: TermParam => a },
+      opts = termArgs.collect { case a: TermOpt => a },
+      subCmdEntry = subCmdEntry,
+      limitations = groupArgs.map { case (limitation, relationSeq, idx) =>
+        limitation -> relationSeq.map(_.name)
+      }
+    )
   }
 
   @tailrec

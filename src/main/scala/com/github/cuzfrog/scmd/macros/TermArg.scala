@@ -89,6 +89,10 @@ case class TermOpt(name: String, term: Term, pos: Position, tpe: Type) extends T
 private final
 case class TermCommandEntry(term: Term, children: immutable.Seq[TermCmdNode])
 
+private object TermCmd {
+  val dummy: TermCmd = TermCmd("", q"_", Position.None)
+}
+
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
     q"""runtime.buildParamNode[${a.tpe}](

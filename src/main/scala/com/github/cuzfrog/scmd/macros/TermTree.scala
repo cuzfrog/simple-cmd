@@ -9,7 +9,6 @@ private final
 case class TermCmdNode(cmd: TermCmd,
                        params: immutable.Seq[TermParam],
                        opts: immutable.Seq[TermOpt],
-                       parent: Option[TermCmdNode],
                        subCmdEntry: TermCommandEntry,
                        limitations: immutable.Seq[(Limitation, immutable.Seq[String])] = Nil)
 
@@ -51,17 +50,12 @@ private object TermCmdNode {
     val entity = q"entity = ${a.cmd.term}"
     val params = q"params = $TERM_immutable.Seq(..${a.params.map(_.defnTerm)})"
     val opts = q"opts = $TERM_immutable.Seq(..${a.opts.map(_.defnTerm)})"
-    val parent = a.parent match {
-      case Some(p) => q"parent = Option(${p.defnTerm})"
-      case None => q"parent = None"
-    }
     val subCmdEntry = q"subCmdEntry = ${a.subCmdEntry.defnTerm}"
 
     q"""runtime.buildCmdNode(
           $entity,
           $params,
           $opts,
-          $parent,
           $subCmdEntry
         )"""
   }

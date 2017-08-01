@@ -55,8 +55,6 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
           case paramNode: ParamNode[_] => paramNode.entity.name
           case optNode: OptNode[_] =>
             throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
-          case cmdEntry: CmdEntryNode =>
-            throw new AssertionError(s"CmdEntry should not be anchored.[$cmdEntry]")
         }
         throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
     }

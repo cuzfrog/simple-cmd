@@ -56,7 +56,6 @@ sealed trait ScmdRuntime {
   def buildCmdNode(entity: Int,
                    params: Seq[Int],
                    opts: Seq[Int],
-                   parent: Option[Int],
                    subCmdEntry: Int): Int
 
   def buildArgTree(topParams: Seq[Int],
@@ -203,15 +202,13 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildCmdNode(entity: Int,
                             params: Seq[Int],
                             opts: Seq[Int],
-                            parent: Option[Int],
                             subCmdEntry: Int): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Command](entity)
     val p = params.map(getEntity[ParamNode[_]])
     val o = opts.map(getEntity[OptNode[_]])
-    val pa = parent.map(getEntity[CmdNode])
     val se = getEntity[CmdEntryNode](subCmdEntry)
-    val a = CmdNode(e, p, o, pa, se)
+    val a = CmdNode(e, p, o, se)
     repository.put(id, Box(a))
     nodeRefs.put(scala.Symbol(e.name), a)
     id

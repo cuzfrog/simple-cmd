@@ -25,6 +25,12 @@ private object TermTree {
       case q"argTreeDef(..$params)" => params
     }.flatten
   }
+
+  def collectArgGlobalLimitations(stats: immutable.Seq[Stat]): immutable.Seq[Term.Arg] = {
+    stats.collect {
+      case q"argDependencyDef(..$params)" => params
+    }.flatten
+  }
 }
 
 /**

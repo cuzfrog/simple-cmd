@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.Argument
-
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
@@ -51,12 +49,12 @@ private object TreeBuilder {
     * @return A TermArgTree shaped by dsl.
     */
   def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
-                        dslParams: immutable.Seq[Term.Arg]): TermArgTree = {
+                        dslStats: immutable.Seq[Term.Arg],
+                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
 
-    val builder = new DslTermNodeBuilder(argDefs, dslParams)
+    val builder = NodeBuilder.newDslTermBuilder(argDefs, dslStats, globalLimitationsStats)
 
-    println(dslParams)
-    ???
+    builder.resolve
   }
 }
 
@@ -65,7 +63,10 @@ private object NodeBuilder {
     new IdxTermNodeBuilder(cmd, None)
   }
 
-  def newDslTermBuilder = ???
+  def newDslTermBuilder(argDefs: immutable.Seq[TermArg],
+                        dslStats: immutable.Seq[Term.Arg],
+                        globalLimitationsStats: immutable.Seq[Term.Arg]): DslTermNodeBuilder =
+    new DslTermNodeBuilder(argDefs, dslStats, globalLimitationsStats)
 }
 
 /** Not thread-safe */
@@ -94,42 +95,50 @@ private final class IdxTermNodeBuilder(cmd: TermCmd, lastSibling: Option[IdxTerm
 }
 
 private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
-                                       dslParams: immutable.Seq[Term.Arg]) {
+                                       dslStats: immutable.Seq[Term.Arg],
+                                       globalLimitationsStats: immutable.Seq[Term.Arg]) {
 
+  def resolve: TermArgTree = {
+    val topNode = recResolve(None, dslStats)
 
+    val gobalLimitations = collectLimitations(globalLimitationsStats)
+      .map { case (l, s, _) => l -> s.map(_.name) }
+
+    TermArgTree(
+      topParams = topNode.params,
+      topOpts = topNode.opts,
+      cmdEntry = topNode.subCmdEntry,
+      topLimitations = topNode.limitations,
+      globalLimitations = gobalLimitations
+    )
+  }
 
   private def recResolve(termCmdOpt: Option[TermCmd],
-                         paramDefs: immutable.Seq[Term.Arg]): TermCmdNode = {
-    val singleArgs: immutable.Seq[(TermArg, Int)] = paramDefs.zipWithIndex.collect {
+                         dslStats: immutable.Seq[Term.Arg]): TermCmdNode = {
+    val singleArgs: immutable.Seq[(TermArg, Int)] = dslStats.zipWithIndex.collect {
       case (Term.Name(argName), idx) => queryArg(argName) match {
         case Some(termArg) => termArg -> idx
         case None => notDefined(argName)
       }
     }
     val groupArgs: immutable.Seq[(Limitation, immutable.Seq[TermArg], Int)] =
-      paramDefs.zipWithIndex.collect {
-        case (Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))), idx) =>
-          val relationSeq = recInfix2seq(subs)
-            .map(argName => queryArg(argName).getOrElse(notDefined(argName)))
-          val limitation = Limitation.fromOperator(operator)
-          (limitation, relationSeq, idx)
-      }
+      collectLimitations(dslStats)
 
     val termArgs =
       (singleArgs.map { case (termArg, idx) => immutable.Seq(termArg) -> idx } ++
-        groupArgs.map { case (limitation, relationSeq, idx) => relationSeq -> idx })
-        .sortBy(_._2).flatMap { case (termArg, idx) => termArg }
+        groupArgs.map { case (_, relationSeq, idx) => relationSeq -> idx })
+        .sortBy(_._2).flatMap { case (termArg, _) => termArg }
 
     val duplicates = termArgs.groupBy(t => t)
       .collect { case (termArg, seq) if seq.size > 1 => termArg }
     if (duplicates.nonEmpty)
-      abort(dslParams.head.pos,
+      abort(dslStats.head.pos,
         s"Duplicates of arguments:${duplicates.mkString(",")} in tree definition.")
 
 
     val subCmdEntry = {
       val cmdEntryTerm = q"scmdRuntime.buildCmdEntry(true)"
-      val childrTermCmdNode = paramDefs.collect {
+      val childrTermCmdNode = dslStats.collect {
         case q"$cmd(..$subParams)" =>
           val cmdName = cmd.syntax
           val termCmd = queryArg(cmdName) match {
@@ -145,11 +154,21 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
       params = termArgs.collect { case a: TermParam => a },
       opts = termArgs.collect { case a: TermOpt => a },
       subCmdEntry = subCmdEntry,
-      limitations = groupArgs.map { case (limitation, relationSeq, idx) =>
+      limitations = groupArgs.map { case (limitation, relationSeq, _) =>
         limitation -> relationSeq.map(_.name)
       }
     )
   }
+
+  private def collectLimitations
+  (dslStats: immutable.Seq[Term.Arg]): immutable.Seq[(Limitation, immutable.Seq[TermArg], Int)] =
+    dslStats.zipWithIndex.collect {
+      case (Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))), idx) =>
+        val relationSeq = (recInfix2seq(subs) :+ lastArgName)
+          .map(argName => queryArg(argName).getOrElse(notDefined(argName)))
+        val limitation = Limitation.fromOperator(operator)
+        (limitation, relationSeq, idx)
+    }
 
   @tailrec
   private def recInfix2seq(subTerm: Term,

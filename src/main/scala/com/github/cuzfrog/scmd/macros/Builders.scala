@@ -45,7 +45,7 @@ private object TreeBuilder {
                           globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
       val idxDefs = argDefs.toIndexedSeq
       val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
-        .map { case (l, s, _) => l -> s.map(_.name) }
+        .map(LimitationGroup.fromTuple)
 
       @tailrec
       def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
@@ -183,8 +183,7 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
   def resolve: TermArgTree = {
     val topNode = recResolve(None, dslStats)
 
-    val gobalLimitations = collectLimitations(globalLimitationsStats)
-      .map { case (l, s, _) => l -> s.map(_.name) }
+    val gobalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
 
     TermArgTree(
       topParams = topNode.params,
@@ -253,9 +252,7 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
       params = termArgs.collect { case a: TermParam => a },
       opts = termArgs.collect { case a: TermOpt => a },
       subCmdEntry = subCmdEntry,
-      limitations = groupArgs.map { case (limitation, relationSeq, _) =>
-        limitation -> relationSeq.map(_.name)
-      }
+      limitations = groupArgs.map(LimitationGroup.fromTuple)
     )
   }
 

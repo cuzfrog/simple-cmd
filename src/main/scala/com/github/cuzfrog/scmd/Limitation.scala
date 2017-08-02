@@ -12,6 +12,8 @@ private object Limitation {
     case "&" => MutuallyDependent
     case bad => throw new IllegalArgumentException(s"Illegal limitation operator:$bad")
   }
+
+  //defnTerm depends on toString:
   case object MutuallyExclusive extends Limitation
   case object MutuallyDependent extends Limitation
 }

@@ -1,17 +1,20 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, OptionArg, Parameter, ValueArgument}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, Limitation, OptionArg, Parameter, ValueArgument}
 
 import scala.reflect.ClassTag
 
 private final case class ArgTree(topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
-                                 cmdEntry: CmdEntryNode) {
+                                 cmdEntry: CmdEntryNode,
+                                 topLimitations: Seq[(Limitation, Seq[scala.Symbol])] = Nil,
+                                 globalLimitations: Seq[(Limitation, Seq[scala.Symbol])] = Nil) {
   def toTopNode: CmdNode = CmdNode(
+    entity = Command("AppName", None), //todo: replace AppName
     params = topParams,
     opts = topOpts,
     subCmdEntry = cmdEntry,
-    entity = Command("AppName", None) //todo: replace AppName
+    limitations = topLimitations
   )
 }
 
@@ -22,7 +25,8 @@ private sealed trait Node {
 private case class CmdNode(entity: Command,
                            params: Seq[ParamNode[_]],
                            opts: Seq[OptNode[_]],
-                           subCmdEntry: CmdEntryNode) extends Node
+                           subCmdEntry: CmdEntryNode,
+                           limitations: Seq[(Limitation, Seq[scala.Symbol])] = Nil) extends Node
 
 private case class CmdEntryNode(entity: CommandEntry,
                                 children: Seq[CmdNode]) {

@@ -57,7 +57,8 @@ private object TreeBuilder {
         case None =>
           val params = idxDefs.collect { case param: TermParam => param }
           val opts = idxDefs.collect { case opt: TermOpt => opt }
-          TermArgTree(params, opts, TermCommandEntry.default, globalLimitations = globalLimitations)
+          TermArgTree(params, opts, TermCommandEntry.placeHolder,
+            globalLimitations = globalLimitations)
 
         case Some(cmd1) =>
           import idxDefs.indexOf
@@ -72,7 +73,7 @@ private object TreeBuilder {
 
           val commands = recAdd(builder, tail).seal
           TermArgTree(Nil, topLevelOpts,
-            TermCommandEntry.defaultWithCmdNodes(commands),
+            TermCommandEntry.createWithCmdNodes(commands),
             globalLimitations = globalLimitations)
       }
     }
@@ -166,7 +167,7 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
   //non-defensive
   private def build: TermCmdNode = {
     //these CmdNodes are flat at level1 (level0 is the top)
-    TermCmdNode(cmd, params, opts, subCmdEntry = TermCommandEntry.default)
+    TermCmdNode(cmd, params, opts, subCmdEntry = TermCommandEntry.placeHolder)
   }
 
   def seal: immutable.Seq[TermCmdNode] = lastSibling match {
@@ -217,7 +218,6 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
         s"Duplicates of arguments:${duplicates.mkString(",")} in tree definition.")
 
     val subCmdEntry = {
-      val cmdEntryTerm = TermCommandEntry.getTerm(true) //todo:implement optional cmd entry.
       val childCompoundCmds = dslStats.zipWithIndex.collect {
         case (q"$cmd(..$subParams)", idx) =>
           val cmdName = cmd.syntax
@@ -232,6 +232,9 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
       }
       val sortedChildCmdNodes: immutable.Seq[TermCmdNode] =
         (childCompoundCmds ++ childSingleCmds).sortBy(_._2).map(_._1)
+
+      val cmdEntryTerm = TermCommandEntry.getTerm(sortedChildCmdNodes.nonEmpty)
+      //todo:implement optional cmd entry.
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
 

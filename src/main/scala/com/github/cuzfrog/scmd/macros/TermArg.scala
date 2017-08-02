@@ -134,13 +134,16 @@ private object TermCommandEntry {
 
   def getTerm(isMandatory: Boolean): Term = q"runtime.buildCmdEntry(${Lit.Boolean(isMandatory)})"
 
-  val default: TermCommandEntry = {
-    val term =
-      q"""runtime.defaultCommandEntry"""
+  /** Optional cmd entry with zero children. */
+  val placeHolder: TermCommandEntry = {
+    val term = q"runtime.buildCmdEntry(false)"
     TermCommandEntry(term = term, children = immutable.Seq.empty)
   }
 
-  def defaultWithCmdNodes(commandNodes: immutable.Seq[TermCmdNode]): TermCommandEntry = {
-    this.default.copy(children = commandNodes)
+  /** If cmdNodes are empty, return a placeHolder, otherwise return a mandatory entry. */
+  def createWithCmdNodes(commandNodes: immutable.Seq[TermCmdNode]): TermCommandEntry = {
+    if (commandNodes.isEmpty) this.placeHolder
+    else
+      TermCommandEntry(term = q"runtime.buildCmdEntry(true)", children = immutable.Seq.empty)
   }
 }

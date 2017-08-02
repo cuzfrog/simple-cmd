@@ -6,26 +6,31 @@ private object OpenStack {
   @ScmdDef
   private class ArgDef(args: Seq[String]) {
     val nova = cmdDef(description = "nova command entry")
-//    val neutron = cmdDef(description = "neutron command entry")
-//    val cinder = cmdDef(description = "cinder command entry")
-//
-//    val list = cmdDef(description = "print service/project list")
-//    val service = cmdDef(description = "chose service to print")
-//    val project = cmdDef(description = "chose project to print")
-//
-//    val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
+    val neutron = cmdDef(description = "neutron command entry")
+    val cinder = cmdDef(description = "cinder command entry")
+
+    val list = cmdDef(description = "print service/project list")
+    val service = cmdDef(description = "chose service to print")
+    val project = cmdDef(description = "chose project to print")
+
+    val version = cmdDef(description = "print version info.")
+
+    val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
 
     import scmdTreeDefDSL._
 
     argTreeDef(
-//      verbose,
-      nova
-//      neutron(
-//        list(service, project),
-//      ),
-//      cinder(
-//        list(service, project),
-//      ),
+      verbose,
+      version,
+      nova(
+        list(service, project),
+      ),
+      neutron(
+        list(service, project),
+      ),
+      cinder(
+        list(service, project),
+      )
     )
   }
 

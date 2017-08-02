@@ -51,8 +51,6 @@ sealed trait ScmdRuntime {
   def buildCmdEntryNode(entity: Int,
                         children: Seq[Int]): Int
 
-  def defaultCommandEntry: Int
-
   def buildCmdNode(entity: Int,
                    params: Seq[Int],
                    opts: Seq[Int],
@@ -190,12 +188,6 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val e = getEntity[CommandEntry](entity)
     val c = children.map(getEntity[CmdNode])
     val a = CmdEntryNode(e, c)
-    repository.put(id, Box(a))
-    id
-  }
-  override def defaultCommandEntry: Int = {
-    val id = idGen.getAndIncrement()
-    val a = CommandEntry()
     repository.put(id, Box(a))
     id
   }

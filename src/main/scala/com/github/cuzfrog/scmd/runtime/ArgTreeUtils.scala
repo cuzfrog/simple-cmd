@@ -14,14 +14,12 @@ private[runtime] trait ArgTreeUtils {
       val optCnt = a.opts.count(_.entity.isMandatory)
       paramCnt + optCnt + a.subCmdEntry.countMandatoryDownstream
     }
-
-
   }
 
   implicit class CmdEntryNodeOps(a: CmdEntryNode) {
     def countMandatoryDownstream: Int = {
       if (!a.entity.isMandatory) 0
-      else a.children.map(_.countMandatoryDownstream).sum
+      else a.children.map(_.countMandatoryDownstream).sum + 1 //1 = cmd itself
     }
   }
 

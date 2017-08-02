@@ -11,6 +11,9 @@ object ScmdTreeDefDSL {
 
   implicit final class CommandTreeDefOps(a: Command) {
     def apply(subArg: Argument[_], moreSubArg: Argument[_]*): Command = a
+
+    /** Make this cmd optional. */
+    def ? : Command = a
   }
 
   implicit final class ValueArgumentOps(a: ValueArgument[_]) {

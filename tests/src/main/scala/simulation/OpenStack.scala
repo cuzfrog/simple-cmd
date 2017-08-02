@@ -23,13 +23,15 @@ private object OpenStack {
       verbose,
       version,
       nova(
-        list(service, project),
+        list(service ?, project), //cmds under list are optional.
+        //equivalent to list(service ?, project ?)
       ),
       neutron(
-        list(service, project),
+        list(service, project) ?,
+        //cmd list is optional. but once list is entered, one of its sub-cmds is required.
       ),
       cinder(
-        list(service, project),
+        list(service, project), //every level of cmds is required.
       )
     )
   }

@@ -197,7 +197,15 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
 
   private def recResolve(termCmdOpt: Option[TermCmd],
                          dslStats: immutable.Seq[Term.Arg]): TermCmdNode = {
-    val singleArgs: immutable.Seq[(TermArg, Int)] = dslStats.zipWithIndex.collect {
+    var isCmdEntryOptional = false
+    val strippedStats = dslStats.map {
+      case Term.Select(cmdTerm, Term.Name("?")) =>
+        isCmdEntryOptional = true
+        cmdTerm //strip off ?
+      case other => other
+    }
+
+    val singleArgs: immutable.Seq[(TermArg, Int)] = strippedStats.zipWithIndex.collect {
       case (Term.Name(argName), idx) => queryArg(argName) match {
         case Some(termArg) => termArg -> idx
         case None => notDefined(argName)
@@ -218,23 +226,25 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
         s"Duplicates of arguments:${duplicates.mkString(",")} in tree definition.")
 
     val subCmdEntry = {
-      val childCompoundCmds = dslStats.zipWithIndex.collect {
-        case (q"$cmd(..$subParams)", idx) =>
-          val cmdName = cmd.syntax
-          val termCmd = queryArg(cmdName) match {
-            case Some(tc: TermCmd) => tc
-            case _ => notDefined(cmdName)
-          }
-          (recResolve(Some(termCmd), subParams), idx)
-      }
+      val childCompoundCmds: immutable.Seq[(TermCmdNode, Int)] =
+        strippedStats.zipWithIndex.collect {
+          case (q"$cmd(..$subParams)", idx) =>
+            val cmdName = cmd.syntax
+            val termCmd = queryArg(cmdName) match {
+              case Some(tc: TermCmd) => tc
+              case _ => notDefined(cmdName)
+            }
+            (recResolve(Some(termCmd), subParams), idx)
+        }
+
       val childSingleCmds = singleArgs.collect { case (cmd: TermCmd, idx) =>
         (recResolve(Some(cmd), Nil), idx)
       }
       val sortedChildCmdNodes: immutable.Seq[TermCmdNode] =
         (childCompoundCmds ++ childSingleCmds).sortBy(_._2).map(_._1)
 
-      val cmdEntryTerm = TermCommandEntry.getTerm(sortedChildCmdNodes.nonEmpty)
-      //todo:implement optional cmd entry.
+      val cmdEntryTerm =
+        TermCommandEntry.getTerm(sortedChildCmdNodes.nonEmpty && !isCmdEntryOptional)
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
 

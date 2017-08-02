@@ -77,7 +77,6 @@ private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
 
 private object ArgTree {
   implicit val canFormPrettyString: CanFormPrettyString[ArgTree] = (a: ArgTree) => {
-    val NEW_LINE = System.lineSeparator
     val cmdNode = a.toTopNode
 
     def variableOrMandatory(n: ValueNode[_]): (String, String) = {
@@ -101,10 +100,17 @@ private object ArgTree {
       val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
       val result: Seq[String] =
         Seq(cmd) ++ params ++ opts ++ cmdEntry ++ subCmds
-      result.mkString(NEW_LINE)
+      result.mkString(NEWLINE)
     }
 
     recMkPrettyString(cmdNode)
+  }
+
+  implicit val manualEvidence:ManualEvidence[ArgTree] = new ManualEvidence[ArgTree] {
+    import com.github.cuzfrog.scmd.internal.AnsiFormatter.FormattedHelper
+
+    override def genFullManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???
+    override def genSimpleManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???
   }
 }
 

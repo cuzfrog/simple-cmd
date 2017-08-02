@@ -205,8 +205,7 @@ private object ParamOrCmd extends CateUtils {
                   c.nextParamNode match {
                     case Some(nextParamNode) if nextParamNode.isMandatory =>
                       acc :+ c.anchor(nextParamNode.copy(value = Seq(arg)))
-                    case Some(nextParamNode) =>
-                      recFork(acc :+ c.anchor(nextParamNode.copy(value = Seq(arg))))
+                    case Some(_) => recFork(acc) //skip optional param
                     case None => acc
                   }
                 }
@@ -219,7 +218,7 @@ private object ParamOrCmd extends CateUtils {
           } else Seq.empty
 
           anchorsWithValue ++ possibleCmdAnchor
-        //there's no params before, a cmd should be matched:
+        //there's no params (left) before, a cmd should be matched:
         case None =>
           trace(s"Parse ParamOrCmd:${a.arg} -> cmd")
           this.consumeCmd(arg, c)

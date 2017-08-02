@@ -13,24 +13,26 @@ private[scmd] object AnsiFormatter {
 
   implicit class FormattedHelper(val sc: StringContext) extends AnyVal {
 
-    def ansi(args: Any*): String = macro ansiImpl
+    def ansi(args: Any*): String = macro AnsiMacroImpl.ansiImpl
   }
+}
+private object AnsiMacroImpl {
 
   import AnsiCodes._
 
-  private def ansiImpl(c: blackbox.Context)(args: c.Tree*): c.Tree = {
+  def ansiImpl(c: blackbox.Context)(args: c.Tree*): c.Tree = {
     import c.universe._
 
     val Apply(_, List(Apply(_, partsTree))) = c.prefix.tree
 
     val parts = partsTree.map {
-      case term @ Literal(Constant(x: String)) => (x, term.pos)
+      case term@Literal(Constant(x: String)) => (x, term.pos)
       case term => c.abort(term.pos, "Expected a String")
     }
 
     val ansiCtx = new AnsiContext()
 
-    val newParts = for( (part,pos) <- parts ) yield {
+    val newParts = for ((part, pos) <- parts) yield {
       try {
         ansiPart(part, ansiCtx)
       } catch {
@@ -38,7 +40,7 @@ private[scmd] object AnsiFormatter {
           c.abort(pos.withPoint(pos.end + offset), msg)
       }
     }
-    if( !ansiCtx.isEmpty ) {
+    if (!ansiCtx.isEmpty) {
       val msg = ansiCtx.size match {
         case 1 => "a tag is not closed properly"
         case more => more + " tags are not closed properly"
@@ -51,19 +53,19 @@ private[scmd] object AnsiFormatter {
 
   private class AnsiContext {
 
-    private var tagStack : List[String] = Nil
-    private var colorStack : List[Int] = List(9)
+    private var tagStack: List[String] = Nil
+    private var colorStack: List[Int] = List(9)
 
     def size: Int = tagStack.size
     def isEmpty: Boolean = tagStack.isEmpty
-    def color : Int = colorStack.head
+    def color: Int = colorStack.head
 
     def push(tag: String, color: Int): Unit = {
       tagStack = tag :: tagStack
       colorStack = color :: colorStack
     }
 
-    def pop() : String = {
+    def pop(): String = {
       val head = tagStack.headOption.getOrElse(sys.error("No more tag found"))
       tagStack = tagStack.tail
       colorStack = colorStack.tail
@@ -82,32 +84,32 @@ private[scmd] object AnsiFormatter {
     "white" -> 7)
 
   /** @return (openCode, closeCode, color) */
-  private def findCodesFor(tag: String, ctx: AnsiContext) : (String,String, Int) = tag match {
-    case "bold"      => (BOLD,      BOLD_OFF,      ctx.color)
-    case "italic"    => (ITALIC,    ITALIC_OFF,    ctx.color)
+  private def findCodesFor(tag: String, ctx: AnsiContext): (String, String, Int) = tag match {
+    case "bold" => (BOLD, BOLD_OFF, ctx.color)
+    case "italic" => (ITALIC, ITALIC_OFF, ctx.color)
     case "underline" => (UNDERLINE, UNDERLINE_OFF, ctx.color)
-    case "blink"     => (BLINK,     BLINK_OFF,     ctx.color)
-    case color       => colorCodes.get(color) match {
+    case "blink" => (BLINK, BLINK_OFF, ctx.color)
+    case color => colorCodes.get(color) match {
       case Some(colorCode) => (s"\u001b[3${colorCode}m", s"\u001b[3${ctx.color}m", colorCode)
       case None => sys.error("Unsupported tag " + tag)
     }
   }
 
   private sealed trait Lexeme
-  private case class StartTag(before: String, after: String, idx : Int) extends Lexeme
-  private case class CloseTag(before: String, after: String, idx : Int) extends Lexeme
+  private case class StartTag(before: String, after: String, idx: Int) extends Lexeme
+  private case class CloseTag(before: String, after: String, idx: Int) extends Lexeme
   private case class Nothing(content: String) extends Lexeme
 
-  private def scan(str: String, prefix : String = "") : Lexeme = {
+  private def scan(str: String, prefix: String = ""): Lexeme = {
 
-    str.indexWhere( c => c == '%' || c == '}' ) match {
+    str.indexWhere(c => c == '%' || c == '}') match {
       case -1 => Nothing(prefix + str)
 
       case idx =>
         val before = str.substring(0, idx)
         val after = str.substring(idx + 1)
 
-        if( str.charAt(idx) == '%' ) {
+        if (str.charAt(idx) == '%') {
 
           if (idx == str.length - 1) {
             // trailing '%' are left verbatim
@@ -117,7 +119,7 @@ private[scmd] object AnsiFormatter {
             scan(after, prefix = prefix + before + "%")
           } else if (str.charAt(idx + 1) == '%') {
             // double '%' are converted into single '%'
-            scan(/* remove a '%' */after.substring(1), prefix = prefix + before + "%")
+            scan(/* remove a '%' */ after.substring(1), prefix = prefix + before + "%")
           } else {
             StartTag(prefix + before, after, idx)
           }
@@ -133,13 +135,13 @@ private[scmd] object AnsiFormatter {
 
   private case class ParsingError(msg: String, offset: Int) extends Exception(msg)
 
-  private def ansiPart(part: String, ctx: AnsiContext, offset: Int = 0) : String = {
+  private def ansiPart(part: String, ctx: AnsiContext, offset: Int = 0): String = {
     scan(part) match {
       case StartTag(before, after, idx) =>
         try {
           after.indexOf("{") match {
             case -1 =>
-              val tag = if( after.indexOf(" ") != -1 ) {
+              val tag = if (after.indexOf(" ") != -1) {
                 after.substring(0, after.indexOf(" "))
               } else {
                 after
@@ -159,7 +161,7 @@ private[scmd] object AnsiFormatter {
                 offset = offset + idx + 1 + bracketIdx + 1)
           }
         } catch {
-          case err : ParsingError => throw err
+          case err: ParsingError => throw err
           case NonFatal(other) => throw ParsingError(other.getMessage,
             offset = offset + idx + 1)
         }
@@ -168,7 +170,7 @@ private[scmd] object AnsiFormatter {
         val closingTag = try {
           ctx.pop()
         } catch {
-          case NonFatal(e) => throw ParsingError(
+          case NonFatal(_) => throw ParsingError(
             msg = "missing open tag",
             offset = offset + idx + 1)
         }

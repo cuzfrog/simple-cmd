@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
+
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
 
@@ -7,6 +8,7 @@ import scala.collection.immutable
 import scala.meta._
 
 private class ScmdDefMacro extends ScmdMacro {
+
 
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
@@ -47,16 +49,16 @@ private class ScmdDefMacro extends ScmdMacro {
       */
     val argTreeBuild = {
       val globalMutualLimitations = TermTree.collectArgGlobalLimitations(stats)
+      val treeBuilder = TreeBuilder.builder
       TermTree.collectTreeDefDsl(stats) match {
         case Nil =>
           /* by the order of user-defined args in source code */
-          TreeBuilder.buildArgTreeByIdx(argDefs, globalMutualLimitations).defnTerm
+          treeBuilder.buildArgTreeByIdx(argDefs, globalMutualLimitations).defnTerm
         case dslParams =>
           /* by tree def dsl */
-          TreeBuilder.buildArgTreeByDSL(argDefs, dslParams, globalMutualLimitations).defnTerm
+          treeBuilder.buildArgTreeByDSL(argDefs, dslParams, globalMutualLimitations).defnTerm
       }
     }
-
 
     /** Method expose to validation class for runtime manipulation. */
     val public_def_addValidation =

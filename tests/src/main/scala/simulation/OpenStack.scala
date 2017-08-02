@@ -3,13 +3,41 @@ package simulation
 import Scmd._
 
 private object OpenStack {
-  private class ArgDef{
+  @ScmdDef
+  private class ArgDef(args: Seq[String]) {
     val nova = cmdDef(description = "nova command entry")
-    val neutron = cmdDef(description = "neutron command entry")
-    val cinder = cmdDef(description = "cinder command entry")
+//    val neutron = cmdDef(description = "neutron command entry")
+//    val cinder = cmdDef(description = "cinder command entry")
+//
+//    val list = cmdDef(description = "print service/project list")
+//    val service = cmdDef(description = "chose service to print")
+//    val project = cmdDef(description = "chose project to print")
+//
+//    val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
 
-    val list = cmdDef(description = "print service/project list")
-    val service = cmdDef(description = "chose service to print")
-    val project = cmdDef(description = "chose project to print")
+    import scmdTreeDefDSL._
+
+    argTreeDef(
+//      verbose,
+      nova
+//      neutron(
+//        list(service, project),
+//      ),
+//      cinder(
+//        list(service, project),
+//      ),
+    )
+  }
+
+  def main(args: Array[String]): Unit = {
+    val conf = (new ArgDef(args))
+    println("-----------App info------------")
+    println(conf.appInfoString)
+    println("-----------Arg tree------------")
+    println(conf.argTreeString)
+    println("---------Parsed node sequence:----------")
+    val parsed: ArgDef = conf.parsed
+    println(conf.parsedSeqString)
+    println("---------Parsed values:----------")
   }
 }

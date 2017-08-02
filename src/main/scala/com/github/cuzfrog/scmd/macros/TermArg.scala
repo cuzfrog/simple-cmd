@@ -132,6 +132,8 @@ private object TermCommandEntry {
         )"""
   }
 
+  def getTerm(isMandatory: Boolean): Term = q"runtime.buildCmdEntry(${Lit.Boolean(isMandatory)})"
+
   val default: TermCommandEntry = {
     val term =
       q"""runtime.defaultCommandEntry"""

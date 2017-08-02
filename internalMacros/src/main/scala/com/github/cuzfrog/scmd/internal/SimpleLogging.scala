@@ -18,11 +18,11 @@ private[scmd] trait SimpleLogging {
   protected implicit val loggerAgent: LoggerAgent = this.getClass.getName
   protected implicit val loggerLevel: Level = queryLevel(this.getClass.getName)
 
-  protected def trace(x: => Any, withTitle: Boolean = true): Unit = pl(x, Trace, LIGHT_BLUE)(withTitle)
-  protected def debug(x: => Any, withTitle: Boolean = true): Unit = pl(x, Debug, MAGENTA)(withTitle)
-  protected def info(x: => Any, withTitle: Boolean = true): Unit = pl(x, Info, GREEN)(withTitle)
-  protected def warn(x: => Any, withTitle: Boolean = true): Unit = pl(x, Warn, YELLOW)(withTitle)
-  protected def err(x: => Any, withTitle: Boolean = true): Unit = pl(x, Error, RED)(withTitle)
+  protected final def trace(x: => Any, withTitle: Boolean = true): Unit = pl(x, Trace, LIGHT_BLUE)(withTitle)
+  protected final def debug(x: => Any, withTitle: Boolean = true): Unit = pl(x, Debug, MAGENTA)(withTitle)
+  protected final def info(x: => Any, withTitle: Boolean = true): Unit = pl(x, Info, GREEN)(withTitle)
+  protected final def warn(x: => Any, withTitle: Boolean = true): Unit = pl(x, Warn, YELLOW)(withTitle)
+  protected final def err(x: => Any, withTitle: Boolean = true): Unit = pl(x, Error, RED)(withTitle)
 
   private def pl(x: => Any, level: Level, color: String = "")
                 (withTitle: Boolean)

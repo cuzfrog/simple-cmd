@@ -302,7 +302,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
 
 
-  override def argTreeString: String = argTree.prettyString
-  override def appInfoString: String = appInfo.prettyString
+  override def argTreeString: String = Option(argTree)
+    .getOrElse(throw new IllegalStateException("argTree not initialized.")).prettyString
+  override def appInfoString: String = Option(appInfo)
+    .getOrElse(throw new IllegalStateException("appInfo not initialized.")).prettyString
   override def parsedSeqString: String = parsedNodes.values.toSeq.prettyString
 }

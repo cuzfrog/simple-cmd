@@ -15,6 +15,13 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
     super.buildParamNode[T](entity, value)
   }
   @IgnoreLogging
+  abstract override def buildCmdEntry(isMandatory: Boolean): Int = {
+    val result = super.buildCmdEntry(isMandatory)
+    debug(s"Build cmd entry id:$result")
+    result
+  }
+
+  @IgnoreLogging
   abstract override def addValidation[T](name: String, func: (T) => Unit): Unit = {
     debug(s"Add validation for arg:$name, func:$func")
     super.addValidation(name, func)

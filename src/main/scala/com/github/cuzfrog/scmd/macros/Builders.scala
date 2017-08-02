@@ -1,13 +1,13 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.Limitation
+import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
 
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
 
-private object TreeBuilder {
-
+private trait TreeBuilder {
   /**
     * Build a flat tree from arg definition by source code order.
     *
@@ -16,40 +16,7 @@ private object TreeBuilder {
     */
   @inline
   def buildArgTreeByIdx(argDefs: immutable.Seq[TermArg],
-                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
-    val idxDefs = argDefs.toIndexedSeq
-    val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
-      .map { case (l, s, _) => l -> s.map(_.name) }
-
-    @tailrec
-    def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
-      if (args.isEmpty) builder
-      else recAdd(builder.add(args.head), args.tail)
-    }
-
-    idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
-      case None =>
-        val params = idxDefs.collect { case param: TermParam => param }
-        val opts = idxDefs.collect { case opt: TermOpt => opt }
-        TermArgTree(params, opts, TermCommandEntry.default, globalLimitations = globalLimitations)
-
-      case Some(cmd1) =>
-        import idxDefs.indexOf
-        val topLevelValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
-
-        val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt }
-        /** param defs above first cmd will be shared by all cmd as their first param. */
-        val topLevelParam = topLevelValueArgs.collect { case param: TermParam => param }
-
-        val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
-        val builder = NodeBuilder.newIdxTermBuilder(cmd1, topLevelParam)
-
-        val commands = recAdd(builder, tail).seal
-        TermArgTree(Nil, topLevelOpts,
-          TermCommandEntry.defaultWithCmdNodes(commands),
-          globalLimitations = globalLimitations)
-    }
-  }
+                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
 
   /**
     * Build tree from DSL.
@@ -59,11 +26,71 @@ private object TreeBuilder {
     */
   def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
-                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
+                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
+}
 
-    val builder = NodeBuilder.newDslTermBuilder(argDefs, dslStats, globalLimitationsStats)
+private object TreeBuilder {
+  /** Create a builder with logging. */
+  def builder: TreeBuilder = new TreeBuilderImpl with TreeBuilderLogging
 
-    builder.resolve
+  private class TreeBuilderImpl extends TreeBuilder {
+    /**
+      * Build a flat tree from arg definition by source code order.
+      *
+      * @param argDefs arg definition list from source code with original order.
+      * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
+      */
+    @inline
+    def buildArgTreeByIdx(argDefs: immutable.Seq[TermArg],
+                          globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
+      val idxDefs = argDefs.toIndexedSeq
+      val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
+        .map { case (l, s, _) => l -> s.map(_.name) }
+
+      @tailrec
+      def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
+        if (args.isEmpty) builder
+        else recAdd(builder.add(args.head), args.tail)
+      }
+
+      idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
+        case None =>
+          val params = idxDefs.collect { case param: TermParam => param }
+          val opts = idxDefs.collect { case opt: TermOpt => opt }
+          TermArgTree(params, opts, TermCommandEntry.default, globalLimitations = globalLimitations)
+
+        case Some(cmd1) =>
+          import idxDefs.indexOf
+          val topLevelValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
+
+          val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt }
+          /** param defs above first cmd will be shared by all cmd as their first param. */
+          val topLevelParam = topLevelValueArgs.collect { case param: TermParam => param }
+
+          val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
+          val builder = NodeBuilder.newIdxTermBuilder(cmd1, topLevelParam)
+
+          val commands = recAdd(builder, tail).seal
+          TermArgTree(Nil, topLevelOpts,
+            TermCommandEntry.defaultWithCmdNodes(commands),
+            globalLimitations = globalLimitations)
+      }
+    }
+
+    /**
+      * Build tree from DSL.
+      *
+      * @see [[com.github.cuzfrog.scmd.macros.NodeBuilder]]
+      * @return A TermArgTree shaped by dsl.
+      */
+    def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
+                          dslStats: immutable.Seq[Term.Arg],
+                          globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
+
+      val builder = NodeBuilder.newDslTermBuilder(argDefs, dslStats, globalLimitationsStats)
+
+      builder.resolve
+    }
   }
 }
 
@@ -189,20 +216,25 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
       abort(dslStats.head.pos,
         s"Duplicates of arguments:${duplicates.mkString(",")} in tree definition.")
 
-
     val subCmdEntry = {
-      val cmdEntryTerm = q"scmdRuntime.buildCmdEntry(true)"
-      val childrTermCmdNode = dslStats.collect {
-        case q"$cmd(..$subParams)" =>
+      val cmdEntryTerm = TermCommandEntry.getTerm(true) //todo:implement optional cmd entry.
+      val childCompoundCmds = dslStats.zipWithIndex.collect {
+        case (q"$cmd(..$subParams)", idx) =>
           val cmdName = cmd.syntax
           val termCmd = queryArg(cmdName) match {
             case Some(tc: TermCmd) => tc
             case _ => notDefined(cmdName)
           }
-          recResolve(Some(termCmd), subParams)
+          (recResolve(Some(termCmd), subParams), idx)
       }
-      TermCommandEntry(cmdEntryTerm, childrTermCmdNode)
+      val childSingleCmds = singleArgs.collect { case (cmd: TermCmd, idx) =>
+        (recResolve(Some(cmd), Nil), idx)
+      }
+      val sortedChildCmdNodes: immutable.Seq[TermCmdNode] =
+        (childCompoundCmds ++ childSingleCmds).sortBy(_._2).map(_._1)
+      TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
+
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
       params = termArgs.collect { case a: TermParam => a },

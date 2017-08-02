@@ -1,9 +1,20 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.Limitation
+
 import scala.reflect.ClassTag
 
 private object Validator {
-  /** Convert string value to typed value and validate it with previously provided function. */
+  /**
+    * Convert string value to typed value and validate it with previously provided function.
+    *
+    * @param valueNode the evaluated node to be validated.
+    * @param cs the corresponding ContextSnapshot taken when the node is anchored.
+    * @param valiFuncOpt an option of client defined validation function.
+    * @tparam T the value type retained by macro,
+    *           it plays an important role as the info to which type the arg should be converted.
+    * @return the validated and converted typed value(s).
+    */
   @throws[ArgParseException]("When type conversion failed or validation function throws an exception.")
   def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T],
                                               cs: ContextSnapshot,
@@ -34,4 +45,18 @@ private object Validator {
     }
     typedValue
   }
+
+  /**
+    * Do high level validation on parsed results against mutual limitations defined in an argTree.
+    *
+    * @param argTree the arguments shape definition, containing the mutual limitation info,
+    *                which is defined by the client via tree def DSL
+    *                and retained and delivered by macros.
+    * @param parsedResults evaluated values with their context snapshot.
+    *                      return result of ArgParser.
+    * @return Nodes that violate mutual limitations.
+    */
+  def highLevelValidate(argTree: ArgTree,
+                        parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Limitation, Seq[Node])] =
+    ???
 }

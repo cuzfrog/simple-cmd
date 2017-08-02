@@ -2,14 +2,15 @@ package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd.Limitation
 
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 private object Validator {
   /**
     * Convert string value to typed value and validate it with previously provided function.
     *
-    * @param valueNode the evaluated node to be validated.
-    * @param cs the corresponding ContextSnapshot taken when the node is anchored.
+    * @param valueNode   the evaluated node to be validated.
+    * @param cs          the corresponding ContextSnapshot taken when the node is anchored.
     * @param valiFuncOpt an option of client defined validation function.
     * @tparam T the value type retained by macro,
     *           it plays an important role as the info to which type the arg should be converted.
@@ -49,14 +50,39 @@ private object Validator {
   /**
     * Do high level validation on parsed results against mutual limitations defined in an argTree.
     *
-    * @param argTree the arguments shape definition, containing the mutual limitation info,
-    *                which is defined by the client via tree def DSL
-    *                and retained and delivered by macros.
+    * @param argTree       the arguments shape definition, containing the mutual limitation info,
+    *                      which is defined by the client via tree def DSL
+    *                      and retained and delivered by macros.
     * @param parsedResults evaluated values with their context snapshot.
-    *                      return result of ArgParser.
-    * @return Nodes that violate mutual limitations.
+    *                      ValueNodes among result returned by ArgParser.
     */
+  @throws[ArgParseException]("when one of mutual limitations has been violated.")
   def highLevelValidate(argTree: ArgTree,
-                        parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Limitation, Seq[Node])] =
+                        parsedResults: Seq[(ValueNode[_], ContextSnapshot)]): Unit = {
+    val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
+
+    argTree.globalLimitations.foreach {
+      case (Limitation.MutuallyExclusive, group) =>
+        parsedResults.foreach { case (node, cs) =>
+          group.find(_ == node.entity.symbol).foreach(_ => acc += node.entity.symbol)
+          if (acc.length > 1) throw ArgParseException(
+            s"${acc.map(_.name).mkString(",")} cannot be input together.", cs
+          )
+        }
+      case (Limitation.MutuallyDependent, group) =>
+        val resultSymbols = parsedResults.map { case (n, _) => n.entity.symbol }
+        parsedResults.find { case (n, _) => group.contains(n.entity.symbol) }
+          .foreach { case (foundNode, cs) =>
+            val absent = group.collect { case symbol if !resultSymbols.contains(symbol) => symbol }
+            if (absent.nonEmpty) throw ArgParseException(
+              s"${absent.map(_.name).mkString(",")}" +
+                s" should be used with ${foundNode.entity.originalName}.", cs
+            )
+          }
+    }
+    acc.clear() //global validation complete.
+
     ???
+  }
+
 }

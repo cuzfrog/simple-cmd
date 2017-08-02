@@ -6,7 +6,9 @@ package com.github.cuzfrog.scmd
 sealed trait Argument[+T] {
   def name: String
   def description: Option[String]
-  def symbol: scala.Symbol = scala.Symbol(name)
+  /** name prepended with hyphen if this is an opt */
+  def originalName: String = name
+  def symbol: scala.Symbol = scala.Symbol(originalName)
 }
 
 
@@ -35,7 +37,8 @@ OptionArg[+T] private[scmd](name: String,
                             abbr: Option[String] = None,
                             description: Option[String] = None,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
-  final def hyphenName: String = OptionArg.camelCase2hyphen(name)
+  val hyphenName: String = OptionArg.camelCase2hyphen(name)
+  final override val originalName: String = "--" + hyphenName
 }
 
 sealed trait ArgValue[+T] {

@@ -19,6 +19,7 @@ private object CateArg {
       case s: SingleOpts => s.parsed
       case l: LongOpt => l.parsed
       case pm: ParamOrCmd => pm.parsed
+      case p: PropsCate => p.parsed
     }
   }
 }
@@ -30,7 +31,7 @@ private case class LongOpt(arg: String) extends CateArg
 /** Param or Cmd with no prefix "-". */
 private case class ParamOrCmd(arg: String) extends CateArg
 
-private case class Properties(arg: String, key: String, value: String,
+private case class PropsCate(arg: String, key: String, value: String,
                               prop: PropNode[_]) extends CateArg
 /**
   * Option with single hyphen -
@@ -148,7 +149,7 @@ private object LongOpt extends CateUtils {
                     case None => c.nextArg
                   }
                   vOpt match {
-                    case Some(v) => c.anchors(optNode.copy(value = Seq(v)))
+                    case Some(v) => c.anchors(optNode.copy(value = Seq(v))) //todo: deal with variable values
                     case None =>
                       ArgParseException(
                         s"No value found for opt -$arg with type[${otherTpe.name}].", c)
@@ -233,6 +234,15 @@ private object ParamOrCmd extends CateUtils {
         case Some(childCmdNode) => c.anchors(childCmdNode)
         case None => ArgParseException(s"Unknown cmd: $arg", c)
       }
+    }
+  }
+}
+
+private object PropsCate extends CateUtils{
+  implicit val parser: Parser[PropsCate, AnchorEither] = new Parser[PropsCate, AnchorEither] {
+    override def parse(a: PropsCate)(implicit c: Context): AnchorEither = {
+      val nodeWithValue = a.prop.copy(value = a.prop.value :+ (a.key,a.value))
+      c.anchors(nodeWithValue)
     }
   }
 }

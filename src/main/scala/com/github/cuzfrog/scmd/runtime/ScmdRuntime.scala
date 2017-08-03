@@ -46,14 +46,14 @@ sealed trait ScmdRuntime {
 
   def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int
 
-  def buildSingleValue[T](_default: Option[T]): ArgValue[T]
-  def buildVariableValue[T](_default: Seq[T]): ArgValue[T]
+  def buildSingleValue[T](_default: Option[T]): SingleValue[T]
+  def buildVariableValue[T](_default: Seq[T]): VariableValue[T]
 
   def buildParamNode[T: ClassTag](entity: Int, value: Seq[String], parent: scala.Symbol): Int
 
   def buildOptNode[T: ClassTag](entity: Int, value: Seq[String], parent: scala.Symbol): Int
 
-  def buildPropNode[T: ClassTag](entity: Int, value: Seq[String]): Int
+  def buildPropNode[T: ClassTag](entity: Int, value: Seq[(String, String)]): Int
 
   def buildCmdEntryNode(entity: Int,
                         children: Seq[Int]): Int
@@ -125,6 +125,10 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] val parsedNodes = mutable.LinkedHashMap.empty[scala.Symbol, Node] //name -> node
   private[this] val parsedContextSnapshots = mutable.Map.empty[Node, ContextSnapshot]
 
+  //----debug methods-----
+  protected final def getNodeRefs: Map[scala.Symbol, Node] = nodeRefs.toMap
+  //----debug methods-----
+
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]
 
@@ -182,10 +186,10 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.put(id, Box(a))
     id
   }
-  override def buildSingleValue[T](_default: Option[T]): ArgValue[T] = {
+  override def buildSingleValue[T](_default: Option[T]): SingleValue[T] = {
     ArgValue.single(_default)
   }
-  override def buildVariableValue[T](_default: Seq[T]): ArgValue[T] = {
+  override def buildVariableValue[T](_default: Seq[T]): VariableValue[T] = {
     ArgValue.variable(_default)
   }
   override def buildParamNode[T: ClassTag](entity: Int,
@@ -210,7 +214,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     id
   }
   override def buildPropNode[T: ClassTag](entity: Int,
-                                          value: Seq[String]): Int = {
+                                          value: Seq[(String, String)]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[PropertyArg[T] with VariableValue[(String, T)]](entity)
     val a = PropNode(entity = e, value = value, tpe = implicitly[ClassTag[T]])
@@ -257,13 +261,13 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.clear()
     this
   }
-  override def addValidation[T](name: String, func: T => Unit): Unit = {
+  override def addValidation[T](name: String, func: T => Unit): Unit = { //todo:move scala.Symbol to compile time
     nodeRefs.get(scala.Symbol(name)) match {
       case Some(node: ValueNode[T@unchecked]) => valiRefs.put(node, func)
       case Some(node) =>
-        throw new AssertionError(s"Node[$node] with name$name is not a value node" +
+        throw new AssertionError(s"Node[$node] with name: $name is not a value node" +
           s"(so not compatible with validation).")
-      case None => throw new AssertionError(s"Cannot find node with name$name")
+      case None => throw new AssertionError(s"Cannot find node with name: $name")
     }
   }
   override def parse(args: Seq[String]): Seq[String] = {

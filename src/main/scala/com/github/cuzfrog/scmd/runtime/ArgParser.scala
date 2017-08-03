@@ -54,8 +54,8 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
         val msg = forks.map(_.anchor.node).map {
           case cmdNode: CmdNode => cmdNode.entity.name
           case paramNode: ParamNode[_] => paramNode.entity.name
-          case optNode: OptNode[_] =>
-            throw new AssertionError(s"OptNode should not be ambiguous.[${optNode.entity.name}]")
+          case n@(_: OptNode[_] | _: PropNode[_]) =>
+            throw new AssertionError(s"OptNode/PropNode should not be ambiguous.[${n.entity.name}]")
         }
         throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
     }
@@ -132,11 +132,11 @@ private object BacktrackingParser {
   private val SingleOptExtractor = """-(\w{1}.*)""".r
   private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
   private object PropertiesExtractor {
-    private val RegexExtractor = """(-[A-Z]{1})([a-z]+[\w\d]+)\=(.*)""".r
-    def unapply(arg: String)(implicit argTree: ArgTree): Option[Properties] = arg match {
+    private val RegexExtractor = """-([A-Z]{1})([a-z]+[\w\d]+)\=(.*)""".r
+    def unapply(arg: String)(implicit argTree: ArgTree): Option[PropsCate] = arg match {
       case RegexExtractor(flag, k, v) =>
         argTree.props.find(_.entity.flag == flag).map { node =>
-          Properties(arg, k, v, node)
+          PropsCate(arg, k, v, node)
         }
       case _ => None
     }

@@ -4,7 +4,7 @@ import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogging}
 import com.github.cuzfrog.scmd.runtime.{Anchor, CmdNode, Context, Node, ParamNode}
 
 private[runtime] trait ContextLogging extends Context with SimpleLogging {
-  override implicit val loggerAgent = classOf[Context].getName
+  override lazy val loggerAgent = classOf[Context].getName
 
   abstract override def anchor(n: Node): Anchor = {
     debug(s"anchor for node:${n.prettyString}")

@@ -15,8 +15,8 @@ private[scmd] trait SimpleLogging {
 
   private val LIGHT_BLUE = "\u001b[94m"
 
-  protected implicit val loggerAgent: LoggerAgent = this.getClass.getName
-  protected implicit val loggerLevel: Level = queryLevel(this.getClass.getName)
+  protected implicit def loggerAgent: LoggerAgent = this.getClass.getName
+  protected implicit val loggerLevel: Level = queryLevel(loggerAgent.name)
 
   protected final def trace(x: => Any, withTitle: Boolean = true): Unit = pl(x, Trace, LIGHT_BLUE)(withTitle)
   protected final def debug(x: => Any, withTitle: Boolean = true): Unit = pl(x, Debug, MAGENTA)(withTitle)

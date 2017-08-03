@@ -7,7 +7,7 @@ import com.github.cuzfrog.scmd.runtime.{ArgTypeEvidence, Node, ScmdRuntime, Scmd
 import scala.reflect.ClassTag
 
 private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLogging {
-  override val loggerAgent = classOf[ScmdRuntime].getName
+  override protected lazy val loggerAgent = classOf[ScmdRuntime].getName
 
   @IgnoreLogging
   abstract override def buildParamNode[T: ClassTag](entity: Int,
@@ -25,7 +25,7 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
 
   @IgnoreLogging
   abstract override def addValidation[T](name: String, func: (T) => Unit): Unit = {
-    debug(s"Add validation for arg:$name, func:$func")
+    debug(s"Add validation for arg:$name")
     super.addValidation(name, func)
   }
   @IgnoreLogging

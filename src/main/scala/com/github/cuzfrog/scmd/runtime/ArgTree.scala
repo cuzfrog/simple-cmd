@@ -82,7 +82,7 @@ private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
 }
 
 private case class PropNode[T](entity: PropertyArg[T] with VariableValue[(String, T)],
-                               value: Seq[String], tpe: ClassTag[_])
+                               value: Seq[(String, String)], tpe: ClassTag[_])
   extends Node {
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def equals(obj: scala.Any): Boolean = {
@@ -105,25 +105,28 @@ private object ArgTree {
       (ifVariable, ifMandatory)
     }
 
-    def recMkPrettyString(cmdNode: CmdNode, indent: String = ""): String = {
+    def recMkPrettyString(cmdNode: CmdNode, indent: String = "",
+                          props: Seq[PropNode[_]] = Nil): String = {
       val cmd = indent + cmdNode.entity.name
+      val propsStr =
+        props.map(p => s"+-props: ${p.entity.name}[key->${p.tpe}] flag ${p.entity.originalName}")
       val params = cmdNode.params.map { n =>
         val (ifVariable, ifMandatory) = variableOrMandatory(n)
         s"$indent+-param$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory"
       }
       val opts = cmdNode.opts.map { n =>
         val (ifVariable, ifMandatory) = variableOrMandatory(n)
-        s"$indent+-opt$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory"
+        s"$indent+-opt$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory ${n.entity.originalName}"
       }
       val subCmds =
         cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
       val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
       val result: Seq[String] =
-        Seq(cmd) ++ params ++ opts ++ cmdEntry ++ subCmds
+        Seq(cmd) ++ propsStr ++ params ++ opts ++ cmdEntry ++ subCmds
       result.mkString(NEWLINE)
     }
 
-    recMkPrettyString(cmdNode)
+    recMkPrettyString(cmdNode, props = a.props)
   }
 }
 
@@ -139,6 +142,8 @@ private object Node {
     case n: OptNode[_] =>
       val ifMultiple = if (n.isVariable) "..." else ""
       s"opt$ifMultiple: ${n.entity.name}[${n.tpe}] = ${n.value}"
+    case n: PropNode[_] =>
+      s"props: ${n.entity.name}(${n.entity.originalName})[key->${n.tpe}] = ${n.value.mkString("|")}"
     case _: CmdEntryNode => s"cmdEntry"
   }
 }

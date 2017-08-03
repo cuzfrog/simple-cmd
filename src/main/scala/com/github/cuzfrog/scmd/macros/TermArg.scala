@@ -12,7 +12,7 @@ import scala.meta._
 /**
   * Created by cuz on 7/14/17.
   */
-private trait TermArg {
+private sealed trait TermArg {
   def name: String
   def term: Term
   def pos: Position
@@ -201,6 +201,6 @@ private object TermCommandEntry {
   def createWithCmdNodes(commandNodes: immutable.Seq[TermCmdNode]): TermCommandEntry = {
     if (commandNodes.isEmpty) this.placeHolder
     else
-      TermCommandEntry(term = q"runtime.buildCmdEntry(true)", children = immutable.Seq.empty)
+      TermCommandEntry(term = q"runtime.buildCmdEntry(true)", children = commandNodes)
   }
 }

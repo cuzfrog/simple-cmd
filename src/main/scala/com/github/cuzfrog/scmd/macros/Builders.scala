@@ -178,14 +178,17 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
     case cmd: TermCmd => new IdxTermNodeBuilder(cmd, sharedParams, Option(this))
     case param: TermParam => this.params :+= param; this
     case opt: TermOpt => this.opts :+= opt; this
+    case _: TermProp => this //ignore props
   }
 
   //non-defensive
   private def build: TermCmdNode = {
     //these CmdNodes are flat at level1 (level0 is the top)
-    TermCmdNode(cmd,
+    TermCmdNode(
+      cmd,
       params.map(_.withParent(scala.Symbol(cmd.name))),
-      opts, subCmdEntry = TermCommandEntry.placeHolder)
+      opts.map(_.withParent(scala.Symbol(cmd.name))),
+      subCmdEntry = TermCommandEntry.placeHolder)
   }
 
   def seal: immutable.Seq[TermCmdNode] = lastSibling match {

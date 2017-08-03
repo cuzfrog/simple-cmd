@@ -4,7 +4,7 @@ import com.github.cuzfrog.scmd.internal.SimpleLogging
 import com.github.cuzfrog.scmd.runtime.TryPath
 
 private[runtime] trait TryPathLogging extends TryPath with SimpleLogging {
-  override implicit val loggerAgent = classOf[TryPath].getName
+  override lazy val loggerAgent = classOf[TryPath].getName
 
   override def complete: TryPathLogging.this.type = {
     val thisPath = super.complete

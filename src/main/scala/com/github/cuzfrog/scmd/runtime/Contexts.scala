@@ -16,7 +16,8 @@ import scala.reflect.ClassTag
   */
 private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   require(args.nonEmpty, "Context construct failed because of empty args.")
-  @volatile private[this] var currentCmdNode: CmdNode = argTree.toTopNode
+  private[this] val topNode: CmdNode = argTree.toTopNode
+  @volatile private[this] var currentCmdNode: CmdNode = topNode
   /** Parameter is ordered. */
   private[this] var paramCursor: Int = 0
   /**
@@ -25,7 +26,8 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     * Opts are out-of-ordered and can be put at tail.
     */
   private[this] val optsUpstreamLeft: mutable.ArrayBuffer[OptNode[_]] =
-    mutable.ArrayBuffer(currentCmdNode.opts: _*)
+    mutable.ArrayBuffer(topNode.opts: _*)
+  private[this] val propsRepo: mutable.Set[PropNode[_]] = mutable.Set(argTree.props: _*)
   private[this] var argCursor: Int = 0
   private[this] var currentCateArg: TypedArg[CateArg] = args.head
 
@@ -62,11 +64,19 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   /** Create an anchor, if the node is an opt, register it as consumed. */
   @inline
   def anchor(n: Node): Anchor = this.synchronized {
-    n match {
-      case optNode: OptNode[_] => optsUpstreamLeft -= optNode //register consumed
-      case _ => //nothing needed to do.
+    val updatedNode: Node = n match {
+      case optNode: OptNode[_] =>
+        optsUpstreamLeft -= optNode //register consumed
+        n //todo: deal with variable value opt
+      case propNode: PropNode[_] =>
+        val storedPropNode = propsRepo.find(_ == propNode)
+          .getOrElse(throw new AssertionError(s"PropNode not in context:$propNode"))
+        val updated = storedPropNode.copy(value = storedPropNode.value ++ propNode.value)
+        propsRepo += updated
+        updated
+      case otherNode =>  otherNode //nothing needed to do.
     }
-    Anchor(n, this)
+    Anchor(updatedNode, this)
   }
 
   /** Return current pointed ParamNode of current CmdNode. */

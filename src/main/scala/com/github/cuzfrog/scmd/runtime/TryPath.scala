@@ -155,6 +155,8 @@ private object TryPath {
           s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
         case n: OptNode[_] =>
           s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
+        case n: PropNode[_] =>
+          s"${indent}prop : ${n.entity.name}[${n.tpe}] - ${n.value.mkString("|")}"
       }
       val subs = if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
         p.branches.flatMap(p => recMkPrettyString(p, indent + " "))

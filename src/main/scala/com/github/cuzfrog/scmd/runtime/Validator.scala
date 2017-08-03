@@ -55,10 +55,11 @@ private object Validator {
     *                      and retained and delivered by macros.
     * @param parsedResults evaluated values with their context snapshot.
     *                      ValueNodes among result returned by ArgParser.
+    * @return the same parsedResults that has passed the validation.
     */
   @throws[ArgParseException]("when one of mutual limitations has been violated.")
   def highLevelValidate(argTree: ArgTree,
-                        parsedResults: Seq[(Node, ContextSnapshot)]): Unit = {
+                        parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
     val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
     val globalValueNodes = parsedResults.collect { case (n: ValueNode[_], cs) => (n, cs) }
 
@@ -90,13 +91,14 @@ private object Validator {
     acc.clear() //--------------- global validation complete. ---------------------
 
     val grouped = globalValueNodes.groupBy { case (n, _) => n.locateToCmdNode(argTree) }
-    grouped.foreach{ case (cmdNode, valueNodes) =>
+    grouped.foreach { case (cmdNode, valueNodes) =>
       cmdNode.limitations.foreach {
         case (Limitation.MExclusive, group) => resolveMExclusive(valueNodes, group)
         case (Limitation.MDependent, group) => resolveMDependent(valueNodes, group)
       }
     }
     //--------------- per-cmd validation complete. ---------------------
+    parsedResults
   }
 
 

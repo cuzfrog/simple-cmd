@@ -44,9 +44,9 @@ sealed trait ScmdRuntime {
   def buildSingleValue[T](_default: Option[T]): ArgValue[T]
   def buildVariableValue[T](_default: Seq[T]): ArgValue[T]
 
-  def buildParamNode[T: ClassTag](entity: Int, value: Seq[String],parent: scala.Symbol): Int
+  def buildParamNode[T: ClassTag](entity: Int, value: Seq[String], parent: scala.Symbol): Int
 
-  def buildOptNode[T: ClassTag](entity: Int, value: Seq[String],parent: scala.Symbol): Int
+  def buildOptNode[T: ClassTag](entity: Int, value: Seq[String], parent: scala.Symbol): Int
 
   def buildCmdEntryNode(entity: Int,
                         children: Seq[Int]): Int
@@ -108,8 +108,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   private[this] val idGen = new AtomicInteger(0)
 
-  private[this] var appInfo: AppInfo = _
-  private[this] var argTree: ArgTree = _
+  private[this] var appInfo: Option[AppInfo] = None
+  private[this] var argTree: Option[ArgTree] = None
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
   private[this] val nodeRefs = mutable.Map.empty[scala.Symbol, Node] //name -> node
   private[this] val valiRefs = mutable.Map.empty[ValueNode[_], Function1[_, Unit]] //id -> func
@@ -126,13 +126,13 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                           license: Option[String],
                           author: Option[String],
                           custom: Seq[(String, String)]): this.type = {
-    appInfo = AppInfo(name = name,
+    appInfo = Some(AppInfo(name = name,
       shortDescription = shortDescription,
       fullDescription = fullDescription,
       version = version,
       license = license,
       author = author,
-      custom = custom.to[scala.collection.immutable.Seq])
+      custom = custom.to[scala.collection.immutable.Seq]))
     this
   }
   override def buildCommand(name: String, description: Option[String]): Int = {
@@ -222,7 +222,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val tp = topParams.map(getEntity[ParamNode[_]])
     val to = topOpts.map(getEntity[OptNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)
-    argTree = ArgTree(tp, to, ce, topLimitations, globalLimitations)
+    argTree = Some(ArgTree(tp, to, ce, topLimitations, globalLimitations))
     repository.clear()
     this
   }
@@ -237,7 +237,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def parse(args: Seq[String]): Seq[String] = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
-    ArgParser.parse(argTree, args).map {
+    val parsedResults = ArgParser.parse(argTree, args)
+    val validated = Validator.highLevelValidate(argTree, parsedResults)
+    validated.map {
       case (node, cs) =>
         parsedNodes.put(scala.Symbol(node.entity.name), node)
         parsedContextSnapshots.put(node, cs)
@@ -305,9 +307,12 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
 
 
-  override def argTreeString: String = Option(argTree)
-    .getOrElse(throw new IllegalStateException("argTree not initialized.")).prettyString
-  override def appInfoString: String = Option(appInfo)
-    .getOrElse(throw new IllegalStateException("appInfo not initialized.")).prettyString
+  override def argTreeString: String = useArgTree(argTree).prettyString
+  override def appInfoString: String = useAppInfo(appInfo).prettyString
   override def parsedSeqString: String = parsedNodes.values.toSeq.prettyString
+
+  private implicit def useArgTree(argTreeOpt: Option[ArgTree]): ArgTree =
+    argTreeOpt.getOrElse(throw new IllegalStateException("argTree not initialized."))
+  private implicit def useAppInfo(appInfoOpt: Option[AppInfo]): AppInfo =
+    appInfoOpt.getOrElse(throw new IllegalStateException("appInfo not initialized."))
 }

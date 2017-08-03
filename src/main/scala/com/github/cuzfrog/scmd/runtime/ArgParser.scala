@@ -6,6 +6,7 @@ import scala.annotation.tailrec
 import scala.language.reflectiveCalls
 
 private object ArgParser {
+  @throws[ArgParseException]("when parsing failed.")
   def parse(argTree: ArgTree, args: Seq[String]): Seq[(Node, ContextSnapshot)] = {
     new BacktrackingParser(argTree, args).parse
   }

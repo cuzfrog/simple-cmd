@@ -55,13 +55,13 @@ sealed trait ScmdRuntime {
                    params: Seq[Int],
                    opts: Seq[Int],
                    subCmdEntry: Int,
-                   limitations: Seq[(Limitation, Seq[scala.Symbol])] = Nil): Int
+                   limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): Int
 
   def buildArgTree(topParams: Seq[Int],
                    topOpts: Seq[Int],
                    cmdEntry: Int,
-                   topLimitations: Seq[(Limitation, Seq[scala.Symbol])] = Nil,
-                   globalLimitations: Seq[(Limitation, Seq[scala.Symbol])] = Nil): this.type
+                   topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
+                   globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): this.type
 
   def addValidation[T](name: String, func: T => Unit): Unit
 
@@ -198,7 +198,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                             params: Seq[Int],
                             opts: Seq[Int],
                             subCmdEntry: Int,
-                            limitations: Seq[(Limitation, Seq[scala.Symbol])]): Int = {
+                            limitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Command](entity)
     val p = params.map(getEntity[ParamNode[_]])
@@ -212,8 +212,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildArgTree(topParams: Seq[Int],
                             topOpts: Seq[Int],
                             cmdEntry: Int,
-                            topLimitations: Seq[(Limitation, Seq[scala.Symbol])],
-                            globalLimitations: Seq[(Limitation, Seq[scala.Symbol])]): this.type = {
+                            topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])],
+                            globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): this.type = {
     val tp = topParams.map(getEntity[ParamNode[_]])
     val to = topOpts.map(getEntity[OptNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)

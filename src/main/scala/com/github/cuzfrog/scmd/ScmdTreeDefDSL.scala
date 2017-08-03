@@ -7,7 +7,7 @@ object ScmdTreeDefDSL {
   final def argTreeDef(subArg: Argument[_], moreSubArg: Argument[_]*): Unit = ()
 
   /** Define global argument mutual limitations. */
-  final def argDependencyDef(group: MutuallyLimitation, moreGroup: MutuallyLimitation*): Unit = ()
+  final def argDependencyDef(group: MutualLimitation, moreGroup: MutualLimitation*): Unit = ()
 
   implicit final class CommandTreeDefOps(a: Command) {
     def apply(subArg: Argument[_], moreSubArg: Argument[_]*): Command = a
@@ -38,7 +38,3 @@ object ScmdTreeDefDSL {
     def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyDependent = g
   }
 }
-
-sealed trait MutuallyLimitation
-sealed trait MutuallyExclusive extends MutuallyLimitation
-sealed trait MutuallyDependent extends MutuallyLimitation

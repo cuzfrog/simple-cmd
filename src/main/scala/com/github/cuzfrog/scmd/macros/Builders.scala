@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.Limitation
+import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
 
 import scala.annotation.tailrec
@@ -125,7 +125,7 @@ private object NodeBuilder {
   /** Shared function used in both implementation. */
   def collectLimitations
   (argDefs: immutable.Seq[TermArg],
-   stats: immutable.Seq[Term.Arg]): immutable.Seq[(Limitation, immutable.Seq[TermArg], Int)] = {
+   stats: immutable.Seq[Term.Arg]): immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] = {
     @tailrec
     def recInfix2seq(subTerm: Term,
                      acc: immutable.Seq[String] = immutable.Seq()): immutable.Seq[String] =
@@ -210,7 +210,7 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
         case None => notDefined(argName)
       }
     }
-    val groupArgs: immutable.Seq[(Limitation, immutable.Seq[TermArg], Int)] =
+    val groupArgs: immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] =
       collectLimitations(dslStats)
 
     val termArgs =
@@ -257,7 +257,7 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
   }
 
   private def collectLimitations
-  (stats: immutable.Seq[Term.Arg]): immutable.Seq[(Limitation, immutable.Seq[TermArg], Int)] =
+  (stats: immutable.Seq[Term.Arg]): immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] =
     NodeBuilder.collectLimitations(argDefs, stats)
 
   private def queryArg(name: String): Option[TermArg] = argDefs.find(_.name == name)

@@ -62,14 +62,14 @@ private object Validator {
     val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
 
     argTree.globalLimitations.foreach {
-      case (Limitation.MutuallyExclusive, group) =>
+      case (Limitation.MExclusive, group) =>
         parsedResults.foreach { case (node, cs) =>
           group.find(_ == node.entity.symbol).foreach(_ => acc += node.entity.symbol)
           if (acc.length > 1) throw ArgParseException(
             s"${acc.map(_.name).mkString(",")} cannot be input together.", cs
           )
         }
-      case (Limitation.MutuallyDependent, group) =>
+      case (Limitation.MDependent, group) =>
         val resultSymbols = parsedResults.map { case (n, _) => n.entity.symbol }
         parsedResults.find { case (n, _) => group.contains(n.entity.symbol) }
           .foreach { case (foundNode, cs) =>

@@ -21,7 +21,12 @@ trait ScmdApi {
 
   final def optDefMultiple[T](abbr: String = "",
                               description: String = "",
+                              isMandatory: Boolean = false,
                               default: => T = Empty): OptionArg[T] with VariableValue[T] = DummyOptionArgV
+
+  final def propDef[T](flag: String = "",
+                       description: String = "",
+                       default: => Seq[(String, T)] = Empty): PropertyArg[T] with VariableValue[(String, T)] = DummyProp
 
   final def appDef(name: String,
                    shortDescription: String = "",

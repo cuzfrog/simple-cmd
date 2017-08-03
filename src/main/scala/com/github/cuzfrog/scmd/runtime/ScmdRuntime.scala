@@ -39,6 +39,11 @@ sealed trait ScmdRuntime {
                         isMandatory: Boolean = Defaults.isMandatory,
                         argValue: ArgValue[T]): Int
 
+  def buildPropertyArg[T](name: String,
+                          flag: String,
+                          description: Option[String] = None,
+                          variableValue: VariableValue[(String, T)]): Int
+
   def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int
 
   def buildSingleValue[T](_default: Option[T]): ArgValue[T]
@@ -47,6 +52,8 @@ sealed trait ScmdRuntime {
   def buildParamNode[T: ClassTag](entity: Int, value: Seq[String], parent: scala.Symbol): Int
 
   def buildOptNode[T: ClassTag](entity: Int, value: Seq[String], parent: scala.Symbol): Int
+
+  def buildPropNode[T: ClassTag](entity: Int, value: Seq[String]): Int
 
   def buildCmdEntryNode(entity: Int,
                         children: Seq[Int]): Int
@@ -159,6 +166,15 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.put(id, Box(a))
     id
   }
+  override def buildPropertyArg[T](name: String,
+                                   flag: String,
+                                   description: Option[String],
+                                   variableValue: VariableValue[(String, T)]): Int = {
+    val id = idGen.getAndIncrement()
+    val a = mix(PropertyArg[T](name, flag, description), variableValue)
+    repository.put(id, Box(a))
+    id
+  }
   override def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int = {
     val id = idGen.getAndIncrement()
     val a = CommandEntry(isMandatory)
@@ -192,6 +208,16 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
+  override def buildPropNode[T: ClassTag](entity: Int,
+                                 value: Seq[String]): Int = {
+    val id = idGen.getAndIncrement()
+    val e = getEntity[PropertyArg[T] with VariableValue[(String, T)]](entity)
+    val a = PropNode(entity = e, value = value, tpe = implicitly[ClassTag[T]])
+    repository.put(id, Box(a))
+    nodeRefs.put(scala.Symbol(e.name), a)
+    id
+  }
+
   override def buildCmdEntryNode(entity: Int, children: Seq[Int]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[CommandEntry](entity)

@@ -31,7 +31,6 @@ Parameter[+T] private[scmd](name: String,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
 }
 
-
 sealed case class
 OptionArg[+T] private[scmd](name: String,
                             abbr: Option[String] = None,
@@ -39,6 +38,14 @@ OptionArg[+T] private[scmd](name: String,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
   val hyphenName: String = OptionArg.camelCase2hyphen(name)
   final override val originalName: String = "--" + hyphenName
+}
+
+sealed case class
+PropertyArg[+T] private[scmd](name: String,
+                              flag: String,
+                              description: Option[String] = None) extends ValueArgument[T] {
+  final override val originalName: String = "-" + flag
+  override val isMandatory: Boolean = false
 }
 
 sealed trait ArgValue[+T] {
@@ -68,6 +75,7 @@ private[scmd] object DummyArgument {
   object DummyParameterVM extends Parameter("") with VariableValue[Nothing] with Mandatory
   object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
   object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
+  object DummyProp extends PropertyArg("","") with VariableValue[Nothing]
 }
 
 private object Command {

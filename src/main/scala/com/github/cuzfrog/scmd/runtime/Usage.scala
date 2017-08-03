@@ -8,12 +8,12 @@ private[runtime] object ConsoleType {
 }
 
 
-private[runtime] trait ManualEvidence[A] {
-  def genManual(a: A)(implicit consoleType: ConsoleType): String
+private[runtime] trait UsageEvidence[A] {
+  def genUsage(a: A)(implicit consoleType: ConsoleType): String
 }
-private object ManualEvidence {
-  implicit val GNU_ManualEvidence: ManualEvidence[ArgTree] = new ManualEvidence[ArgTree] {
-    override def genManual(a: ArgTree)(implicit consoleType: ConsoleType): String = {
+private object UsageEvidence {
+  implicit val defaultUsage: UsageEvidence[ArgTree] = new UsageEvidence[ArgTree] {
+    override def genUsage(a: ArgTree)(implicit consoleType: ConsoleType): String = {
       ansi"%bold{Description}"
       ???
     }

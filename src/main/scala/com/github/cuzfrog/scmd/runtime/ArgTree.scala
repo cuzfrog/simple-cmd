@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, MutualLimitation, OptionArg, Parameter, ValueArgument}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, MutualLimitation, OptionArg, Parameter, PropertyArg, ValueArgument, VariableValue}
 
 import scala.reflect.ClassTag
 
@@ -77,6 +77,21 @@ private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
     case _ => false
   }
   //todo: check if equals' overriding is correct.
+  //todo: use macro to generate equality overriding.
+}
+
+private case class PropNode[T](entity: PropertyArg[T] with VariableValue[(String, T)],
+                               value: Seq[String], tpe: ClassTag[_])
+  extends Node{
+  //equality depends on its entity's. Value is stripped off for parsing quick comparing.
+  override def equals(obj: scala.Any): Boolean = {
+    if (!this.canEqual(obj)) return false
+    obj.asInstanceOf[PropNode[_]].entity == this.entity
+  }
+  override def canEqual(that: Any): Boolean = that match {
+    case _: PropNode[_] => true
+    case _ => false
+  }
 }
 
 private object ArgTree {

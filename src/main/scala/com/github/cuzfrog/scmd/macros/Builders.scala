@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
-import com.github.cuzfrog.scmd.{AppInfo, Command, Limitation, MutualLimitation}
+import com.github.cuzfrog.scmd.{Command, Limitation, MutualLimitation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable

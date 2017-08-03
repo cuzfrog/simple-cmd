@@ -109,17 +109,6 @@ private object ArgTree {
 
     recMkPrettyString(cmdNode)
   }
-
-  implicit val manualEvidence: ManualEvidence[ArgTree] = new ManualEvidence[ArgTree] {
-
-    import com.github.cuzfrog.scmd.internal.AnsiFormatter.FormattedHelper
-
-    override def genFullManual(a: ArgTree)(implicit consoleType: ConsoleType): String = {
-      ansi"%bold{Description}"
-      ???
-    }
-    override def genSimpleManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???
-  }
 }
 
 private object Node {

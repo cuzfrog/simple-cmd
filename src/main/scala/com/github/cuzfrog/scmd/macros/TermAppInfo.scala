@@ -58,6 +58,3 @@ private object TermAppInfo {
          )"""
   }
 }
-
-////    require(Option(appName).nonEmpty, "appName cannot be null.") //guards
-////    require(appName != "", "appName cannot be empty. You could leave as default, which is: App")

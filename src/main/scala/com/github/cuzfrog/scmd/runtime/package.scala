@@ -49,15 +49,9 @@ package object runtime extends ArgTreeUtils {
     def convertTo[R](implicit ev: Convertible[A, R]): R = ev.convertTo(a)
   }
 
-  private[runtime] sealed trait ConsoleType
-  private[runtime] trait ManualEvidence[A] {
-    def genFullManual(a: A)(implicit consoleType: ConsoleType): String
-    def genSimpleManual(a: A)(implicit consoleType: ConsoleType): String
-  }
   private[runtime] implicit class ManualGenerationOps[A: ManualEvidence](a: A) {
     private val ev: ManualEvidence[A] = implicitly[ManualEvidence[A]]
-    private implicit val consoleType = new ConsoleType {}//todo: detect console type.
-    def genFullManual: String = ev.genFullManual(a)
-    def genSimpleManual: String = ev.genSimpleManual(a)
+    private implicit val consoleType: ConsoleType = ConsoleType.detect
+    def genManual: String = ev.genManual(a)
   }
 }

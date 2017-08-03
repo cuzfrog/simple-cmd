@@ -4,13 +4,14 @@ import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command
 
 import scala.reflect.ClassTag
 
-private final case class ArgTree(topParams: Seq[ParamNode[_]],
+private final case class ArgTree(appName: String,
+                                 topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
                                  cmdEntry: CmdEntryNode,
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                                  globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) {
   def toTopNode: CmdNode = CmdNode(
-    entity = Command.topCmd,
+    entity = Command.topCmd.copy(name = appName),
     params = topParams,
     opts = topOpts,
     subCmdEntry = cmdEntry,
@@ -111,7 +112,12 @@ private object ArgTree {
 
   implicit val manualEvidence: ManualEvidence[ArgTree] = new ManualEvidence[ArgTree] {
 
-    override def genFullManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???
+    import com.github.cuzfrog.scmd.internal.AnsiFormatter.FormattedHelper
+
+    override def genFullManual(a: ArgTree)(implicit consoleType: ConsoleType): String = {
+      ansi"%bold{Description}"
+      ???
+    }
     override def genSimpleManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???
   }
 }

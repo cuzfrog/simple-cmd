@@ -13,7 +13,8 @@ case class TermCmdNode(cmd: TermCmd,
                        limitations: immutable.Seq[LimitationGroup] = Nil)
 
 private final
-case class TermArgTree(topParams: immutable.Seq[TermParam],
+case class TermArgTree(appName: Lit.String,
+                       topParams: immutable.Seq[TermParam],
                        topOpts: immutable.Seq[TermOpt],
                        cmdEntry: TermCommandEntry,
                        topLimitations: immutable.Seq[LimitationGroup] = Nil,
@@ -61,6 +62,7 @@ private object TermArgTree {
     val topLimitations = q"$TERM_immutable.Seq(..${a.topLimitations.map(_.defnTerm)})"
     val globalLimitations = q"$TERM_immutable.Seq(..${a.globalLimitations.map(_.defnTerm)})"
     q"""runtime.buildArgTree(
+          appName = ${a.appName},
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
           cmdEntry = $cmdEntry,

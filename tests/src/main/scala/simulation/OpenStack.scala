@@ -4,7 +4,7 @@ import Scmd._
 
 private object OpenStack {
   @ScmdDef
-  private class ArgDef(args: Seq[String]) {
+  private class OpenStackDef(args: Seq[String]) {
     val nova = cmdDef(description = "nova command entry")
     val neutron = cmdDef(description = "neutron command entry")
     val cinder = cmdDef(description = "cinder command entry")
@@ -37,13 +37,13 @@ private object OpenStack {
   }
 
   def main(args: Array[String]): Unit = {
-    val conf = (new ArgDef(args))
+    val conf = (new OpenStackDef(args))
     println("-----------App info------------")
     println(conf.appInfoString)
     println("-----------Arg tree------------")
     println(conf.argTreeString)
     println("---------Parsed node sequence:----------")
-    val parsed: ArgDef = conf.parsed
+    val parsed: OpenStackDef = conf.parsed
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
   }

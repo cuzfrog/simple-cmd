@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
-import com.github.cuzfrog.scmd.{Command, Limitation, MutualLimitation}
+import com.github.cuzfrog.scmd.{AppInfo, Command, Limitation, MutualLimitation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -15,7 +15,8 @@ private trait TreeBuilder {
     * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
     */
   @inline
-  def buildArgTreeByIdx(argDefs: immutable.Seq[TermArg],
+  def buildArgTreeByIdx(appName: String,
+                        argDefs: immutable.Seq[TermArg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
 
   /**
@@ -24,7 +25,8 @@ private trait TreeBuilder {
     * @see [[com.github.cuzfrog.scmd.macros.NodeBuilder]]
     * @return A TermArgTree shaped by dsl.
     */
-  def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
+  def buildArgTreeByDSL(appName: String,
+                        argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
 }
@@ -41,7 +43,8 @@ private object TreeBuilder {
       * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
       */
     @inline
-    def buildArgTreeByIdx(argDefs: immutable.Seq[TermArg],
+    def buildArgTreeByIdx(appName: String,
+                          argDefs: immutable.Seq[TermArg],
                           globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
       val idxDefs = argDefs.toIndexedSeq
       val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
@@ -57,7 +60,7 @@ private object TreeBuilder {
         case None =>
           val params = idxDefs.collect { case param: TermParam => param.withParent() }
           val opts = idxDefs.collect { case opt: TermOpt => opt.withParent() }
-          TermArgTree(params, opts, TermCommandEntry.placeHolder,
+          TermArgTree(Lit.String(appName), params, opts, TermCommandEntry.placeHolder,
             globalLimitations = globalLimitations)
 
         case Some(cmd1) =>
@@ -72,7 +75,7 @@ private object TreeBuilder {
           val builder = NodeBuilder.newIdxTermBuilder(cmd1, topLevelParam)
 
           val commands = recAdd(builder, tail).seal
-          TermArgTree(Nil, topLevelOpts,
+          TermArgTree(Lit.String(appName), Nil, topLevelOpts,
             TermCommandEntry.createWithCmdNodes(commands),
             globalLimitations = globalLimitations)
       }
@@ -84,11 +87,12 @@ private object TreeBuilder {
       * @see [[com.github.cuzfrog.scmd.macros.NodeBuilder]]
       * @return A TermArgTree shaped by dsl.
       */
-    def buildArgTreeByDSL(argDefs: immutable.Seq[TermArg],
+    def buildArgTreeByDSL(appName: String,
+                          argDefs: immutable.Seq[TermArg],
                           dslStats: immutable.Seq[Term.Arg],
                           globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
 
-      val builder = NodeBuilder.newDslTermBuilder(argDefs, dslStats, globalLimitationsStats)
+      val builder = NodeBuilder.newDslTermBuilder(appName, argDefs, dslStats, globalLimitationsStats)
 
       builder.resolve
     }
@@ -111,15 +115,17 @@ private object NodeBuilder {
   /**
     * Create a new dsl builder.
     *
+    * @param appName                Client defined application name i.e. top command name.
     * @param argDefs                argument defs list that is parsed by macros earlier,
     *                               used to query argument info.
     * @param dslStats               tree def DSL statements collected.
     * @param globalLimitationsStats global mutual limitation statements collected.
     */
-  def newDslTermBuilder(argDefs: immutable.Seq[TermArg],
+  def newDslTermBuilder(appName: String,
+                        argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): DslTermNodeBuilder =
-    new DslTermNodeBuilder(argDefs, dslStats, globalLimitationsStats)
+    new DslTermNodeBuilder(appName, argDefs, dslStats, globalLimitationsStats)
 
 
   /** Shared function used in both implementation. */
@@ -178,7 +184,8 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
   }
 }
 
-private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
+private final class DslTermNodeBuilder(appName: String,
+                                       argDefs: immutable.Seq[TermArg],
                                        dslStats: immutable.Seq[Term.Arg],
                                        globalLimitationsStats: immutable.Seq[Term.Arg]) {
 
@@ -188,6 +195,7 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
     val gobalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
 
     TermArgTree(
+      appName = Lit.String(appName),
       topParams = topNode.params,
       topOpts = topNode.opts,
       cmdEntry = topNode.subCmdEntry,

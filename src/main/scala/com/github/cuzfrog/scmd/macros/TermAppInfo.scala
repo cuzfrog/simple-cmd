@@ -44,11 +44,10 @@ private object TermAppInfo {
   }
 
 
-  implicit val definable: Definable[AppInfo] = new Definable[AppInfo] {
-    override def defnTerm(a: AppInfo): Term = {
+  implicit val definable: Definable[AppInfo] = (a: AppInfo) => {
 
-      val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
-      q"""runtime.addAppInfo(
+    val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
+    q"""runtime.addAppInfo(
           name = ${a.name.defnTerm},
           shortDescription = ${a.shortDescription.defnTerm},
           fullDescription = ${a.fullDescription.defnTerm},
@@ -57,7 +56,6 @@ private object TermAppInfo {
           author = ${a.author.defnTerm},
           custom = Seq(..$customTerm)
          )"""
-    }
   }
 }
 

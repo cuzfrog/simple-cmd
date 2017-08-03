@@ -57,7 +57,8 @@ sealed trait ScmdRuntime {
                    subCmdEntry: Int,
                    limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): Int
 
-  def buildArgTree(topParams: Seq[Int],
+  def buildArgTree(appName: String,
+                   topParams: Seq[Int],
                    topOpts: Seq[Int],
                    cmdEntry: Int,
                    topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
@@ -214,7 +215,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
-  override def buildArgTree(topParams: Seq[Int],
+  override def buildArgTree(appName: String,
+                            topParams: Seq[Int],
                             topOpts: Seq[Int],
                             cmdEntry: Int,
                             topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])],
@@ -222,7 +224,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val tp = topParams.map(getEntity[ParamNode[_]])
     val to = topOpts.map(getEntity[OptNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)
-    argTree = Some(ArgTree(tp, to, ce, topLimitations, globalLimitations))
+    argTree = Some(ArgTree(appName, tp, to, ce, topLimitations, globalLimitations))
     repository.clear()
     this
   }

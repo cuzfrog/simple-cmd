@@ -28,8 +28,11 @@ private class ScmdDefMacro extends ScmdMacro {
     }
 
 
-    val appInfoBuild = TermAppInfo.collectAppInfo(stats).term
-
+    val appInfo = TermAppInfo.collectAppInfo(stats)
+    val appName: String = {
+      val inferredName = if (name.value.endsWith("Def")) name.value.dropRight(3) else name.value
+      appInfo.appInfo.name.getOrElse(inferredName.toLowerCase)
+    }
     /**
       * A TermArg is macro time term of arg Node.
       *
@@ -53,10 +56,11 @@ private class ScmdDefMacro extends ScmdMacro {
       TermTree.collectTreeDefDsl(stats) match {
         case Nil =>
           /* by the order of user-defined args in source code */
-          treeBuilder.buildArgTreeByIdx(argDefs, globalMutualLimitations).defnTerm
+          treeBuilder.buildArgTreeByIdx(appName, argDefs, globalMutualLimitations).defnTerm
         case dslParams =>
           /* by tree def dsl */
-          treeBuilder.buildArgTreeByDSL(argDefs, dslParams, globalMutualLimitations).defnTerm
+          treeBuilder.buildArgTreeByDSL(
+            appName, argDefs, dslParams, globalMutualLimitations).defnTerm
       }
     }
 
@@ -81,7 +85,7 @@ private class ScmdDefMacro extends ScmdMacro {
     val addMethods = List(
       q"""private[this] val scmdRuntime:ScmdRuntime = {
              val runtime = ScmdRuntime.create
-             $appInfoBuild //execute scmdRuntime to build an appInfo
+             ${appInfo.term} //execute scmdRuntime to build an appInfo
              $argTreeBuild //execute scmdRuntime to build an argTree
              runtime
           }""",

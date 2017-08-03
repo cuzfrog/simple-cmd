@@ -10,7 +10,7 @@ private final case class ArgTree(topParams: Seq[ParamNode[_]],
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                                  globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) {
   def toTopNode: CmdNode = CmdNode(
-    entity = Command("AppName", None), //todo: replace AppName
+    entity = Command.topCmd,
     params = topParams,
     opts = topOpts,
     subCmdEntry = cmdEntry,
@@ -42,11 +42,13 @@ private[runtime] sealed trait ValueNode[T] extends Node {
   //tpe needs to be put in constructor parameter, .copy removes type info.
   def isVariable: Boolean = entity.isVariable
   def isMandatory: Boolean = entity.isMandatory
+  def parent: scala.Symbol
   override def hashCode(): Int = entity.hashCode * 3 + 17
 }
 
 private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
-                                value: Seq[String], tpe: ClassTag[_])
+                                value: Seq[String], tpe: ClassTag[_],
+                                parent: scala.Symbol)
   extends ValueNode[T] with NodeTag[ParamNode[T]] {
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def equals(obj: scala.Any): Boolean = {
@@ -60,7 +62,8 @@ private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
 }
 
 private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
-                              value: Seq[String], tpe: ClassTag[_])
+                              value: Seq[String], tpe: ClassTag[_],
+                              parent: scala.Symbol)
   extends ValueNode[T] with NodeTag[OptNode[T]] {
 
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
@@ -106,7 +109,7 @@ private object ArgTree {
     recMkPrettyString(cmdNode)
   }
 
-  implicit val manualEvidence:ManualEvidence[ArgTree] = new ManualEvidence[ArgTree] {
+  implicit val manualEvidence: ManualEvidence[ArgTree] = new ManualEvidence[ArgTree] {
 
     override def genFullManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???
     override def genSimpleManual(a: ArgTree)(implicit consoleType: ConsoleType): String = ???

@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.Limitation
+import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -58,31 +58,58 @@ private object Validator {
     */
   @throws[ArgParseException]("when one of mutual limitations has been violated.")
   def highLevelValidate(argTree: ArgTree,
-                        parsedResults: Seq[(ValueNode[_], ContextSnapshot)]): Unit = {
+                        parsedResults: Seq[(Node, ContextSnapshot)]): Unit = {
     val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
+    val globalValueNodes = parsedResults.collect { case (n: ValueNode[_], cs) => (n, cs) }
 
-    argTree.globalLimitations.foreach {
-      case (Limitation.MExclusive, group) =>
-        parsedResults.foreach { case (node, cs) =>
-          group.find(_ == node.entity.symbol).foreach(_ => acc += node.entity.symbol)
-          if (acc.length > 1) throw ArgParseException(
-            s"${acc.map(_.name).mkString(",")} cannot be input together.", cs
+    def resolveMExclusive(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]) = {
+      valueNodes.foreach { case (node, cs) =>
+        group.find(_ == node.entity.symbol).foreach(_ => acc += node.entity.symbol)
+        if (acc.length > 1) throw ArgParseException(
+          s"${acc.map(_.name).mkString(",")} cannot be input together.", cs
+        )
+      }
+    }
+
+    def resolveMDependent(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]) = {
+      val resultSymbols = valueNodes.map { case (n, _) => n.entity.symbol }
+      valueNodes.find { case (n, _) => group.contains(n.entity.symbol) }
+        .foreach { case (foundNode, cs) =>
+          val absent = group.collect { case symbol if !resultSymbols.contains(symbol) => symbol }
+          if (absent.nonEmpty) throw ArgParseException(
+            s"${absent.map(_.name).mkString(",")}" +
+              s" should be used with ${foundNode.entity.originalName}.", cs
           )
         }
-      case (Limitation.MDependent, group) =>
-        val resultSymbols = parsedResults.map { case (n, _) => n.entity.symbol }
-        parsedResults.find { case (n, _) => group.contains(n.entity.symbol) }
-          .foreach { case (foundNode, cs) =>
-            val absent = group.collect { case symbol if !resultSymbols.contains(symbol) => symbol }
-            if (absent.nonEmpty) throw ArgParseException(
-              s"${absent.map(_.name).mkString(",")}" +
-                s" should be used with ${foundNode.entity.originalName}.", cs
-            )
-          }
     }
-    acc.clear() //global validation complete.
 
-    ???
+    argTree.globalLimitations.foreach {
+      case (Limitation.MExclusive, group) => resolveMExclusive(globalValueNodes, group)
+      case (Limitation.MDependent, group) => resolveMDependent(globalValueNodes, group)
+    }
+    acc.clear() //--------------- global validation complete. ---------------------
+
+    val grouped = globalValueNodes.groupBy { case (n, _) => n.locateToCmdNode(argTree) }
+    grouped.foreach{ case (cmdNode, valueNodes) =>
+      cmdNode.limitations.foreach {
+        case (Limitation.MExclusive, group) => resolveMExclusive(valueNodes, group)
+        case (Limitation.MDependent, group) => resolveMDependent(valueNodes, group)
+      }
+    }
+    //--------------- per-cmd validation complete. ---------------------
+  }
+
+
+  private implicit class OptNodeOps(in: ValueNode[_]) {
+    def locateToCmdNode(argTree: ArgTree): CmdNode = recLocate(argTree.toTopNode) match {
+      case Some(cmdNode) => cmdNode
+      case None => throw new AssertionError(s"Cmd symbol: ${in.parent} cannot be found in arg tree.")
+    }
+
+    private def recLocate(cmdNode: CmdNode): Option[CmdNode] = {
+      if (in.parent == cmdNode.entity.symbol) Some(cmdNode)
+      else cmdNode.subCmdEntry.children.find(n => recLocate(n).nonEmpty)
+    }
   }
 
 }

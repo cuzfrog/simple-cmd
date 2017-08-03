@@ -10,9 +10,11 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
   override val loggerAgent = classOf[ScmdRuntime].getName
 
   @IgnoreLogging
-  abstract override def buildParamNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
+  abstract override def buildParamNode[T: ClassTag](entity: Int,
+                                                    value: Seq[String],
+                                                    parent: scala.Symbol): Int = {
     debug(s"Build ParamNode[${implicitly[ClassTag[T]]}]")
-    super.buildParamNode[T](entity, value)
+    super.buildParamNode[T](entity, value, parent)
   }
   @IgnoreLogging
   abstract override def buildCmdEntry(isMandatory: Boolean): Int = {

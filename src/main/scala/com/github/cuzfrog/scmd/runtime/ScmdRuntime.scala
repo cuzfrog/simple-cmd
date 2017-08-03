@@ -44,9 +44,9 @@ sealed trait ScmdRuntime {
   def buildSingleValue[T](_default: Option[T]): ArgValue[T]
   def buildVariableValue[T](_default: Seq[T]): ArgValue[T]
 
-  def buildParamNode[T: ClassTag](entity: Int, value: Seq[String]): Int
+  def buildParamNode[T: ClassTag](entity: Int, value: Seq[String],parent: scala.Symbol): Int
 
-  def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int
+  def buildOptNode[T: ClassTag](entity: Int, value: Seq[String],parent: scala.Symbol): Int
 
   def buildCmdEntryNode(entity: Int,
                         children: Seq[Int]): Int
@@ -170,18 +170,23 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildVariableValue[T](_default: Seq[T]): ArgValue[T] = {
     ArgValue.variable(_default)
   }
-  override def buildParamNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
+  override def buildParamNode[T: ClassTag](entity: Int,
+                                           value: Seq[String],
+                                           parent: scala.Symbol): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Parameter[T] with ArgValue[T]](entity)
-    val a = ParamNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]])
+    val a = ParamNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]], parent)
     repository.put(id, Box(a))
     nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
-  override def buildOptNode[T: ClassTag](entity: Int, value: Seq[String]): Int = {
+  override def buildOptNode[T: ClassTag](entity: Int,
+                                         value: Seq[String],
+                                         parent: scala.Symbol): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[OptionArg[T] with ArgValue[T]](entity)
-    val a = OptNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]])
+    val a =
+      OptNode[T](entity = e, value = value, tpe = implicitly[ClassTag[T]], parent: scala.Symbol)
     repository.put(id, Box(a))
     nodeRefs.put(scala.Symbol(e.name), a)
     id

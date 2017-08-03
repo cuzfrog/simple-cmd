@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
+import com.github.cuzfrog.scmd.{Command, Limitation, MutualLimitation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -55,8 +55,8 @@ private object TreeBuilder {
 
       idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
         case None =>
-          val params = idxDefs.collect { case param: TermParam => param }
-          val opts = idxDefs.collect { case opt: TermOpt => opt }
+          val params = idxDefs.collect { case param: TermParam => param.withParent() }
+          val opts = idxDefs.collect { case opt: TermOpt => opt.withParent() }
           TermArgTree(params, opts, TermCommandEntry.placeHolder,
             globalLimitations = globalLimitations)
 
@@ -64,7 +64,7 @@ private object TreeBuilder {
           import idxDefs.indexOf
           val topLevelValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
 
-          val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt }
+          val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt.withParent() }
           /** param defs above first cmd will be shared by all cmd as their first param. */
           val topLevelParam = topLevelValueArgs.collect { case param: TermParam => param }
 
@@ -167,7 +167,9 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
   //non-defensive
   private def build: TermCmdNode = {
     //these CmdNodes are flat at level1 (level0 is the top)
-    TermCmdNode(cmd, params, opts, subCmdEntry = TermCommandEntry.placeHolder)
+    TermCmdNode(cmd,
+      params.map(_.withParent(scala.Symbol(cmd.name))),
+      opts, subCmdEntry = TermCommandEntry.placeHolder)
   }
 
   def seal: immutable.Seq[TermCmdNode] = lastSibling match {
@@ -247,10 +249,13 @@ private final class DslTermNodeBuilder(argDefs: immutable.Seq[TermArg],
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
 
+    val currentCmdSymbol =
+      termCmdOpt.map(t => scala.Symbol(t.name)).getOrElse(Command.topCmd.symbol)
+
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
-      params = termArgs.collect { case a: TermParam => a },
-      opts = termArgs.collect { case a: TermOpt => a },
+      params = termArgs.collect { case a: TermParam => a.withParent(currentCmdSymbol) },
+      opts = termArgs.collect { case a: TermOpt => a.withParent(currentCmdSymbol) },
       subCmdEntry = subCmdEntry,
       limitations = groupArgs.map(LimitationGroup.fromTuple)
     )

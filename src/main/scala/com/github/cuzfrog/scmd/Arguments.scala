@@ -58,15 +58,21 @@ sealed trait VariableValue[+T] extends ArgValue[T] {
 
 sealed trait Mandatory
 
-private[scmd] object DummyCommand extends Command("")
-private[scmd] object DummyParameterS extends Parameter("") with SingleValue[Nothing]
-private[scmd] object DummyParameterV extends Parameter("") with VariableValue[Nothing]
-private[scmd] object DummyOptionArgS extends OptionArg("") with SingleValue[Nothing]
-private[scmd] object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
-private[scmd] object DummyParameterSM extends Parameter("") with SingleValue[Nothing] with Mandatory
-private[scmd] object DummyParameterVM extends Parameter("") with VariableValue[Nothing] with Mandatory
-private[scmd] object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
-private[scmd] object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
+private[scmd] object DummyArgument {
+  object DummyCommand extends Command("")
+  object DummyParameterS extends Parameter("") with SingleValue[Nothing]
+  object DummyParameterV extends Parameter("") with VariableValue[Nothing]
+  object DummyOptionArgS extends OptionArg("") with SingleValue[Nothing]
+  object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
+  object DummyParameterSM extends Parameter("") with SingleValue[Nothing] with Mandatory
+  object DummyParameterVM extends Parameter("") with VariableValue[Nothing] with Mandatory
+  object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
+  object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
+}
+
+private object Command {
+  val topCmd: Command = Command("AppName", None) //todo: replace AppName
+}
 
 //todo: use macros to eliminate boilerplate:
 private object Parameter {

@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
+import com.github.cuzfrog.scmd.MutualLimitation
 
 import scala.collection.immutable
 import scala.meta._

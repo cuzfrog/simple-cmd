@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd
 
+import DummyArgument._
+
 trait ScmdApi {
   // --------------------- Def methods ----------------------
   final def cmdDef(description: String = ""): Command = DummyCommand

@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.Defaults
+import com.github.cuzfrog.scmd.{Command, Defaults}
 import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
 import com.github.cuzfrog.scmd.macros.Constants._
 
@@ -92,9 +92,17 @@ private sealed trait TermValueArg extends TermArg
 private final
 case class TermCmd(name: String, term: Term, pos: Position) extends TermArg {val tpe = TYPE_NOTHING}
 private final
-case class TermParam(name: String, term: Term, pos: Position, tpe: Type) extends TermValueArg
+case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
+                     parent: Option[Lit.Symbol] = None) extends TermValueArg {
+  def withParent(symbol: scala.Symbol = Command.topCmd.symbol): TermParam =
+    this.copy(parent = Some(Lit.Symbol(symbol)))
+}
 private final
-case class TermOpt(name: String, term: Term, pos: Position, tpe: Type) extends TermValueArg
+case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
+                   parent: Option[Lit.Symbol] = None) extends TermValueArg {
+  def withParent(symbol: scala.Symbol = Command.topCmd.symbol): TermOpt =
+    this.copy(parent = Some(Lit.Symbol(symbol)))
+}
 private final
 case class TermCommandEntry(term: Term, children: immutable.Seq[TermCmdNode])
 
@@ -104,18 +112,24 @@ private object TermCmd {
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
+    val parent =
+      a.parent.getOrElse(throw new AssertionError(s"Parent empty of TermParam: ${a.name}"))
     q"""runtime.buildParamNode[${a.tpe}](
             entity = ${a.term},
-            value = Nil
+            value = Nil,
+            parent = $parent
         )"""
   }
 }
 
 private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
+    val parent =
+      a.parent.getOrElse(throw new AssertionError(s"Parent empty of TermOpt: ${a.name}"))
     q"""runtime.buildOptNode[${a.tpe}](
             entity = ${a.term},
-            value = Nil
+            value = Nil,
+            parent = $parent
         )"""
   }
 }

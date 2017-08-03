@@ -67,6 +67,7 @@ sealed trait ScmdRuntime {
   def buildArgTree(appName: String,
                    topParams: Seq[Int],
                    topOpts: Seq[Int],
+                   props: Seq[Int],
                    cmdEntry: Int,
                    topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                    globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): this.type
@@ -209,7 +210,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     id
   }
   override def buildPropNode[T: ClassTag](entity: Int,
-                                 value: Seq[String]): Int = {
+                                          value: Seq[String]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[PropertyArg[T] with VariableValue[(String, T)]](entity)
     val a = PropNode(entity = e, value = value, tpe = implicitly[ClassTag[T]])
@@ -244,13 +245,15 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildArgTree(appName: String,
                             topParams: Seq[Int],
                             topOpts: Seq[Int],
+                            props: Seq[Int],
                             cmdEntry: Int,
                             topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])],
                             globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): this.type = {
     val tp = topParams.map(getEntity[ParamNode[_]])
     val to = topOpts.map(getEntity[OptNode[_]])
+    val ps = props.map(getEntity[PropNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)
-    argTree = Some(ArgTree(appName, tp, to, ce, topLimitations, globalLimitations))
+    argTree = Some(ArgTree(appName, tp, to, ps, ce, topLimitations, globalLimitations))
     repository.clear()
     this
   }

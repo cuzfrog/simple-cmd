@@ -30,6 +30,8 @@ private case class LongOpt(arg: String) extends CateArg
 /** Param or Cmd with no prefix "-". */
 private case class ParamOrCmd(arg: String) extends CateArg
 
+private case class Properties(arg: String, key: String, value: String,
+                              prop: PropNode[_]) extends CateArg
 /**
   * Option with single hyphen -
   * e.g. -p -P

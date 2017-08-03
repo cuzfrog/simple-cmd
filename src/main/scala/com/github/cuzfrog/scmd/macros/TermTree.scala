@@ -16,6 +16,7 @@ private final
 case class TermArgTree(appName: Lit.String,
                        topParams: immutable.Seq[TermParam],
                        topOpts: immutable.Seq[TermOpt],
+                       props: immutable.Seq[TermProp],
                        cmdEntry: TermCommandEntry,
                        topLimitations: immutable.Seq[LimitationGroup] = Nil,
                        globalLimitations: immutable.Seq[LimitationGroup] = Nil)
@@ -58,6 +59,7 @@ private object TermArgTree {
   implicit val definable: Definable[TermArgTree] = (a: TermArgTree) => {
     val topParams = a.topParams.map(_.defnTerm)
     val topOpts = a.topOpts.map(_.defnTerm)
+    val props = a.props.map(_.defnTerm)
     val cmdEntry = a.cmdEntry.defnTerm
     val topLimitations = q"$TERM_immutable.Seq(..${a.topLimitations.map(_.defnTerm)})"
     val globalLimitations = q"$TERM_immutable.Seq(..${a.globalLimitations.map(_.defnTerm)})"
@@ -65,6 +67,7 @@ private object TermArgTree {
           appName = ${a.appName},
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
+          props = $TERM_immutable.Seq(..$props),
           cmdEntry = $cmdEntry,
           topLimitations = $topLimitations,
           globalLimitations = $globalLimitations

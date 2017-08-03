@@ -43,9 +43,9 @@ OptionArg[+T] private[scmd](name: String,
 sealed case class
 PropertyArg[+T] private[scmd](name: String,
                               flag: String,
-                              description: Option[String] = None) extends ValueArgument[T] {
+                              description: Option[String] = None) extends Argument[T] {
   final override val originalName: String = "-" + flag
-  override val isMandatory: Boolean = false
+  //override val isMandatory: Boolean = false
 }
 
 sealed trait ArgValue[+T] {
@@ -75,11 +75,11 @@ private[scmd] object DummyArgument {
   object DummyParameterVM extends Parameter("") with VariableValue[Nothing] with Mandatory
   object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
   object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
-  object DummyProp extends PropertyArg("","") with VariableValue[Nothing]
+  object DummyProp extends PropertyArg("", "") with VariableValue[Nothing]
 }
 
 private object Command {
-  val topCmd: Command = Command("AppName", None) //todo: replace AppName
+  val topCmd: Command = Command("AppName", None) //todo: check AppName is harmless.
 }
 
 //todo: use macros to eliminate boilerplate:
@@ -140,7 +140,6 @@ private object Parameter {
         override def default: Seq[T] = _default
       }
     }
-
   }
 }
 
@@ -158,7 +157,7 @@ private object OptionArg {
     }
 
   private[scmd] implicit def mixValueTrait
-  [T, V <: ArgValue[T], A <: ValueArgument[T]]: CanMix[OptionArg[T], V] =
+  [T, V <: ArgValue[T]]: CanMix[OptionArg[T], V] =
     (a: OptionArg[T], stuff: V) => {
       val result = stuff match {
         case s: SingleValue[T@unchecked] =>
@@ -217,6 +216,30 @@ private object OptionArg {
         if (char.isLower) lastUpper = false
         Seq(char.toLower)
       }
+    }
+  }
+}
+
+private object PropertyArg {
+  private[scmd] implicit def mergeValue[T]: CanMerge[PropertyArg[T], Seq[(String, T)]] =
+    (a: PropertyArg[T], stuff: Seq[(String, T)]) => a match {
+      case arg: VariableValue[(String, T)@unchecked] =>
+        createProp[T](a.name, arg.flag, a.description, stuff, arg.default)
+      case arg: PropertyArg[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+    }
+
+
+  private[scmd] implicit def mixValueTrait[T]: CanMix[PropertyArg[T], VariableValue[(String, T)]] =
+    (a: PropertyArg[T], stuff: VariableValue[(String, T)]) => {
+      createProp[T](a.name, a.flag, a.description, stuff.value, stuff.default)
+    }
+
+  private def createProp[T](name: String, flag: String, description: Option[String],
+                            _value: Seq[(String, T)], _default: Seq[(String, T)]) = {
+    new PropertyArg[T](name = name, flag = flag, description = description)
+      with VariableValue[(String, T)] {
+      override def value: Seq[(String, T)] = _value
+      override def default: Seq[(String, T)] = _default
     }
   }
 }

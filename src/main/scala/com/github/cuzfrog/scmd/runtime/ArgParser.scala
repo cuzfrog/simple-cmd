@@ -8,7 +8,7 @@ import scala.language.reflectiveCalls
 private object ArgParser {
   @throws[ArgParseException]("when parsing failed.")
   def parse(argTree: ArgTree, args: Seq[String]): Seq[(Node, ContextSnapshot)] = {
-    new BacktrackingParser(argTree, args).parse
+    new BacktrackingParser(args)(argTree).parse
   }
 }
 
@@ -22,7 +22,7 @@ private object ArgParser {
   *
   * Not thread-safe. It should only be accessed inside ArgParser.
   */
-private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends SimpleLogging {
+private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) extends SimpleLogging {
 
   import BacktrackingParser._
 
@@ -119,16 +119,27 @@ private class BacktrackingParser(argTree: ArgTree, args: Seq[String]) extends Si
 }
 
 private object BacktrackingParser {
-  private val SingleOptExtractor = """-(\w{1}.*)""".r
-  private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
-
-  def categorize(arg: String): TypedArg[CateArg] = {
+  def categorize(arg: String)(implicit argTree: ArgTree): TypedArg[CateArg] = {
     val cateArg: CateArg = arg match {
+      case PropertiesExtractor(prop) => prop
       case SingleOptExtractor(sOpt) => SingleOpts(sOpt)
       case LongOptExtractor(lOpt, _, _) => LongOpt(lOpt)
       case paramOrCmd => ParamOrCmd(paramOrCmd)
     }
     TypedArg(cateArg, arg)
+  }
+
+  private val SingleOptExtractor = """-(\w{1}.*)""".r
+  private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
+  private object PropertiesExtractor {
+    private val RegexExtractor = """(-[A-Z]{1})([a-z]+[\w\d]+)\=(.*)""".r
+    def unapply(arg: String)(implicit argTree: ArgTree): Option[Properties] = arg match {
+      case RegexExtractor(flag, k, v) =>
+        argTree.props.find(_.entity.flag == flag).map { node =>
+          Properties(arg, k, v, node)
+        }
+      case _ => None
+    }
   }
 }
 

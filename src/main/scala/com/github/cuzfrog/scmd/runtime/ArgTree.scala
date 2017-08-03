@@ -7,6 +7,7 @@ import scala.reflect.ClassTag
 private final case class ArgTree(appName: String,
                                  topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
+                                 props: Seq[PropNode[_]],
                                  cmdEntry: CmdEntryNode,
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                                  globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) {
@@ -82,7 +83,7 @@ private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
 
 private case class PropNode[T](entity: PropertyArg[T] with VariableValue[(String, T)],
                                value: Seq[String], tpe: ClassTag[_])
-  extends Node{
+  extends Node {
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false

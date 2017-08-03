@@ -55,12 +55,18 @@ private object TreeBuilder {
         if (args.isEmpty) builder
         else recAdd(builder.add(args.head), args.tail)
       }
+      val props = idxDefs.collect { case prop: TermProp => prop }
 
       idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
         case None =>
           val params = idxDefs.collect { case param: TermParam => param.withParent() }
           val opts = idxDefs.collect { case opt: TermOpt => opt.withParent() }
-          TermArgTree(Lit.String(appName), params, opts, TermCommandEntry.placeHolder,
+          TermArgTree(
+            appName = Lit.String(appName),
+            topParams = params,
+            topOpts = opts,
+            props = props,
+            cmdEntry = TermCommandEntry.placeHolder,
             globalLimitations = globalLimitations)
 
         case Some(cmd1) =>
@@ -75,8 +81,12 @@ private object TreeBuilder {
           val builder = NodeBuilder.newIdxTermBuilder(cmd1, topLevelParam)
 
           val commands = recAdd(builder, tail).seal
-          TermArgTree(Lit.String(appName), Nil, topLevelOpts,
-            TermCommandEntry.createWithCmdNodes(commands),
+          TermArgTree(
+            appName = Lit.String(appName),
+            topParams = Nil,
+            topOpts = topLevelOpts,
+            props = props,
+            cmdEntry = TermCommandEntry.createWithCmdNodes(commands),
             globalLimitations = globalLimitations)
       }
     }
@@ -191,16 +201,17 @@ private final class DslTermNodeBuilder(appName: String,
 
   def resolve: TermArgTree = {
     val topNode = recResolve(None, dslStats)
-
-    val gobalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
+    val props = argDefs.collect { case prop: TermProp => prop }
+    val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
 
     TermArgTree(
       appName = Lit.String(appName),
       topParams = topNode.params,
       topOpts = topNode.opts,
+      props = props,
       cmdEntry = topNode.subCmdEntry,
       topLimitations = topNode.limitations,
-      globalLimitations = gobalLimitations
+      globalLimitations = globalLimitations
     )
   }
 

@@ -1,6 +1,12 @@
 package com.github.cuzfrog
 
 package object scmd {
+  private[scmd] trait Convertible[A, R] {
+    def convertTo(a: A): R
+  }
+  private[scmd] implicit class ConversionOps[A](a: A) {
+    def convertTo[R](implicit ev: Convertible[A, R]): R = ev.convertTo(a)
+  }
 
   private[scmd] trait CanFormPrettyString[A] {
     def mkPrettyString(a: A): String

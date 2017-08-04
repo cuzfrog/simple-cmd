@@ -207,7 +207,7 @@ private final class DslTermNodeBuilder(appName: String,
     val props = argDefs.collect { case prop: TermProp => prop }
     val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
 
-    TermArgTree(
+    val tree = TermArgTree(
       appName = Lit.String(appName),
       topParams = topNode.params,
       topOpts = topNode.opts,
@@ -216,6 +216,12 @@ private final class DslTermNodeBuilder(appName: String,
       topLimitations = topNode.limitations,
       globalLimitations = globalLimitations
     )
+    val argDifference = argDefs.map(_.name)
+      .diff(tree.convertTo[immutable.Seq[TermArg]].map(_.name))
+    if(argDifference.nonEmpty)
+      abort(s"Arg not defined in tree dsl:${argDifference.mkString(",")}." +
+        s" Comment these argDefs out or put them in the tree.")
+    tree
   }
 
   private def recResolve(termCmdOpt: Option[TermCmd],

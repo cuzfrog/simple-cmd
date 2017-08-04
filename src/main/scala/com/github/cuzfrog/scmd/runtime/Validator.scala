@@ -101,11 +101,10 @@ private object Validator {
     parsedResults
   }
 
-
   private implicit class OptNodeOps(in: ValueNode[_]) {
     def locateToCmdNode(argTree: ArgTree): CmdNode = recLocate(argTree.toTopNode) match {
       case Some(cmdNode) => cmdNode
-      case None => throw new AssertionError(s"Cmd symbol: ${in.parent} cannot be found in arg tree.")
+      case None => throw new AssertionError(s"ValueArg ${in.entity.name}'s parent Cmd symbol: ${in.parent} cannot be found in arg tree.")
     }
 
     private def recLocate(cmdNode: CmdNode): Option[CmdNode] = {

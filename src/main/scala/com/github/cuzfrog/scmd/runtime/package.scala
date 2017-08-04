@@ -42,13 +42,6 @@ package object runtime extends ArgTreeUtils {
     def collect[R: ClassTag]: Seq[R] = collectible.collect(a)
   }
 
-  private[runtime] trait Convertible[A, R] {
-    def convertTo(a: A): R
-  }
-  private[runtime] implicit class ConversionOps[A](a: A) {
-    def convertTo[R](implicit ev: Convertible[A, R]): R = ev.convertTo(a)
-  }
-
   private[runtime] implicit class UsageGenerationOps[A: UsageEvidence](a: A) {
     private val ev: UsageEvidence[A] = implicitly[UsageEvidence[A]]
     private implicit val consoleType: ConsoleType = ConsoleType.detect

@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.Convertible
 import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.collection.immutable
@@ -73,4 +74,14 @@ private object TermArgTree {
           globalLimitations = $globalLimitations
         )"""
   }
+
+  implicit val convert2NodeSeq: Convertible[TermArgTree, immutable.Seq[TermArg]] =
+    (a: TermArgTree) => {
+      def recConvertTermCmdNode2NodeSeq(tn: TermCmdNode): immutable.Seq[TermArg] = {
+        tn.params ++ tn.opts ++
+          tn.subCmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq) :+ tn.cmd
+      }
+      a.props ++ a.topParams ++ a.topOpts ++
+        a.cmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq)
+    }
 }

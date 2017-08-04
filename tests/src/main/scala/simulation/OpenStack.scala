@@ -17,12 +17,13 @@ private object OpenStack {
     val version = cmdDef(description = "print version info.")
 
     val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
-    //val inTable = optDef[Boolean](description = "print in table.", default = true)
+    val inTable = optDef[Boolean](description = "print in table.", default = true)
 
     import scmdTreeDefDSL._
 
     argTreeDef(
       verbose,
+      inTable,
       version,
       nova(
         list(service ?, project), //cmds under list are optional.

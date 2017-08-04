@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.CanFormPrettyString
+import com.github.cuzfrog.scmd.{CanFormPrettyString, Convertible}
 import com.github.cuzfrog.scmd.runtime.logging.TryPathLogging
 
 import scala.annotation.tailrec

@@ -67,7 +67,7 @@ private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
                               value: Seq[String], tpe: ClassTag[_],
                               parent: scala.Symbol)
   extends ValueNode[T] with NodeTag[OptNode[T]] {
-
+  def addValue(v: String): OptNode[T] = this.copy(value = value :+ v)
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false

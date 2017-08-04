@@ -66,7 +66,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def anchor(n: Node): Anchor = this.synchronized {
     val updatedNode: Node = n match {
       case optNode: OptNode[_] =>
-        optsUpstreamLeft -= optNode //register consumed
+        if (!optNode.isVariable) optsUpstreamLeft -= optNode //register consumed
         n //todo: deal with variable value opt
       case propNode: PropNode[_] =>
         val storedPropNode = propsRepo.find(_ == propNode)
@@ -74,7 +74,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
         val updated = storedPropNode.copy(value = storedPropNode.value ++ propNode.value)
         propsRepo += updated
         updated
-      case otherNode =>  otherNode //nothing needed to do.
+      case otherNode => otherNode //nothing needed to do.
     }
     Anchor(updatedNode, this)
   }
@@ -151,7 +151,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   @inline
   def mandatoryLeftCnt: Int = this.synchronized {
     val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
-    val optCnt = optsUpstreamLeft.count(_.entity.isMandatory)
+    val optCnt = optsUpstreamLeft.filter(_.value.isEmpty).count(_.entity.isMandatory)
     val subCmdCnt = currentCmdNode.subCmdEntry.mandatoryDownstreamCnt
     paramCnt + optCnt + subCmdCnt
   }

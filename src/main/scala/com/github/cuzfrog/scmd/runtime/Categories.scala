@@ -32,7 +32,7 @@ private case class LongOpt(arg: String) extends CateArg
 private case class ParamOrCmd(arg: String) extends CateArg
 
 private case class PropsCate(arg: String, key: String, value: String,
-                              prop: PropNode[_]) extends CateArg
+                             prop: PropNode[_]) extends CateArg
 /**
   * Option with single hyphen -
   * e.g. -p -P
@@ -60,12 +60,12 @@ private object SingleOpts extends CateUtils {
                 //arg=literal
                 case EqualLitertal(argAbbr, bool) if optNode1.entity.abbr.contains(argAbbr) =>
                   parseBoolStr(bool) match {
-                    case Some(b) => c.anchors(optNode1.copy(value = Seq(b)))
+                    case Some(b) => c.anchors(optNode1.addValue(b))
                     case None => ArgParseException(s"Unknown bool literal: $bool", c)
                   }
                 //multichar single abbr
                 case bool if optNode1.entity.abbr.contains(bool) =>
-                  c.anchors(optNode1.copy(value = Seq(extractBooleanValue(optNode1))))
+                  c.anchors(optNode1.addValue(extractBooleanValue(optNode1)))
                 //folded letters
                 case bools if bools.matches("""\w+""") =>
                   val boolSet = bools.split("").toSet
@@ -82,7 +82,7 @@ private object SingleOpts extends CateUtils {
                   }
                   else {
                     val optNodesWithValue = boolNodes.flatMap { n =>
-                      c.anchors(n.copy(value = Seq(extractBooleanValue(n))))
+                      c.anchors(n.addValue(extractBooleanValue(n)))
                     }
                     optNodesWithValue
                   }
@@ -102,7 +102,7 @@ private object SingleOpts extends CateUtils {
                       s"No value found for opt -$arg with type[${otherTpe.name}].", c))
                   case bad => throw ArgParseException(s"Malformed opt -$bad", c)
                 }
-                c.anchors(optNode1.copy(value = Seq(value)))
+                c.anchors(optNode1.addValue(value))
               } catch {
                 case e: ArgParseException => e
               }
@@ -135,11 +135,11 @@ private object LongOpt extends CateUtils {
                 case ClassTag.Boolean =>
                   valueOpt match {
                     case Some(boolStr) => parseBoolStr(boolStr) match {
-                      case Some(b) => c.anchors(optNode.copy(value = Seq(b)))
+                      case Some(b) => c.anchors(optNode.addValue(b))
                       case None => ArgParseException(s"Unknown bool literal: -$arg", c)
                     }
                     case None =>
-                      c.anchors(optNode.copy(value = Seq(extractBooleanValue(optNode))))
+                      c.anchors(optNode.addValue(extractBooleanValue(optNode)))
                   }
 
                 //arg def of other type
@@ -149,7 +149,7 @@ private object LongOpt extends CateUtils {
                     case None => c.nextArg
                   }
                   vOpt match {
-                    case Some(v) => c.anchors(optNode.copy(value = Seq(v))) //todo: deal with variable values
+                    case Some(v) => c.anchors(optNode.addValue(v)) //todo: deal with variable values
                     case None =>
                       ArgParseException(
                         s"No value found for opt -$arg with type[${otherTpe.name}].", c)
@@ -238,10 +238,10 @@ private object ParamOrCmd extends CateUtils {
   }
 }
 
-private object PropsCate extends CateUtils{
+private object PropsCate extends CateUtils {
   implicit val parser: Parser[PropsCate, AnchorEither] = new Parser[PropsCate, AnchorEither] {
     override def parse(a: PropsCate)(implicit c: Context): AnchorEither = {
-      val nodeWithValue = a.prop.copy(value = a.prop.value :+ (a.key,a.value))
+      val nodeWithValue = a.prop.copy(value = a.prop.value :+ (a.key, a.value))
       c.anchors(nodeWithValue)
     }
   }

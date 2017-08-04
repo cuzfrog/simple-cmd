@@ -72,7 +72,8 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
         val storedPropNode = propsRepo.find(_ == propNode)
           .getOrElse(throw new AssertionError(s"PropNode not in context:$propNode"))
         val updated = storedPropNode.copy(value = storedPropNode.value ++ propNode.value)
-        propsRepo += updated
+        propsRepo.remove(storedPropNode) //this is required, because updated node is equal to storedPropNode
+        propsRepo.add(updated)
         updated
       case otherNode => otherNode //nothing needed to do.
     }

@@ -71,6 +71,11 @@ object ScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
       override def convert(a: OptionArg[T] with SingleValue[T] with WithDefault): T =
         a.value.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
     }
+
+  implicit class PropsOps[T](propertyArg: PropsV[T]) {
+    def apply(key: String): Option[T] =
+      propertyArg.value.collectFirst { case (k, v) if k == key => v }
+  }
 }
 
 sealed trait LowLevelImplicitsOfScmdValueConverter {

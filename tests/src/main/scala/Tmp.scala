@@ -79,6 +79,7 @@ object Tmp {
     println("---------Parsed values:----------")
     val files = parsed.files.value
     println(files)
+    println(parsed.properties("key2"))
   }
 }
 

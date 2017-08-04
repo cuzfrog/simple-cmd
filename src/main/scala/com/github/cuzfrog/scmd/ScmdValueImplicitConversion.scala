@@ -9,7 +9,7 @@ package com.github.cuzfrog.scmd
   */
 object ScmdValueImplicitConversion {
   /*
-   * S = SingleValue, M = Mandatory, V = VariableValue
+   * S = SingleValue, V = VariableValue, M = Mandatory
    */
 
   implicit def cmd2Value(in: Command): Boolean = in.met

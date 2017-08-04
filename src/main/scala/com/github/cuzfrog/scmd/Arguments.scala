@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd
 
+import com.github.cuzfrog.scmd.internal.ArgCreationMacro
+
 /**
   * Exposed to macros for basic validation, so need to put in this package.
   */
@@ -64,6 +66,7 @@ sealed trait VariableValue[+T] extends ArgValue[T] {
 }
 
 sealed trait Mandatory
+sealed trait WithDefault
 
 private[scmd] object DummyArgument {
   object DummyCommand extends Command("")
@@ -82,7 +85,6 @@ private object Command {
   val topCmd: Command = Command("AppName", None) //todo: check AppName is harmless.
 }
 
-//todo: use macros to eliminate boilerplate:
 private object Parameter {
   private[scmd] implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =
     (a: Parameter[T], stuff: Seq[T]) => {
@@ -108,39 +110,12 @@ private object Parameter {
       result.asInstanceOf[Parameter[T] with V]
     }
 
-
+  @ArgCreationMacro
   private def createParam[T](name: String, description: Option[String],
-                             isMandatory: Boolean, _value: Option[T], _default: Option[T]) = {
-    if (isMandatory) {
-      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
-        with SingleValue[T] with Mandatory {
-        override def value: Option[T] = _value
-        override def default: Option[T] = _default
-      }
-    } else {
-      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
-        with SingleValue[T] {
-        override def value: Option[T] = _value
-        override def default: Option[T] = _default
-      }
-    }
-  }
+                             isMandatory: Boolean, _value: Option[T], _default: Option[T]) = Empty
+  @ArgCreationMacro
   private def createParam[T](name: String, description: Option[String],
-                             isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = {
-    if (isMandatory) {
-      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
-        with VariableValue[T] with Mandatory {
-        override def value: Seq[T] = _value
-        override def default: Seq[T] = _default
-      }
-    } else {
-      new Parameter[T](name = name, description = description, isMandatory = isMandatory)
-        with VariableValue[T] {
-        override def value: Seq[T] = _value
-        override def default: Seq[T] = _default
-      }
-    }
-  }
+                             isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = Empty
 }
 
 private object OptionArg {
@@ -169,40 +144,12 @@ private object OptionArg {
       result.asInstanceOf[OptionArg[T] with V]
     }
 
-
+  @ArgCreationMacro
   private def createOpt[T](name: String, abbr: Option[String], description: Option[String],
-                           isMandatory: Boolean, _value: Option[T], _default: Option[T]) = {
-    if (isMandatory) {
-      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
-        with SingleValue[T] with Mandatory {
-        override def value: Option[T] = _value
-        override def default: Option[T] = _default
-      }
-    } else {
-      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
-        with SingleValue[T] {
-        override def value: Option[T] = _value
-        override def default: Option[T] = _default
-      }
-    }
-
-  }
+                           isMandatory: Boolean, _value: Option[T], _default: Option[T]) = Empty
+  @ArgCreationMacro
   private def createOpt[T](name: String, abbr: Option[String], description: Option[String],
-                           isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = {
-    if (isMandatory) {
-      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
-        with VariableValue[T] with Mandatory {
-        override def value: Seq[T] = _value
-        override def default: Seq[T] = _default
-      }
-    } else {
-      new OptionArg[T](name = name, abbr = abbr, description = description, isMandatory = isMandatory)
-        with VariableValue[T] {
-        override def value: Seq[T] = _value
-        override def default: Seq[T] = _default
-      }
-    }
-  }
+                           isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = Empty
 
   @inline
   private def camelCase2hyphen(camelCase: String): String = {
@@ -236,10 +183,18 @@ private object PropertyArg {
 
   private def createProp[T](name: String, flag: String, description: Option[String],
                             _value: Seq[(String, T)], _default: Seq[(String, T)]) = {
-    new PropertyArg[T](name = name, flag = flag, description = description)
-      with VariableValue[(String, T)] {
-      override def value: Seq[(String, T)] = _value
-      override def default: Seq[(String, T)] = _default
+    if (_default.nonEmpty) {
+      new PropertyArg[T](name = name, flag = flag, description = description)
+        with VariableValue[(String, T)] with WithDefault {
+        override def value: Seq[(String, T)] = _value
+        override def default: Seq[(String, T)] = _default
+      }
+    } else {
+      new PropertyArg[T](name = name, flag = flag, description = description)
+        with VariableValue[(String, T)] {
+        override def value: Seq[(String, T)] = _value
+        override def default: Seq[(String, T)] = _default
+      }
     }
   }
 }

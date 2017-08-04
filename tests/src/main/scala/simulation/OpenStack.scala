@@ -46,5 +46,7 @@ private object OpenStack {
     val parsed: OpenStackDef = conf.parsed
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
+    import scmdValueConverter._
+    println("Is Verbose:" + parsed.verbose.value)
   }
 }

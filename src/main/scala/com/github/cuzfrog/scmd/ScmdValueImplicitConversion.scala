@@ -9,21 +9,28 @@ package com.github.cuzfrog.scmd
   */
 object ScmdValueImplicitConversion {
   /*
-   * S = SingleValue, V = VariableValue, M = Mandatory
+   * S = SingleValue, V = VariableValue, M = Mandatory, D = WithDefault
    */
 
   implicit def cmd2Value(in: Command): Boolean = in.met
   implicit def paramS2value[T](in: Parameter[T] with SingleValue[T]): Option[T] = in.value
-  implicit def paramSM2value[T](in: Parameter[T] with SingleValue[T] with Mandatory): T = in.value.get
-  implicit def paramV2value[T](in: Parameter[T] with VariableValue[T]): Seq[T] = in.value
+  implicit def paramSM2value[T](in: Parameter[T] with SingleValue[T] with Mandatory): T =
+    in.value.get
+  implicit def paramSD2value[T](in: Parameter[T] with SingleValue[T] with WithDefault): T =
+    in.value.getOrElse(in.default.get)
+  implicit def paramV2value[T](in: Parameter[T] with VariableValue[T]): Seq[T] =
+    if (in.value.nonEmpty) in.value else in.default
   //           paramVM same as above
   implicit def optS2value[T](in: OptionArg[T] with SingleValue[T]): Option[T] = in.value
-  implicit def optSM2value[T](in: OptionArg[T] with SingleValue[T] with Mandatory): T = in.value.get
-  implicit def optV2value[T](in: OptionArg[T] with VariableValue[T]): Seq[T] = in.value
+  implicit def optSM2value[T](in: OptionArg[T] with SingleValue[T] with Mandatory): T =
+    in.value.get
+  implicit def optSD2value[T](in: OptionArg[T] with SingleValue[T] with WithDefault): T =
+    in.value.get
+  implicit def optV2value[T](in: OptionArg[T] with VariableValue[T]): Seq[T] =
+    if (in.value.nonEmpty) in.value else in.default
   //           optVM same as above
 }
 
-//todo: add default value fallback
 /**
   * Provide explicit method to get value of Argument.
   */
@@ -42,13 +49,27 @@ object ScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
   implicit def paramSM2value[T]: ValueConvertible
     [T, Parameter[T] with SingleValue[T] with Mandatory, T] =
     new ValueConvertible[T, Parameter[T] with SingleValue[T] with Mandatory, T] {
-      override def convert(a: Parameter[T] with SingleValue[T] with Mandatory): T = a.value.get
+      override def convert(a: Parameter[T] with SingleValue[T] with Mandatory): T =
+        a.value.getOrElse(throwIfEmptyMandatory(a))
+    }
+  implicit def paramSD2value[T]: ValueConvertible
+    [T, Parameter[T] with SingleValue[T] with WithDefault, T] =
+    new ValueConvertible[T, Parameter[T] with SingleValue[T] with WithDefault, T] {
+      override def convert(a: Parameter[T] with SingleValue[T] with WithDefault): T =
+        a.value.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
     }
 
   implicit def optSM2value[T]: ValueConvertible
     [T, OptionArg[T] with SingleValue[T] with Mandatory, T] =
     new ValueConvertible[T, OptionArg[T] with SingleValue[T] with Mandatory, T] {
-      override def convert(a: OptionArg[T] with SingleValue[T] with Mandatory): T = a.value.get
+      override def convert(a: OptionArg[T] with SingleValue[T] with Mandatory): T =
+        a.value.getOrElse(throwIfEmptyMandatory(a))
+    }
+  implicit def optSD2value[T]: ValueConvertible
+    [T, OptionArg[T] with SingleValue[T] with WithDefault, T] =
+    new ValueConvertible[T, OptionArg[T] with SingleValue[T] with WithDefault, T] {
+      override def convert(a: OptionArg[T] with SingleValue[T] with WithDefault): T =
+        a.value.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
     }
 }
 
@@ -76,4 +97,16 @@ sealed trait LowLevelImplicitsOfScmdValueConverter {
     new ValueConvertible[T, OptionArg[T] with VariableValue[T], Seq[T]] {
       override def convert(a: OptionArg[T] with VariableValue[T]): Seq[T] = a.value
     }
+
+  protected type PropsV[T] = PropertyArg[T] with VariableValue[(String, T)]
+  implicit def propsV2value[T]: ValueConvertible[T, PropsV[T], Seq[(String, T)]] =
+    new ValueConvertible[T, PropsV[T], Seq[(String, T)]] {
+      override def convert(a: PropsV[T]): Seq[(String, T)] =
+        if (a.value.nonEmpty) a.value else a.default
+    }
+
+  protected def throwIfEmptyDefault(arg: Argument[_]): Nothing =
+    throw new AssertionError(s"Default value empty for ${arg.originalName}")
+  protected def throwIfEmptyMandatory(arg: Argument[_]): Nothing =
+    throw new AssertionError(s"Mandatory value empty for ${arg.originalName}")
 }

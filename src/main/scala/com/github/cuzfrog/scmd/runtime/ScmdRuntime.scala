@@ -144,7 +144,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private[this] var argTree: Option[ArgTree] = None
   private[this] val repository = mutable.Map.empty[Int, Box[_]] //id -> element
   private[this] val nodeRefs = mutable.Map.empty[scala.Symbol, Node] //name -> node
-  private[this] val valiRefs = mutable.Map.empty[ValueNode[_], Function1[_, Unit]] //id -> func
+  private[this] val valiRefs = mutable.Map.empty[Node {def tpe: ClassTag[_]}, Function1[_, Unit]] //id -> func
   private[this] val parsedNodes = mutable.LinkedHashMap.empty[scala.Symbol, Node] //name -> node
   private[this] val parsedContextSnapshots = mutable.Map.empty[Node, ContextSnapshot]
 
@@ -287,16 +287,16 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def addValidation[T](name: String, func: T => Unit): Unit = { //todo:move scala.Symbol to compile time
     nodeRefs.get(scala.Symbol(name)) match {
       case Some(node: ValueNode[T@unchecked]) => valiRefs.put(node, func)
+      case Some(node: PropNode[T@unchecked]) => valiRefs.put(node, func)
       case Some(node) =>
-        throw new AssertionError(s"Node[$node] with name: $name is not a value node" +
-          s"(so not compatible with validation).")
+        throw new AssertionError(s"Node[$node] with name: $name is not compatible with validation.")
       case None => throw new AssertionError(s"Cannot find node with name: $name")
     }
   }
   override def parse(args: Seq[String]): Seq[String] = {
     if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
     val parsedResults = ArgParser.parse(argTree, args)
-    val validated = Validator.highLevelValidate(argTree, parsedResults)
+    val validated = Validator.mutualLimitationValidate(argTree, parsedResults)
     validated.map {
       case (node, cs) =>
         parsedNodes.put(scala.Symbol(node.entity.name), node)
@@ -324,6 +324,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         if tpe == classOf[ParamNode[_]] || tpe == classOf[ValueNode[_]] => paramNode
       case optNode: OptNode[_]
         if tpe == classOf[OptNode[_]] || tpe == classOf[ValueNode[_]] => optNode
+      case propNode: PropNode[_] if tpe == classOf[PropNode[_]] => propNode
       case _: CmdEntryNode =>
         throw new AssertionError(s"CmdEntryNode has no name and should not be cached.")
       case bad =>
@@ -340,9 +341,11 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
 
     /** Get parsed node by type. */
     def parsedNode[N <: Node : ClassTag]: Option[N] = this.getNode[N](name, parsedNodes)
-    def checkNodeType(n: ValueNode[_]): Unit = if (n.tpe != valueTpe)
+    def checkNodeType(n: {def tpe: ClassTag[_]}): Unit = if (n.tpe != valueTpe)
       throw new AssertionError(s"Node's value type[${n.tpe}]" +
         s" is different from specified type[$valueTpe].")
+    def getCS(n: Node): ContextSnapshot = parsedContextSnapshots
+      .getOrElse(n, throw new AssertionError("ContextSnapshot should company parsed node. "))
 
     val argument: Argument[_] = argTpe.runtimeClass match {
       case rc if rc == classOf[Command] =>
@@ -354,12 +357,18 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         checkNodeType(node)
         val value: Seq[T] = parsedNode[ValueNode[T]] match {
           case None => Seq.empty[T]
-          case Some(n) =>
-            val cs = parsedContextSnapshots
-              .getOrElse(n, throw new AssertionError("ContextSnapshot should company parsed node. "))
-            Validator.validate(n, cs, valiRefs.get(n))
+          case Some(n) => Validator.validateValueNode(n, getCS(n), valiRefs.get(n))
         }
         merge(node.entity.asInstanceOf[ValueArgument[T]], value)
+
+      case rc if rc == classOf[PropertyArg[_]] =>
+        val node = this.getNodeByName[PropNode[_]](name)
+        checkNodeType(node)
+        val value: Seq[(String, T)] = parsedNode[PropNode[T]] match {
+          case None => Seq.empty
+          case Some(n) => Validator.validatePropNode(n, getCS(n), valiRefs.get(n))
+        }
+        merge(node.entity.asInstanceOf[PropertyArg[T]], value)
     }
     argument.asInstanceOf[A]
   }

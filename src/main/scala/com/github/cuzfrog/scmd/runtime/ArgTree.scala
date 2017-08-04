@@ -45,7 +45,6 @@ private[runtime] sealed trait ValueNode[T] extends Node {
   def isVariable: Boolean = entity.isVariable
   def isMandatory: Boolean = entity.isMandatory
   def parent: scala.Symbol
-  override def hashCode(): Int = entity.hashCode * 3 + 17
 }
 
 private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
@@ -53,6 +52,7 @@ private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
                                 parent: scala.Symbol)
   extends ValueNode[T] with NodeTag[ParamNode[T]] {
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
+  override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false
     obj.asInstanceOf[ParamNode[_]].entity == this.entity
@@ -69,6 +69,7 @@ private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
   extends ValueNode[T] with NodeTag[OptNode[T]] {
   def addValue(v: String): OptNode[T] = this.copy(value = value :+ v)
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
+  override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false
     obj.asInstanceOf[OptNode[_]].entity == this.entity
@@ -85,6 +86,7 @@ private case class PropNode[T](entity: PropertyArg[T] with VariableValue[(String
                                value: Seq[(String, String)], tpe: ClassTag[_])
   extends Node {
   //equality depends on its entity's. Value is stripped off for parsing quick comparing.
+  override def hashCode(): Int = entity.hashCode * 3 + 17
   override def equals(obj: scala.Any): Boolean = {
     if (!this.canEqual(obj)) return false
     obj.asInstanceOf[PropNode[_]].entity == this.entity

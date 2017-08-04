@@ -18,14 +18,14 @@ object Tmp {
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
 
     val properties = propDef[Int](flag = "D")
-//    import scmdTreeDefDSL._
-//
-//    argTreeDef(
-//      cat(
-//        files & newLine & files,
-//        newLine
-//      )
-//    )
+    //    import scmdTreeDefDSL._
+    //
+    //    argTreeDef(
+    //      cat(
+    //        files & newLine & files,
+    //        newLine
+    //      )
+    //    )
 
   }
 
@@ -36,6 +36,13 @@ object Tmp {
       files.foreach { f =>
         println(s"Print in validation func:$f")
         //if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+      }
+    }
+
+    validation(argDef.properties) { props =>
+      println(s"Print in validation, value:$props")
+      props.find { case (k, _) => k == "key1" }.foreach {
+        case (_, v) =>
       }
     }
   }

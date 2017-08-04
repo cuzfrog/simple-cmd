@@ -4,6 +4,7 @@ import com.github.cuzfrog.scmd.Limitation
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
+import scala.language.reflectiveCalls
 
 private object Validator {
   /**
@@ -17,35 +18,56 @@ private object Validator {
     * @return the validated and converted typed value(s).
     */
   @throws[ArgValidationException]("When type conversion failed or validation function throws an exception.")
-  def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T],
-                                              cs: ContextSnapshot,
-                                              valiFuncOpt: Option[Function1[_, Unit]]): Seq[T] = {
-    val tpe = implicitly[ClassTag[T]]
-    val typeEvidence = implicitly[ArgTypeEvidence[T]]
-    if (tpe != valueNode.tpe)
-      throw new AssertionError(s"Type of demanded value is different from node's")
-
-    val typedValue = valueNode.value.map { str =>
-      try {typeEvidence.verify(str)}
-      catch {
-        case e: Exception =>
-          throw ArgValidationException(s"Arg ${cs.rudeArg} to ${valueNode.entity.name}"
-            + s" of value:$str does not confirm expected type[$tpe]", cs, Some(e))
-      }
-    }.toList
+  def validateValueNode
+  [T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T],
+                                  cs: ContextSnapshot,
+                                  valiFuncOpt: Option[Function1[_, Unit]]): Seq[T] = {
+    checkType(valueNode)
+    val typedValues = valueNode.value.map(v => verify(v, valueNode, cs)).toList
 
     valiFuncOpt.foreach { valiFunc =>
       try {
-        if (valueNode.isVariable) valiFunc.asInstanceOf[List[T] => Unit].apply(typedValue)
-        else typedValue.foreach(valiFunc.asInstanceOf[T => Unit].apply)
+        if (valueNode.isVariable) valiFunc.asInstanceOf[List[T] => Unit].apply(typedValues)
+        else typedValues.foreach(valiFunc.asInstanceOf[T => Unit].apply)
       } catch {
         case e: Exception =>
           throw ArgValidationException(s"Arg ${cs.rudeArg} to ${valueNode.entity.name}"
             + s" failed validation: ${e.getMessage}", cs, Some(e))
       }
     }
-    typedValue
+    typedValues
   }
+
+  @throws[ArgValidationException]("When type conversion failed or validation function throws an exception.")
+  def validatePropNode
+  [T: ClassTag : ArgTypeEvidence](propNode: PropNode[T],
+                                  cs: ContextSnapshot,
+                                  valiFuncOpt: Option[Function1[_, Unit]]): Seq[(String, T)] = {
+    checkType(propNode)
+    val typedValues = propNode.value.map { case (k, v) => (k, verify(v, propNode, cs)) }.toList
+    valiFuncOpt.foreach { valiFunc =>
+      try {
+        valiFunc.asInstanceOf[List[(String, T)] => Unit].apply(typedValues)
+      } catch {
+        case e: Exception =>
+          throw ArgValidationException(s"Arg ${cs.rudeArg} to ${propNode.entity.name}"
+            + s" failed validation: ${e.getMessage}", cs, Some(e))
+      }
+    }
+    typedValues
+  }
+
+  private def checkType[T: ClassTag](n: {def tpe: ClassTag[_]}): Unit =
+    if (implicitly[ClassTag[T]] != n.tpe)
+      throw new AssertionError(s"Type of demanded value is different from node's")
+
+  private def verify[T: ArgTypeEvidence : ClassTag](v: String, node: Node, cs: ContextSnapshot): T =
+    try {implicitly[ArgTypeEvidence[T]].verify(v)}
+    catch {
+      case e: Exception =>
+        throw ArgValidationException(s"For Arg ${cs.rudeArg} to ${node.entity.originalName}"
+          + s", value:$v does not cohere to expected type[${implicitly[ClassTag[T]]}]", cs, Some(e))
+    }
 
   /**
     * Do high level validation on parsed results against mutual limitations defined in an argTree.
@@ -58,8 +80,8 @@ private object Validator {
     * @return the same parsedResults that has passed the validation.
     */
   @throws[ArgValidationException]("when one of mutual limitations has been violated.")
-  def highLevelValidate(argTree: ArgTree,
-                        parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
+  def mutualLimitationValidate(argTree: ArgTree,
+                               parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
     val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
     val globalValueNodes = parsedResults.collect { case (n: ValueNode[_], cs) => (n, cs) }
 

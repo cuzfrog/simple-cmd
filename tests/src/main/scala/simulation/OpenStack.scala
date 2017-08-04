@@ -45,8 +45,9 @@ private object OpenStack {
     println(conf.appInfoString)
     println("-----------Arg tree------------")
     println(conf.argTreeString)
-    println("---------Parsed node sequence:----------")
+
     val parsed: OpenStackDef = conf.parsed
+    println("---------Parsed node sequence:----------")
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
     import scmdValueConverter._

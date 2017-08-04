@@ -74,15 +74,32 @@ sealed trait ScmdRuntime {
 
   def addValidation[T](name: String, func: T => Unit): Unit
 
-  /** Trigger final parsing. Return parsed nodes. */
+  /**
+    * Trigger final parsing.
+    * <br><br>
+    * First it uses ArgParser to parse args against ArgTree(defined already).
+    * If parsing succeeds, it does mutual limitation validation.
+    * Then it restores the result in runtime cache.
+    * <br><br>
+    * This is one of the two scmd-runtime Apis that throws scmd exceptions. The other is:<br>
+    * {{{    def getEvaluatedArgumentByName
+    *  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A }}}
+    *
+    * @return parsed argument name sequence.
+    */
+  @throws[ArgParseException]("when parsing failed.")
+  @throws[ArgValidationException]("when mutual limitation validation failed.")
   def parse(args: Seq[String]): Seq[String]
 
 
   /**
     * Key method to return parsed/evaluated argument to client def class.
-    *
+    * <br><br>
     * Validation is done before returning.
     * String values of cmd args have been converted into typed values within validation.
+    *
+    * This is one of the two scmd-runtime Apis that throws scmd exceptions. The other is:<br>
+    * {{{    def parse(args: Seq[String]) }}}
     *
     * @see [[com.github.cuzfrog.scmd.runtime.ArgTypeEvidence]]<br>
     *      [[com.github.cuzfrog.scmd.macros.argutils.ConvertParsedImpl]]<br>
@@ -92,8 +109,12 @@ sealed trait ScmdRuntime {
     * @tparam A the Argument type, delivered by macro.
     * @return an evaluated Argument.
     */
+  @throws[ArgValidationException]("when type validation failed.")
   def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A
+
+  /** Clean cache to release references. */
+  def clean(): Unit
 
   def argTreeString: String
   def appInfoString: String
@@ -340,7 +361,15 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
     argument.asInstanceOf[A]
   }
-
+  override def clean(): Unit = {
+    appInfo = None
+    argTree = None
+    repository.clear()
+    nodeRefs.clear()
+    valiRefs.clear()
+    parsedNodes.clear()
+    parsedContextSnapshots.clear()
+  }
 
   override def argTreeString: String = useArgTree(argTree).prettyString
   override def appInfoString: String = useAppInfo(appInfo).prettyString
@@ -350,4 +379,5 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     argTreeOpt.getOrElse(throw new IllegalStateException("argTree not initialized."))
   private implicit def useAppInfo(appInfoOpt: Option[AppInfo]): AppInfo =
     appInfoOpt.getOrElse(throw new IllegalStateException("appInfo not initialized."))
+
 }

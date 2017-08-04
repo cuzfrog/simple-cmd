@@ -75,12 +75,14 @@ private class ScmdDefMacro extends ScmdMacro {
       val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
       q"""def parsed: $name = {
             scmdRuntime.parse($argsParam)
-            new ${Ctor.Ref.Name(name.value)}(...$termParamss){
+            val evaluatedDefs = new ${Ctor.Ref.Name(name.value)}(...$termParamss){
               ..${ArgUtils.convertParsed(stats)}
             }
+            //scmdRuntime.clean()
+            evaluatedDefs
           }"""
     }
-
+    //todo: clean runtime after completion of parsing.
 
     val addMethods = List(
       q"""private[this] val scmdRuntime:ScmdRuntime = {

@@ -43,8 +43,7 @@ private[scmd] class ArgCreationMacro extends StaticAnnotation {
 
           q"""
             if (isMandatory && _default.nonEmpty) {
-              new $argCtor[T](..$params)
-                with $argValueCtor[T] with Mandatory with WithDefault{..$stats}
+              throw new AssertionError("Argument cannot be mandatory while with default value.")
             } else if(isMandatory && _default.isEmpty) {
               new $argCtor[T](..$params)
                 with $argValueCtor[T] with Mandatory{..$stats}

@@ -1,6 +1,7 @@
 package simulation
 
 import Scmd._
+import com.github.cuzfrog.scmd.{OptionArg, SingleValue}
 
 private object OpenStack {
   @ScmdDef
@@ -16,6 +17,7 @@ private object OpenStack {
     val version = cmdDef(description = "print version info.")
 
     val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
+    //val inTable = optDef[Boolean](description = "print in table.", default = true)
 
     import scmdTreeDefDSL._
 

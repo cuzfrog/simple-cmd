@@ -69,16 +69,23 @@ sealed trait Mandatory
 sealed trait WithDefault
 
 private[scmd] object DummyArgument {
-  object DummyCommand extends Command("")
-  object DummyParameterS extends Parameter("") with SingleValue[Nothing]
-  object DummyParameterV extends Parameter("") with VariableValue[Nothing]
-  object DummyOptionArgS extends OptionArg("") with SingleValue[Nothing]
-  object DummyOptionArgV extends OptionArg("") with VariableValue[Nothing]
-  object DummyParameterSM extends Parameter("") with SingleValue[Nothing] with Mandatory
-  object DummyParameterVM extends Parameter("") with VariableValue[Nothing] with Mandatory
-  object DummyOptionArgSM extends OptionArg("") with SingleValue[Nothing] with Mandatory
-  object DummyOptionArgVM extends OptionArg("") with VariableValue[Nothing] with Mandatory
-  object DummyProp extends PropertyArg("", "") with VariableValue[Nothing]
+  def DummyCommand: Command = Command("")
+
+  def DummyParameterS: Parameter[Nothing] with SingleValue[Nothing] = new Parameter("") with SingleValue[Nothing]
+  def DummyParameterV: Parameter[Nothing] with VariableValue[Nothing] = new Parameter("") with VariableValue[Nothing]
+  def DummyOptionArgS: OptionArg[Nothing] with SingleValue[Nothing] = new OptionArg("") with SingleValue[Nothing]
+  def DummyOptionArgV: OptionArg[Nothing] with VariableValue[Nothing] = new OptionArg("") with VariableValue[Nothing]
+  def DummyParameterSM: Parameter[Nothing] with SingleValue[Nothing] with Mandatory = new Parameter("") with SingleValue[Nothing] with Mandatory
+  def DummyParameterVM: Parameter[Nothing] with VariableValue[Nothing] with Mandatory = new Parameter("") with VariableValue[Nothing] with Mandatory
+  def DummyOptionArgSM: OptionArg[Nothing] with SingleValue[Nothing] with Mandatory = new OptionArg("") with SingleValue[Nothing] with Mandatory
+  def DummyOptionArgVM: OptionArg[Nothing] with VariableValue[Nothing] with Mandatory = new OptionArg("") with VariableValue[Nothing] with Mandatory
+  def DummyParameterSD: Parameter[Nothing] with SingleValue[Nothing] with WithDefault = new Parameter("") with SingleValue[Nothing] with WithDefault
+  def DummyParameterVD: Parameter[Nothing] with VariableValue[Nothing] with WithDefault = new Parameter("") with VariableValue[Nothing] with WithDefault
+  def DummyOptionArgSD: OptionArg[Nothing] with SingleValue[Nothing] with WithDefault = new OptionArg("") with SingleValue[Nothing] with WithDefault
+  def DummyOptionArgVD: OptionArg[Nothing] with VariableValue[Nothing] with WithDefault = new OptionArg("") with VariableValue[Nothing] with WithDefault
+
+  def DummyProp: PropertyArg[Nothing] with VariableValue[Nothing] = new PropertyArg("", "") with VariableValue[Nothing]
+  def DummyPropD: PropertyArg[Nothing] with VariableValue[Nothing] with WithDefault = new PropertyArg("", "") with VariableValue[Nothing] with WithDefault
 }
 
 private object Command {

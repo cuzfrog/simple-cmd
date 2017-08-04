@@ -46,7 +46,9 @@ private object TermArg extends SimpleLogging {
           val default = extract[Term.Arg](params)
           if (isMandatory && default.nonEmpty)
             abort(pos, s"Mandatory arg ${argName.syntax} cannot have default value.")
-          default.defnTerm
+          //default for Boolean is false.
+          if (default.isEmpty && tpe.syntax == "Boolean") q"Option(false)"
+          else default.defnTerm
         }
         val name = Lit.String(argName.syntax)
         defName match {
@@ -168,7 +170,7 @@ private object TermOpt {
   }
 }
 
-private object TermProp{
+private object TermProp {
   implicit val definable: Definable[TermProp] = (a: TermProp) => {
     q"""runtime.buildPropNode[${a.tpe}](
             entity = ${a.term},

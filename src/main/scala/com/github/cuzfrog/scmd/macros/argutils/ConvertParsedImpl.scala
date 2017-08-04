@@ -9,7 +9,7 @@ import scala.meta._
 /**
   * Macro implementation to convert client def class statements.
   */
-private object ConvertParsedImpl extends SimpleLogging{
+private object ConvertParsedImpl extends SimpleLogging {
   override protected val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
 
   def convertParsed(stats: immutable.Seq[Stat]): immutable.Seq[Stat] = {
@@ -27,18 +27,15 @@ private object ConvertParsedImpl extends SimpleLogging{
         typedVal(para, Types.parameter, tpe, Types.variableValue, params, stat)
       case stat@q"val $opt:$_ = optDefMultiple[$tpe](..$params)" =>
         typedVal(opt, Types.optionArg, tpe, Types.variableValue, params, stat)
+      case stat@q"val $opt:$_ = propDef[$tpe](..$params)" =>
+        typedVal(opt, Types.propertyArg, tpe, Types.variableValue, params, stat)
     }
   }
 
   private def typedVal(argName: Pat, arg: Type, tpe: Type, argValue: Type,
                        params: immutable.Seq[Term.Arg], stat: Stat): Defn.Val = {
-    implicit val pos = stat.pos
-    val isMandatory = RawArgMacro.extract[Boolean](params).getOrElse(Defaults.isMandatory)
-    val composedTpe = if (isMandatory) {
-      t"$arg[$tpe] with $argValue[$tpe] with Mandatory"
-    } else {
-      t"$arg[$tpe] with $argValue[$tpe]"
-    }
+    implicit val pos: Position = stat.pos
+    val (_, _, composedTpe) = ArgUtils.getComposedTpe(params, arg, tpe, argValue)
     debug(s"GetEvaluatedArument $argName of type[$composedTpe]")
     q"""override val ${argName.asInstanceOf[Pat.Var.Term]}: $composedTpe = {
           scmdRuntime.getEvaluatedArgumentByName

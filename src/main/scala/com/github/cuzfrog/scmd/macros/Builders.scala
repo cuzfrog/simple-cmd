@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
-import com.github.cuzfrog.scmd.{Command, Limitation, MutualLimitation}
+import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -59,8 +59,8 @@ private object TreeBuilder {
 
       idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
         case None =>
-          val params = idxDefs.collect { case param: TermParam => param.withParent() }
-          val opts = idxDefs.collect { case opt: TermOpt => opt.withParent() }
+          val params = idxDefs.collect { case param: TermParam => param }
+          val opts = idxDefs.collect { case opt: TermOpt => opt }
           TermArgTree(
             appName = Lit.String(appName),
             topParams = params,
@@ -73,7 +73,7 @@ private object TreeBuilder {
           import idxDefs.indexOf
           val topLevelValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
 
-          val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt.withParent() }
+          val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt }
           /** param defs above first cmd will be shared by all cmd as their first param. */
           val topLevelParam = topLevelValueArgs.collect { case param: TermParam => param }
 
@@ -186,8 +186,8 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
     //these CmdNodes are flat at level1 (level0 is the top)
     TermCmdNode(
       cmd,
-      params.map(_.withParent(scala.Symbol(cmd.name))),
-      opts.map(_.withParent(scala.Symbol(cmd.name))),
+      params,
+      opts,
       subCmdEntry = TermCommandEntry.placeHolder)
   }
 
@@ -218,7 +218,7 @@ private final class DslTermNodeBuilder(appName: String,
     )
     val argDifference = argDefs.map(_.name)
       .diff(tree.convertTo[immutable.Seq[TermArg]].map(_.name))
-    if(argDifference.nonEmpty)
+    if (argDifference.nonEmpty)
       abort(s"Arg not defined in tree dsl:${argDifference.mkString(",")}." +
         s" Comment these argDefs out or put them in the tree.")
     tree
@@ -277,13 +277,10 @@ private final class DslTermNodeBuilder(appName: String,
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
 
-    val currentCmdSymbol =
-      termCmdOpt.map(t => scala.Symbol(t.name)).getOrElse(Command.topCmd.symbol)
-
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
-      params = termArgs.collect { case a: TermParam => a.withParent(currentCmdSymbol) },
-      opts = termArgs.collect { case a: TermOpt => a.withParent(currentCmdSymbol) },
+      params = termArgs.collect { case a: TermParam => a },
+      opts = termArgs.collect { case a: TermOpt => a },
       subCmdEntry = subCmdEntry,
       limitations = groupArgs.map(LimitationGroup.fromTuple)
     )

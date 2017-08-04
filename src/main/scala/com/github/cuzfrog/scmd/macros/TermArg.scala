@@ -7,7 +7,9 @@ import com.github.cuzfrog.scmd.macros.Constants._
 import scala.collection.immutable
 import scala.meta._
 
-//todo: add positions.
+/*
+ * Position is not available, this is a known issue.
+ */
 
 /**
   * Created by cuz on 7/14/17.
@@ -20,8 +22,10 @@ private sealed trait TermArg {
 }
 private object TermArg extends SimpleLogging {
   override protected val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
-  def collectTermArg(stats: immutable.Seq[Stat]): immutable.Seq[TermArg] = {
+  def collectTermArg(stats: immutable.Seq[Stat], appName: String): immutable.Seq[TermArg] = {
     import RawArgMacro.extract
+
+    val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
 
     stats collect {
       case q"val $cmd: $_ = cmdDef(..$params)" =>
@@ -58,14 +62,14 @@ private object TermArg extends SimpleLogging {
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatoryTerm,
                                                argValue = ${singleValue(tpe, defaultTerm)})"""
-            TermParam(name.value, term, pos, tpe)
+            TermParam(name.value, term, pos, tpe, topCmdSymbol)
           case q"paramDefVariable" =>
             val term =
               q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatoryTerm,
                                                argValue = ${variableValue(tpe, defaultTerm)})"""
-            TermParam(name.value, term, pos, tpe)
+            TermParam(name.value, term, pos, tpe, topCmdSymbol)
           case q"optDef" =>
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
@@ -73,7 +77,7 @@ private object TermArg extends SimpleLogging {
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatoryTerm,
                                                argValue = ${singleValue(tpe, defaultTerm)})"""
-            TermOpt(name.value, term, pos, tpe)
+            TermOpt(name.value, term, pos, tpe, topCmdSymbol)
           case q"optDefMultiple" =>
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
@@ -81,7 +85,7 @@ private object TermArg extends SimpleLogging {
                                                $TERM_DESCRIPTION = $description,
                                                $TERM_IS_MANDATORY = $isMandatoryTerm,
                                                argValue = ${variableValue(tpe, defaultTerm)})"""
-            TermOpt(name.value, term, pos, tpe)
+            TermOpt(name.value, term, pos, tpe, topCmdSymbol)
           case q"propDef" =>
             val argValueType = Type.Name(s"(String,${tpe.syntax})")
             val flagTerm = {
@@ -126,16 +130,10 @@ case class TermCmd(name: String, term: Term, pos: Position) extends TermArg {
 }
 private final
 case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
-                     parent: Option[Lit.Symbol] = None) extends TermValueArg {
-  def withParent(symbol: scala.Symbol = Command.topCmd.symbol): TermParam =
-    this.copy(parent = Some(Lit.Symbol(symbol)))
-}
+                     parent: Lit.Symbol) extends TermValueArg
 private final
 case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
-                   parent: Option[Lit.Symbol] = None) extends TermValueArg {
-  def withParent(symbol: scala.Symbol = Command.topCmd.symbol): TermOpt =
-    this.copy(parent = Some(Lit.Symbol(symbol)))
-}
+                   parent: Lit.Symbol) extends TermValueArg
 private final
 case class TermProp(name: String, flag: String,
                     term: Term, pos: Position, tpe: Type) extends TermArg
@@ -148,24 +146,20 @@ private object TermCmd {
 
 private object TermParam {
   implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    val parent =
-      a.parent.getOrElse(throw new AssertionError(s"Parent empty of TermParam: ${a.name}"))
     q"""runtime.buildParamNode[${a.tpe}](
             entity = ${a.term},
             value = Nil,
-            parent = $parent
+            parent = ${a.parent}
         )"""
   }
 }
 
 private object TermOpt {
   implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
-    val parent =
-      a.parent.getOrElse(throw new AssertionError(s"Parent empty of TermOpt: ${a.name}"))
     q"""runtime.buildOptNode[${a.tpe}](
             entity = ${a.term},
             value = Nil,
-            parent = $parent
+            parent = ${a.parent}
         )"""
   }
 }

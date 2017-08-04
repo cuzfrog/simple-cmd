@@ -12,7 +12,7 @@ private final case class ArgTree(appName: String,
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                                  globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) {
   def toTopNode: CmdNode = CmdNode(
-    entity = Command.topCmd.copy(name = appName),
+    entity = Command.topCmd(appName),
     params = topParams,
     opts = topOpts,
     subCmdEntry = cmdEntry,

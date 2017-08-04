@@ -89,7 +89,8 @@ private[scmd] object DummyArgument {
 }
 
 private object Command {
-  val topCmd: Command = Command("AppName", None) //todo: check AppName is harmless.
+  /** Return a top cmd representing app. */
+  def topCmd(appName: String): Command = Command(appName, None)
 }
 
 private object Parameter {

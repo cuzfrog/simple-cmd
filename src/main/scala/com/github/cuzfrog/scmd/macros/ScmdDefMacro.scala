@@ -39,7 +39,7 @@ private class ScmdDefMacro extends ScmdMacro {
       * This step collects arg defs from source code, checking syntax,
       * then turn them into Node terms.
       */
-    val argDefs = TermArg.collectTermArg(stats)
+    val argDefs = TermArg.collectTermArg(stats, appName)
 
     /**
       * ArgTree represents structure of user defined args.

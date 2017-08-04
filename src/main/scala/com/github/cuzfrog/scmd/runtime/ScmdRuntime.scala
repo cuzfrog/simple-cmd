@@ -113,6 +113,8 @@ sealed trait ScmdRuntime {
   def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A
 
+  def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing
+
   /** Clean cache to release references. */
   def clean(): Unit
 
@@ -360,6 +362,10 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
         merge(node.entity.asInstanceOf[ValueArgument[T]], value)
     }
     argument.asInstanceOf[A]
+  }
+  override def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing = {
+    implicitly[ScmdExceptionHandler[E]].handle(e)
+    throw e
   }
   override def clean(): Unit = {
     appInfo = None

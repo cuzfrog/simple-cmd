@@ -74,9 +74,13 @@ private class ScmdDefMacro extends ScmdMacro {
     val public_def_parsed = {
       val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
       q"""def parsed: $name = {
-            scmdRuntime.parse($argsParam)
-            val evaluatedDefs = new ${Ctor.Ref.Name(name.value)}(...$termParamss){
-              ..${ArgUtils.convertParsed(stats)}
+            val evaluatedDefs = try{
+              scmdRuntime.parse($argsParam)
+              new ${Ctor.Ref.Name(name.value)}(...$termParamss){
+                ..${ArgUtils.convertParsed(stats)}
+              }
+            }catch{
+              case e: ScmdException=> scmdRuntime.handleException(e)
             }
             //scmdRuntime.clean()
             evaluatedDefs
@@ -103,6 +107,7 @@ private class ScmdDefMacro extends ScmdMacro {
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd._
+          import $TERM_pkg_scmd.runtime._
           import runtime.ScmdRuntime
           ..${stats.map(ArgUtils.addExplicitType)}
           ..$addMethods

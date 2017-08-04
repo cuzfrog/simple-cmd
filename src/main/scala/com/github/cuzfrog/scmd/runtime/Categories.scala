@@ -149,7 +149,7 @@ private object LongOpt extends CateUtils {
                     case None => c.nextArg
                   }
                   vOpt match {
-                    case Some(v) => c.anchors(optNode.addValue(v)) //todo: deal with variable values
+                    case Some(v) => c.anchors(optNode.addValue(v))
                     case None =>
                       ArgParseException(
                         s"No value found for opt -$arg with type[${otherTpe.name}].", c)

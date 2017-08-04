@@ -66,8 +66,9 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def anchor(n: Node): Anchor = this.synchronized {
     val updatedNode: Node = n match {
       case optNode: OptNode[_] =>
-        if (!optNode.isVariable) optsUpstreamLeft -= optNode //register consumed
-        n //todo: deal with variable value opt
+        optsUpstreamLeft -= optNode //register consumed
+        if (optNode.isVariable) optsUpstreamLeft += optNode //put evaluated back.
+        optNode
       case propNode: PropNode[_] =>
         val storedPropNode = propsRepo.find(_ == propNode)
           .getOrElse(throw new AssertionError(s"PropNode not in context:$propNode"))

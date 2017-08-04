@@ -57,7 +57,7 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
           case n@(_: OptNode[_] | _: PropNode[_]) =>
             throw new AssertionError(s"OptNode/PropNode should not be ambiguous.[${n.entity.name}]")
         }
-        throw new ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
+        throw ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
     }
   }
 

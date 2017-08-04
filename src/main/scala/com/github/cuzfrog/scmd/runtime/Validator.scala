@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
+import com.github.cuzfrog.scmd.Limitation
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -16,7 +16,7 @@ private object Validator {
     *           it plays an important role as the info to which type the arg should be converted.
     * @return the validated and converted typed value(s).
     */
-  @throws[ArgParseException]("When type conversion failed or validation function throws an exception.")
+  @throws[ArgValidationException]("When type conversion failed or validation function throws an exception.")
   def validate[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T],
                                               cs: ContextSnapshot,
                                               valiFuncOpt: Option[Function1[_, Unit]]): Seq[T] = {
@@ -29,7 +29,7 @@ private object Validator {
       try {typeEvidence.verify(str)}
       catch {
         case e: Exception =>
-          throw new ArgParseException(s"Arg ${cs.rudeArg} to ${valueNode.entity.name}"
+          throw ArgValidationException(s"Arg ${cs.rudeArg} to ${valueNode.entity.name}"
             + s" of value:$str does not confirm expected type[$tpe]", cs, Some(e))
       }
     }.toList
@@ -40,7 +40,7 @@ private object Validator {
         else typedValue.foreach(valiFunc.asInstanceOf[T => Unit].apply)
       } catch {
         case e: Exception =>
-          throw new ArgParseException(s"Arg ${cs.rudeArg} to ${valueNode.entity.name}"
+          throw ArgValidationException(s"Arg ${cs.rudeArg} to ${valueNode.entity.name}"
             + s" failed validation: ${e.getMessage}", cs, Some(e))
       }
     }
@@ -57,27 +57,27 @@ private object Validator {
     *                      ValueNodes among result returned by ArgParser.
     * @return the same parsedResults that has passed the validation.
     */
-  @throws[ArgParseException]("when one of mutual limitations has been violated.")
+  @throws[ArgValidationException]("when one of mutual limitations has been violated.")
   def highLevelValidate(argTree: ArgTree,
                         parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
     val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
     val globalValueNodes = parsedResults.collect { case (n: ValueNode[_], cs) => (n, cs) }
 
-    def resolveMExclusive(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]) = {
+    def resolveMExclusive(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]): Unit = {
       valueNodes.foreach { case (node, cs) =>
         group.find(_ == node.entity.symbol).foreach(_ => acc += node.entity.symbol)
-        if (acc.length > 1) throw ArgParseException(
+        if (acc.length > 1) throw ArgValidationException(
           s"${acc.map(_.name).mkString(",")} cannot be input together.", cs
         )
       }
     }
 
-    def resolveMDependent(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]) = {
+    def resolveMDependent(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]): Unit = {
       val resultSymbols = valueNodes.map { case (n, _) => n.entity.symbol }
       valueNodes.find { case (n, _) => group.contains(n.entity.symbol) }
         .foreach { case (foundNode, cs) =>
           val absent = group.collect { case symbol if !resultSymbols.contains(symbol) => symbol }
-          if (absent.nonEmpty) throw ArgParseException(
+          if (absent.nonEmpty) throw ArgValidationException(
             s"${absent.map(_.name).mkString(",")}" +
               s" should be used with ${foundNode.entity.originalName}.", cs
           )

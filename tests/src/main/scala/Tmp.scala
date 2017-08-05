@@ -43,7 +43,7 @@ object Tmp {
     validation(argDef.properties) { props =>
       println(s"Print in validation, value:$props")
       props.find { case (k, _) => k == "key1" }.foreach {
-        case (_, v) =>
+        case (_, v) => if(v<=3) throw new IllegalArgumentException("Value of key1 must be greater than 3")
       }
     }
   }

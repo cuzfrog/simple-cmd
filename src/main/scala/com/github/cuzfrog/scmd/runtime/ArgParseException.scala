@@ -1,12 +1,10 @@
 package com.github.cuzfrog.scmd.runtime
 
-import scala.reflect.ClassTag
 
 sealed abstract class ScmdException(val msg: String) extends Exception(msg)
 
-class
-ArgParseException private(override val msg: String,
-                          private[runtime] val contextSnapshot: ContextSnapshot)
+class ArgParseException private(override val msg: String,
+                                private[runtime] val contextSnapshot: ContextSnapshot)
   extends ScmdException(msg) {
 
 }
@@ -20,10 +18,9 @@ private object ArgParseException {
     Left(argParseException)
 }
 
-class
-ArgValidationException private(override val msg: String,
-                               private[runtime] val contextSnapshot: ContextSnapshot,
-                               val cause: Option[Exception] = None)
+class ArgValidationException private(override val msg: String,
+                                     private[runtime] val contextSnapshot: ContextSnapshot,
+                                     val cause: Option[Exception] = None)
   extends ScmdException(msg)
 
 private object ArgValidationException {
@@ -34,20 +31,23 @@ private object ArgValidationException {
 }
 
 trait ScmdExceptionHandler[E <: ScmdException] {
-  def handle(e: E): Unit
+  def handle(e: E): Nothing
 }
 
 private object ScmdExceptionHandler {
   implicit val defaultParseExceptionHandler: ScmdExceptionHandler[ArgParseException] =
     (e: ArgParseException) => {
       println(s"Handle parse exception: ${e.getMessage}")
+      throw e
     }
-
+  //todo: implement handling printing.
   implicit val defaultValidationExceptionHandler: ScmdExceptionHandler[ArgValidationException] =
     (e: ArgValidationException) => {
       println(s"Handle validation exception: ${e.getMessage}")
+      throw e
     }
 
+  /** Client provides this to override default handling behavior. */
   implicit val defaultHandler: ScmdExceptionHandler[ScmdException] = {
     case ex: ArgParseException => defaultParseExceptionHandler.handle(ex)
     case ex: ArgValidationException => defaultValidationExceptionHandler.handle(ex)

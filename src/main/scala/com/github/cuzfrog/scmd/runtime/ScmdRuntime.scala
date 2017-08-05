@@ -374,7 +374,6 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   }
   override def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing = {
     implicitly[ScmdExceptionHandler[E]].handle(e)
-    throw e
   }
   override def clean(): Unit = {
     appInfo = None

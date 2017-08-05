@@ -19,7 +19,7 @@ trait ScmdApi {
                       isMandatory: Boolean = false,
                       default: => T = Empty): OptionArg[T] with SingleValue[T] = DummyOptionArgS
 
-  final def optDefMultiple[T](abbr: String = "",
+  final def optDefVariable[T](abbr: String = "",
                               description: String = "",
                               isMandatory: Boolean = false,
                               default: => T = Empty): OptionArg[T] with VariableValue[T] = DummyOptionArgV
@@ -27,6 +27,10 @@ trait ScmdApi {
   final def propDef[T](flag: String = "",
                        description: String = "",
                        default: => Seq[(String, T)] = Empty): PropertyArg[T] with VariableValue[(String, T)] = DummyProp
+
+  final def priorDef(alias: Seq[String] = Nil,
+                     description: String = "",
+                     matchName: Boolean = true): PriorArg = DummyPriorArg
 
   final def appDef(name: String,
                    shortDescription: String = "",

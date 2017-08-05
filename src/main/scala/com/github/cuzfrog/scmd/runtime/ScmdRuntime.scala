@@ -44,6 +44,11 @@ sealed trait ScmdRuntime {
                           description: Option[String] = None,
                           variableValue: VariableValue[(String, T)]): Int
 
+  def buildPriorArg(name: String,
+                    alias: Seq[String],
+                    description: Option[String],
+                    matchName: Boolean): Int
+
   def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int
 
   def buildSingleValue[T](_default: Option[T]): SingleValue[T]
@@ -200,6 +205,15 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                                    variableValue: VariableValue[(String, T)]): Int = {
     val id = idGen.getAndIncrement()
     val a = mix(PropertyArg[T](name, flag, description), variableValue)
+    repository.put(id, Box(a))
+    id
+  }
+  override def buildPriorArg(name: String,
+                             alias: Seq[String],
+                             description: Option[String],
+                             matchName: Boolean): Int = {
+    val id = idGen.getAndIncrement()
+    val a = PriorArg(name, alias = alias, description = description, matchName = matchName)
     repository.put(id, Box(a))
     id
   }

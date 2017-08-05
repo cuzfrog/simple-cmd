@@ -61,30 +61,33 @@ private object TreeBuilder {
         case None =>
           val params = idxDefs.collect { case param: TermParam => param }
           val opts = idxDefs.collect { case opt: TermOpt => opt }
+          val priors = idxDefs.collect { case prior: TermPrior => prior }
           TermArgTree(
             appName = Lit.String(appName),
             topParams = params,
             topOpts = opts,
+            topPriors = priors,
             props = props,
             cmdEntry = TermCommandEntry.placeHolder,
             globalLimitations = globalLimitations)
 
         case Some(cmd1) =>
           import idxDefs.indexOf
-          val topLevelValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
-
-          val topLevelOpts = topLevelValueArgs.collect { case opt: TermOpt => opt }
+          val topValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
           /** param defs above first cmd will be shared by all cmd as their first param. */
-          val topLevelParam = topLevelValueArgs.collect { case param: TermParam => param }
+          val topParams = topValueArgs.collect { case param: TermParam => param }
+          val topOpts = topValueArgs.collect { case opt: TermOpt => opt }
+          val topPriors = topValueArgs.collect { case prior: TermPrior => prior }
 
           val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
-          val builder = NodeBuilder.newIdxTermBuilder(cmd1, topLevelParam)
+          val builder = NodeBuilder.newIdxTermBuilder(cmd1, topParams)
 
           val commands = recAdd(builder, tail).seal
           TermArgTree(
             appName = Lit.String(appName),
             topParams = Nil,
-            topOpts = topLevelOpts,
+            topOpts = topOpts,
+            topPriors = topPriors,
             props = props,
             cmdEntry = TermCommandEntry.createWithCmdNodes(commands),
             globalLimitations = globalLimitations)
@@ -173,11 +176,13 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
 
   private[this] var params: immutable.Seq[TermParam] = sharedParams
   private[this] var opts: immutable.Seq[TermOpt] = immutable.Seq.empty
+  private[this] var priors: immutable.Seq[TermPrior] = immutable.Seq.empty
 
   def add(arg: TermArg): IdxTermNodeBuilder = arg match {
     case cmd: TermCmd => new IdxTermNodeBuilder(cmd, sharedParams, Option(this))
     case param: TermParam => this.params :+= param; this
     case opt: TermOpt => this.opts :+= opt; this
+    case prior: TermPrior => this.priors :+= prior; this
     case _: TermProp => this //ignore props
   }
 
@@ -188,6 +193,7 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
       cmd,
       params,
       opts,
+      priors,
       subCmdEntry = TermCommandEntry.placeHolder)
   }
 
@@ -211,6 +217,7 @@ private final class DslTermNodeBuilder(appName: String,
       appName = Lit.String(appName),
       topParams = topNode.params,
       topOpts = topNode.opts,
+      topPriors = topNode.priors,
       props = props,
       cmdEntry = topNode.subCmdEntry,
       topLimitations = topNode.limitations,
@@ -281,6 +288,7 @@ private final class DslTermNodeBuilder(appName: String,
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
       params = termArgs.collect { case a: TermParam => a },
       opts = termArgs.collect { case a: TermOpt => a },
+      priors = termArgs.collect { case a: TermPrior => a },
       subCmdEntry = subCmdEntry,
       limitations = groupArgs.map(LimitationGroup.fromTuple)
     )

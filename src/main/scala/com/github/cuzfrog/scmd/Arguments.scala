@@ -49,20 +49,23 @@ PropertyArg[+T] private[scmd](name: String,
 }
 
 /**
-  * PriorArgs are special argument that trigger specific action,
-  * like help/-help/--help, version/-ver/--ver etc.
-  * ,similar to commands, while they can be of any shape.
+  * PriorArgs are special arguments that trigger specific actions,
+  * similar to commands, while they can be of any shape.
   * During args parsing, a PriorArg has priority to be matched and must be fully matched.
   * At a time only the first PriorArg will be picked, others dropped.
   * <br><br>
   * Client can define a PriorArg within the scope of a (sub) command.
   * This is handy, e.g. providing scoped help info for each command.
   * <br><br>
+  * If a PriorArg starts with a letter, it will only be matched closely after a command.
+  * <br><br>
   * Scmd provide basic PriorArg: <strong>help</strong> and <strong>version</strong>.
   * Both have alias with - or -- prepended.
   */
 sealed case class
-PriorArg private[scmd](name: String, alias: Seq[String],
+PriorArg private[scmd](name: String,
+                       alias: Seq[String] = Nil,
+                       matchName: Boolean = true,
                        description: Option[String] = None) extends Argument[Nothing]
 
 sealed trait ArgValue[+T] {
@@ -85,6 +88,7 @@ sealed trait WithDefault
 
 private[scmd] object DummyArgument {
   def DummyCommand: Command = Command("")
+  def DummyPriorArg: PriorArg = PriorArg("")
 
   def DummyParameterS: Parameter[Nothing] with SingleValue[Nothing] = new Parameter("") with SingleValue[Nothing]
   def DummyParameterV: Parameter[Nothing] with VariableValue[Nothing] = new Parameter("") with VariableValue[Nothing]

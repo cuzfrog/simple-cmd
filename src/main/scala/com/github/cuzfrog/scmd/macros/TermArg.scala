@@ -28,14 +28,27 @@ private object TermArg extends SimpleLogging {
     val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
 
     stats collect {
-      case q"val $cmd: $_ = cmdDef(..$params)" =>
-        implicit val pos: Position = cmd.pos
+      case q"val $argName: $_ = $defName(..$params)" =>
+        implicit val pos: Position = argName.pos
+        val name = Lit.String(argName.syntax)
         val description = extract[String](params).defnTerm
-        if(!cmd.syntax.matches("""\w+.*""")) abort(pos,"Command can only start with letter.")
-        val term =
-          q"""runtime.buildCommand($TERM_NAME = ${Lit.String(cmd.syntax)},
-                                   $TERM_DESCRIPTION = $description)"""
-        TermCmd(cmd.syntax, term, pos)
+        defName match {
+          case q"cmdDef" =>
+            if (!name.value.matches("""\w+.*""")) abort(pos, "Command can only start with letter.")
+            val term =
+              q"""runtime.buildCommand($TERM_NAME = $name,
+                                       $TERM_DESCRIPTION = $description)"""
+            TermCmd(name.value, term, pos)
+          case q"priorDef" =>
+            val alias = extract[Term](params).getOrElse(q"Nil")
+            val matchName = extract[Boolean](params).getOrElse(true)
+            val term =
+              q"""runtime.buildPriorArg($TERM_NAME = $name,
+                                        alias = $alias,
+                                        $TERM_DESCRIPTION = $description,
+                                        matchName = ${matchName.defnTerm})"""
+            TermPrior(name.value, term, pos)
+        }
       case q"val $argName: $_ = $defName[$tpe](..$params)" =>
         debug(s"Collected $defName: $argName[$tpe]")
         implicit val pos: Position = argName.pos
@@ -79,7 +92,7 @@ private object TermArg extends SimpleLogging {
                                                $TERM_IS_MANDATORY = $isMandatoryTerm,
                                                argValue = ${singleValue(tpe, defaultTerm)})"""
             TermOpt(name.value, term, pos, tpe, topCmdSymbol)
-          case q"optDefMultiple" =>
+          case q"optDefVariable" =>
             val term =
               q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
                                                $TERM_ABBREVIATION = $abbr,
@@ -125,19 +138,18 @@ private object TermArg extends SimpleLogging {
 }
 
 private sealed trait TermValueArg extends TermArg
-private final
-case class TermCmd(name: String, term: Term, pos: Position) extends TermArg {
+private final case class TermCmd(name: String, term: Term, pos: Position) extends TermArg {
   val tpe: Type.Name = TYPE_NOTHING
 }
-private final
-case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
-                     parent: Lit.Symbol) extends TermValueArg
-private final
-case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
-                   parent: Lit.Symbol) extends TermValueArg
-private final
-case class TermProp(name: String, flag: String,
-                    term: Term, pos: Position, tpe: Type) extends TermArg
+private final case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
+                                   parent: Lit.Symbol) extends TermValueArg
+private final case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
+                                 parent: Lit.Symbol) extends TermValueArg
+private final case class TermProp(name: String, flag: String,
+                                  term: Term, pos: Position, tpe: Type) extends TermArg
+private final case class TermPrior(name: String, term: Term, pos: Position) extends TermArg {
+  val tpe: Type.Name = TYPE_NOTHING
+}
 private final
 case class TermCommandEntry(term: Term, children: immutable.Seq[TermCmdNode])
 

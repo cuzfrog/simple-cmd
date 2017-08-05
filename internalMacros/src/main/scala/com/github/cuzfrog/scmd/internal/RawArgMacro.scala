@@ -16,7 +16,7 @@ private[scmd] object RawArgMacro {
 
   /** This method should not be called directly. */
   def extractWithName[T: ClassTag](params: Seq[Term.Arg],
-                                           paramName: String, pos: Position): Option[T] = {
+                                   paramName: String, pos: Position): Option[T] = {
     val value = params.map {
       case named: Term.Arg.Named => named
       case unnamed =>
@@ -27,6 +27,7 @@ private[scmd] object RawArgMacro {
     val actual = tpe.runtimeClass match {
       case rc if rc == classOf[String] => value collect { case Lit.String(v) => v }
       case rc if rc == classOf[Boolean] => value collect { case Lit.Boolean(v) => v }
+      case rc if rc == classOf[Term] => value collect { case term: Term => term }
       case rc if rc == classOf[Term.Arg] => value
       case rc => throw new AssertionError(s"Type not coded for argDef def: $rc")
     }

@@ -10,6 +10,7 @@ private final
 case class TermCmdNode(cmd: TermCmd,
                        params: immutable.Seq[TermParam],
                        opts: immutable.Seq[TermOpt],
+                       priors: immutable.Seq[TermPrior],
                        subCmdEntry: TermCommandEntry,
                        limitations: immutable.Seq[LimitationGroup] = Nil)
 
@@ -17,6 +18,7 @@ private final
 case class TermArgTree(appName: Lit.String,
                        topParams: immutable.Seq[TermParam],
                        topOpts: immutable.Seq[TermOpt],
+                       topPriors: immutable.Seq[TermPrior],
                        props: immutable.Seq[TermProp],
                        cmdEntry: TermCommandEntry,
                        topLimitations: immutable.Seq[LimitationGroup] = Nil,

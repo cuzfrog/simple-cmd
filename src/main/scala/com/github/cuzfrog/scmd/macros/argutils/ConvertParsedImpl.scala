@@ -25,7 +25,7 @@ private object ConvertParsedImpl extends SimpleLogging {
         typedVal(opt, Types.optionArg, tpe, Types.singleValue, params, stat)
       case stat@q"val $para:$_ = paramDefVariable[$tpe](..$params)" =>
         typedVal(para, Types.parameter, tpe, Types.variableValue, params, stat)
-      case stat@q"val $opt:$_ = optDefMultiple[$tpe](..$params)" =>
+      case stat@q"val $opt:$_ = optDefVariable[$tpe](..$params)" =>
         typedVal(opt, Types.optionArg, tpe, Types.variableValue, params, stat)
       case stat@q"val $opt:$_ = propDef[$tpe](..$params)" =>
         typedVal(opt, Types.propertyArg, tpe, Types.variableValue, params, stat)

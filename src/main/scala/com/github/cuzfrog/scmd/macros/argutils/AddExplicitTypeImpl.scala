@@ -22,7 +22,7 @@ private object AddExplicitTypeImpl {
       case q"val $para:$_ = paramDefVariable[$tpe](..$params)" =>
         getDummyApi(para, Types.parameter, tpe, Types.variableValue, params)
 
-      case q"val $opt:$_ = optDefMultiple[$tpe](..$params)" =>
+      case q"val $opt:$_ = optDefVariable[$tpe](..$params)" =>
         getDummyApi(opt, Types.optionArg, tpe, Types.variableValue, params)
       //todo: is it necessary to add for props?
 

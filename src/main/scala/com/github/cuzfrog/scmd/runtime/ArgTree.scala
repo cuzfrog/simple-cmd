@@ -36,6 +36,8 @@ private case class CmdEntryNode(entity: CommandEntry,
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
+
+
 private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]
 
 private[runtime] sealed trait ValueNode[T] extends Node {

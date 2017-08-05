@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.internal.EqualityOverridingMacro
 import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, MutualLimitation, OptionArg, Parameter, PropertyArg, ValueArgument, VariableValue}
 
 import scala.reflect.ClassTag
@@ -47,55 +48,29 @@ private[runtime] sealed trait ValueNode[T] extends Node {
   def parent: scala.Symbol
 }
 
+/*
+ * For ParamNode, OptNode, PropNode, equality depends on its entity's.
+ * Value is stripped off for parsing quick comparing.
+ *
+ * When parsing args, node and path are the basic idea.
+ * see TryPath and Context.
+ */
+//todo: check if equals' overriding is correct.
+@EqualityOverridingMacro
 private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],
                                 value: Seq[String], tpe: ClassTag[_],
                                 parent: scala.Symbol)
-  extends ValueNode[T] with NodeTag[ParamNode[T]] {
-  //equality depends on its entity's. Value is stripped off for parsing quick comparing.
-  override def hashCode(): Int = entity.hashCode * 3 + 17
-  override def equals(obj: scala.Any): Boolean = {
-    if (!this.canEqual(obj)) return false
-    obj.asInstanceOf[ParamNode[_]].entity == this.entity
-  }
-  override def canEqual(that: Any): Boolean = that match {
-    case _: ParamNode[_] => true
-    case _ => false
-  }
-}
-
+  extends ValueNode[T] with NodeTag[ParamNode[T]]
+@EqualityOverridingMacro
 private case class OptNode[T](entity: OptionArg[T] with ArgValue[T],
                               value: Seq[String], tpe: ClassTag[_],
                               parent: scala.Symbol)
   extends ValueNode[T] with NodeTag[OptNode[T]] {
   def addValue(v: String): OptNode[T] = this.copy(value = value :+ v)
-  //equality depends on its entity's. Value is stripped off for parsing quick comparing.
-  override def hashCode(): Int = entity.hashCode * 3 + 17
-  override def equals(obj: scala.Any): Boolean = {
-    if (!this.canEqual(obj)) return false
-    obj.asInstanceOf[OptNode[_]].entity == this.entity
-  }
-  override def canEqual(that: Any): Boolean = that match {
-    case _: OptNode[_] => true
-    case _ => false
-  }
-  //todo: check if equals' overriding is correct.
-  //todo: use macro to generate equality overriding.
 }
-
+@EqualityOverridingMacro
 private case class PropNode[T](entity: PropertyArg[T] with VariableValue[(String, T)],
-                               value: Seq[(String, String)], tpe: ClassTag[_])
-  extends Node {
-  //equality depends on its entity's. Value is stripped off for parsing quick comparing.
-  override def hashCode(): Int = entity.hashCode * 3 + 17
-  override def equals(obj: scala.Any): Boolean = {
-    if (!this.canEqual(obj)) return false
-    obj.asInstanceOf[PropNode[_]].entity == this.entity
-  }
-  override def canEqual(that: Any): Boolean = that match {
-    case _: PropNode[_] => true
-    case _ => false
-  }
-}
+                               value: Seq[(String, String)], tpe: ClassTag[_]) extends Node
 
 private object ArgTree {
   implicit val canFormPrettyString: CanFormPrettyString[ArgTree] = (a: ArgTree) => {

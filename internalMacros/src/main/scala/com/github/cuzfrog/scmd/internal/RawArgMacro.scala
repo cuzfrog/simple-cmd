@@ -5,7 +5,7 @@ import scala.language.experimental.macros
 import scala.reflect.ClassTag
 import scala.reflect.macros.whitebox
 
-
+/** Extract argDef param by statement val name. */
 private[scmd] object RawArgMacro {
 
   import scala.meta.{Lit, Position, Term, abort}

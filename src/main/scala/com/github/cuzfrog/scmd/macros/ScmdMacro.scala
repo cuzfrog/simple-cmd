@@ -14,6 +14,7 @@ private trait ScmdMacro {
              stats: immutable.Seq[Stat]): Stat
 }
 
+/** Entry for scmd macro, this has to be public for client Api package Scmd does not enclose this. */
 object MacroUtil {
   def apply(implName: scala.Symbol, defn: Tree): Stat = {
 
@@ -33,7 +34,7 @@ object MacroUtil {
           immutable.Seq(macroImpl.expand(mods, name, ctorMods, paramss, stats), companion)
         )
       case _ =>
-        abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class.")
+        abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class without type parameters.")
     }
   }
 }

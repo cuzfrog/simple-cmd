@@ -30,8 +30,7 @@ sealed trait ValueArgument[+T] extends Argument[T] {
 sealed case class
 Parameter[+T] private[scmd](name: String,
                             description: Option[String] = None,
-                            isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
-}
+                            isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T]
 
 sealed case class
 OptionArg[+T] private[scmd](name: String,
@@ -47,8 +46,24 @@ PropertyArg[+T] private[scmd](name: String,
                               flag: String,
                               description: Option[String] = None) extends Argument[T] {
   final override val originalName: String = "-" + flag
-  //override val isMandatory: Boolean = false
 }
+
+/**
+  * PriorArgs are special argument that trigger specific action,
+  * like help/-help/--help, version/-ver/--ver etc.
+  * ,similar to commands, while they can be of any shape.
+  * During args parsing, a PriorArg has priority to be matched and must be fully matched.
+  * At a time only the first PriorArg will be picked, others dropped.
+  * <br><br>
+  * Client can define a PriorArg within the scope of a (sub) command.
+  * This is handy, e.g. providing scoped help info for each command.
+  * <br><br>
+  * Scmd provide basic PriorArg: <strong>help</strong> and <strong>version</strong>.
+  * Both have alias with - or -- prepended.
+  */
+sealed case class
+PriorArg private[scmd](name: String, alias: Seq[String],
+                       description: Option[String] = None) extends Argument[Nothing]
 
 sealed trait ArgValue[+T] {
   private[scmd] def isVariable: Boolean

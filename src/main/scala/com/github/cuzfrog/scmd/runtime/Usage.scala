@@ -14,8 +14,7 @@ private[runtime] trait UsageEvidence[A] {
 private object UsageEvidence {
   implicit val defaultUsage: UsageEvidence[ArgTree] = new UsageEvidence[ArgTree] {
     override def genUsage(a: ArgTree)(implicit consoleType: ConsoleType): String = {
-      ansi"%bold{Description}"
-      ???
+      ansi"%underline{Usage:} this is usage page."
     }
   }
 

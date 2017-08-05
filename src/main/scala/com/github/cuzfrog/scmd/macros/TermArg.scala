@@ -31,6 +31,7 @@ private object TermArg extends SimpleLogging {
       case q"val $cmd: $_ = cmdDef(..$params)" =>
         implicit val pos: Position = cmd.pos
         val description = extract[String](params).defnTerm
+        if(!cmd.syntax.matches("""\w+.*""")) abort(pos,"Command can only start with letter.")
         val term =
           q"""runtime.buildCommand($TERM_NAME = ${Lit.String(cmd.syntax)},
                                    $TERM_DESCRIPTION = $description)"""

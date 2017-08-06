@@ -62,6 +62,48 @@ private class TryPath(argAnchor: Anchor) {
     recBacktrack(this)
   }
 
+  /**
+    * Move upstream, and remove any other branches exception current one.
+    *
+    * @return the same Path with any redundant forks trimmed, only single lineage left.
+    */
+  def trimUpstream: this.type = {
+    if (!this.branches.contains(TryPath.CompletePath))
+      throw new UnsupportedOperationException("def trimUpstream can only be called on down stream end.")
+    @tailrec
+    def recTrimUpstream(tryPath: TryPath): this.type = {
+      tryPath.parentOpt match {
+        case Some(parent) =>
+          parent.branches.clear()
+          parent.branches += tryPath
+          recTrimUpstream(parent)
+        case None => this
+      }
+    }
+    recTrimUpstream(this)
+  }
+
+  /**
+    * Filter TryPaths that satisfy the prediction f.
+    * Top path will not suffer the filtering.
+    *
+    * @return the top path with downstream paths filtered.
+    */
+  def filter(f: TryPath => Boolean): TryPath = {
+    val top = this.toTop
+    def recFilterDownstream(f: TryPath => Boolean, currentPath: TryPath): Unit = {
+      if (!currentPath.branches.contains(TryPath.CompletePath)) {
+        val filtered = currentPath.branches.filter(f)
+        currentPath.branches.clear()
+        currentPath.branches ++= filtered
+        if (currentPath.branches.isEmpty) currentPath.complete
+        currentPath.branches.foreach(tp => recFilterDownstream(f, tp))
+      }
+    }
+    recFilterDownstream(f, top)
+    top
+  }
+
   /** Return top parent of this path. If this is already at top, return this. */
   @inline
   def toTop: TryPath = TryPath.getTop(this)

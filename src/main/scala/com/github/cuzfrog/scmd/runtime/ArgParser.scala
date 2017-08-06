@@ -54,7 +54,7 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
         val msg = forks.map(_.anchor.node).map {
           case cmdNode: CmdNode => cmdNode.entity.name
           case paramNode: ParamNode[_] => paramNode.entity.name
-          case n@(_: OptNode[_] | _: PropNode[_]) =>
+          case n@(_: OptNode[_] | _: PropNode[_] | _: PriorNode) =>
             throw new AssertionError(s"OptNode/PropNode should not be ambiguous.[${n.entity.name}]")
         }
         throw ArgParseException(s"Ambiguous arg: $arg for: ${msg.mkString(",")}", c)
@@ -99,11 +99,16 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
       //if complete:
       case None =>
         currentPath.complete //seal this path.
-        currentPath.toTop.findUnsealedFork match { //if there's another unsealed fork:
-          case None => currentPath //all paths are sealed, return
-          case Some(path) =>
-            c.restore(path.anchor.contextSnapshot)
-            recProceed(path, exceptions)
+        currentPath.anchor.node match {
+          case _: PriorNode =>
+            currentPath.trimUpstream //todo: check if it needs to be filtered.
+          case _ =>
+            currentPath.toTop.findUnsealedFork match { //if there's another unsealed fork:
+              case None => currentPath //all paths are sealed, return
+              case Some(path) =>
+                c.restore(path.anchor.contextSnapshot)
+                recProceed(path, exceptions)
+            }
         }
     }
   }

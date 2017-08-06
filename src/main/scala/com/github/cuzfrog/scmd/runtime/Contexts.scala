@@ -28,6 +28,8 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   private[this] val optsUpstreamLeft: mutable.ArrayBuffer[OptNode[_]] =
     mutable.ArrayBuffer(topNode.opts: _*)
   private[this] val propsRepo: mutable.Set[PropNode[_]] = mutable.Set(argTree.props: _*)
+  /** Once prior arg encountered, this is registered. */
+  private[this] var priorRegister: Option[PriorNode] = None
   private[this] var argCursor: Int = 0
   private[this] var currentCateArg: TypedArg[CateArg] = args.head
 
@@ -77,14 +79,14 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
         propsRepo.add(updated)
         updated
       case priorNode: PriorNode =>
-        ???
+        priorRegister = Some(priorNode)
+        priorNode
       case otherNode => otherNode //nothing needed to do.
     }
     Anchor(updatedNode, this)
   }
 
   /** Return current pointed ParamNode of current CmdNode. */
-  @inline
   def nextParamNode: Option[ParamNode[_]] = this.synchronized {
     val params = currentCmdNode.params
     if (noMoreParamForThisCmd) None else {
@@ -152,7 +154,6 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     paramCursor = snapshot.paramCursor
   }
 
-  @inline
   def mandatoryLeftCnt: Int = this.synchronized {
     val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
     val optCnt = optsUpstreamLeft.filter(_.value.isEmpty).count(_.entity.isMandatory)
@@ -160,8 +161,9 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     paramCnt + optCnt + subCmdCnt
   }
 
-  @inline
-  def isComplete: Boolean = this.synchronized {mandatoryLeftCnt == 0 && noArgLeft}
+  def isComplete: Boolean = this.synchronized {
+    priorRegister.nonEmpty || (mandatoryLeftCnt == 0 && noArgLeft)
+  }
 
   def noArgLeft: Boolean = this.synchronized(args.length <= argCursor)
 

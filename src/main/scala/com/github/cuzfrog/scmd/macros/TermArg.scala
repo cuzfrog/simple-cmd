@@ -28,7 +28,7 @@ private object TermArg extends SimpleLogging {
     val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
 
     stats collect {
-      case q"val $argName: $_ = $defName(..$params)" =>
+      case q"val $argName: $_ = $defName(..$params)" if defName.isInstanceOf[Term.Name] =>
         implicit val pos: Position = argName.pos
         val name = Lit.String(argName.syntax)
         val description = extract[String](params).defnTerm

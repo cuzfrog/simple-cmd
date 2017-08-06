@@ -9,6 +9,7 @@ import scala.meta._
 
 /*
  * Position is not available, this is a known issue.
+ * todo: still try to add position info for client.
  */
 
 /**
@@ -40,11 +41,14 @@ private object TermArg extends SimpleLogging {
                                        $TERM_DESCRIPTION = $description)"""
             TermCmd(name.value, term, pos)
           case q"priorDef" =>
-            val alias = extract[Term](params).getOrElse(q"Nil")
+            val alias = extract[Term](params)
             val matchName = extract[Boolean](params).getOrElse(Defaults.priorMatchName)
+            if(alias.isEmpty && !matchName)
+              abort(pos,s"PriorArg ${name.value} can never be matched," +
+                s" no alias defined and not going to match name.")
             val term =
               q"""runtime.buildPriorArg($TERM_NAME = $name,
-                                        alias = $alias,
+                                        alias = ${alias.getOrElse(q"Nil")},
                                         $TERM_DESCRIPTION = $description,
                                         matchName = ${matchName.defnTerm})"""
             TermPrior(name.value, term, pos, topCmdSymbol)
@@ -189,7 +193,7 @@ private object TermProp {
 
 private object TermPrior {
   implicit val definable: Definable[TermPrior] = (a: TermPrior) => {
-    q"""runtime.buildPriorNode[${a.tpe}](
+    q"""runtime.buildPriorNode(
             entity = ${a.term},
             parent = ${a.parent}
         )"""

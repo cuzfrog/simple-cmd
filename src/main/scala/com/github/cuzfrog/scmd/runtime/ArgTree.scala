@@ -90,6 +90,9 @@ private object ArgTree {
     def recMkPrettyString(cmdNode: CmdNode, indent: String = "",
                           props: Seq[PropNode[_]] = Nil): String = {
       val cmd = indent + cmdNode.entity.name
+      val priors = cmdNode.priors.map { n =>
+        s"$indent+-prior: ${n.entity.name} alias: ${n.entity.alias.mkString(",")}"
+      }
       val propsStr =
         props.map(p => s"+-props: ${p.entity.name}[key->${p.tpe}] flag ${p.entity.originalName}")
       val params = cmdNode.params.map { n =>
@@ -104,7 +107,7 @@ private object ArgTree {
         cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
       val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
       val result: Seq[String] =
-        Seq(cmd) ++ propsStr ++ params ++ opts ++ cmdEntry ++ subCmds
+        Seq(cmd) ++ propsStr ++ priors ++ params ++ opts ++  cmdEntry ++ subCmds
       result.mkString(NEWLINE)
     }
 

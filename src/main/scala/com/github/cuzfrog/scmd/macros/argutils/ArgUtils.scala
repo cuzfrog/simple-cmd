@@ -18,7 +18,7 @@ private[macros] object ArgUtils {
   /** Scala meta generated fields need explicit types to inform IDE. */
   def addExplicitType(stat: Stat): Stat = AddExplicitTypeImpl.addExplicitType(stat)
 
-
+  // ------------------- Shared helpers ----------------------
   private[argutils] def getComposedTpe(params: immutable.Seq[Term.Arg],
                                        arg: Type,
                                        tpe: Type,
@@ -31,7 +31,7 @@ private[macros] object ArgUtils {
         argValue.structure == Types.singleValue.structure) true
       else default.nonEmpty
     }
-    val argValueTpe = if(arg.structure == Types.propertyArg.structure) t"(String,$tpe)" else tpe
+    val argValueTpe = if (arg.structure == Types.propertyArg.structure) t"(String,$tpe)" else tpe
     val composedTpe = if (isMandatory && withDefault) {
       throw new AssertionError("Argument cannot be mandatory while with default value.")
     } else if (isMandatory) {

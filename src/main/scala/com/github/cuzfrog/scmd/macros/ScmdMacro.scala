@@ -23,7 +23,7 @@ object MacroUtil {
       case 'Valid => new ScmdValidMacro
       case bad => throw new AssertionError(s"No such ScmdMacro implementation:$bad")
     }
-
+    //todo: mods cannot contain final
     defn match {
       case q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }" =>
         macroImpl.expand(mods, name, ctorMods, paramss, stats)

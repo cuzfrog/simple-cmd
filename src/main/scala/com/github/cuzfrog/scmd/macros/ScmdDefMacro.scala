@@ -71,11 +71,20 @@ private class ScmdDefMacro extends ScmdMacro {
             this
           }"""
 
+    /**
+      * Return a new defClass after done parsing.
+      *
+      * Built-in priors are run in the new defClass.
+      * This does not conflict with client-defined control flow.
+      * Because when a prior arg is matched, args(cmds) afterward are ignored,
+      * they are not met to execute client code.
+      */
     val public_def_parsed = {
       val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
       q"""def parsed: $name = {
-            val evaluatedDefs = try{
+            val evaluatedDefClass = try{
               scmdRuntime.parse($argsParam)
+              scmdRuntime.runBuiltInPriors()
               new ${Ctor.Ref.Name(name.value)}(...$termParamss){
                 ..${ArgUtils.convertParsed(stats)}
               }
@@ -83,7 +92,7 @@ private class ScmdDefMacro extends ScmdMacro {
               case e: ScmdException=> scmdRuntime.handleException(e)
             }
             //scmdRuntime.clean()
-            evaluatedDefs
+            evaluatedDefClass
           }"""
     }
     //todo: clean runtime after completion of parsing.

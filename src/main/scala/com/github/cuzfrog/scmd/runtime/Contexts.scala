@@ -76,6 +76,8 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
         propsRepo.remove(storedPropNode) //this is required, because updated node is equal to storedPropNode
         propsRepo.add(updated)
         updated
+      case priorNode: PriorNode =>
+        ???
       case otherNode => otherNode //nothing needed to do.
     }
     Anchor(updatedNode, this)

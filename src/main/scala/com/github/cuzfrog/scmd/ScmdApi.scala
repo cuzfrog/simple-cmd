@@ -30,7 +30,7 @@ trait ScmdApi {
 
   final def priorDef(alias: Seq[String] = Nil,
                      description: String = "",
-                     matchName: Boolean = true): PriorArg = DummyPriorArg
+                     matchName: Boolean = false): PriorArg = DummyPriorArg
 
   final def appDef(name: String,
                    shortDescription: String = "",

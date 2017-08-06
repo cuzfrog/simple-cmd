@@ -41,7 +41,7 @@ private object TermArg extends SimpleLogging {
             TermCmd(name.value, term, pos)
           case q"priorDef" =>
             val alias = extract[Term](params).getOrElse(q"Nil")
-            val matchName = extract[Boolean](params).getOrElse(true)
+            val matchName = extract[Boolean](params).getOrElse(Defaults.priorMatchName)
             val term =
               q"""runtime.buildPriorArg($TERM_NAME = $name,
                                         alias = $alias,

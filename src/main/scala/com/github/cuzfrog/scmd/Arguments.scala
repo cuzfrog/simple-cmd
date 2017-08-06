@@ -65,7 +65,7 @@ PropertyArg[+T] private[scmd](name: String,
 sealed case class
 PriorArg private[scmd](name: String,
                        alias: Seq[String] = Nil,
-                       matchName: Boolean = true,
+                       matchName: Boolean = Defaults.priorMatchName,
                        description: Option[String] = None,
                        private[scmd] val met: Boolean = false) extends Argument[Nothing]
 

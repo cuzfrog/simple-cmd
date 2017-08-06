@@ -30,7 +30,7 @@ private case class SingleOpts(arg: String) extends CateArg
 private case class LongOpt(arg: String) extends CateArg
 /** Param or Cmd with no prefix "-". */
 private case class ParamOrCmd(arg: String) extends CateArg
-
+/** Properties arg, with flag dropped. */
 private case class PropsCate(arg: String, key: String, value: String,
                              prop: PropNode[_]) extends CateArg
 /**
@@ -47,6 +47,8 @@ private object SingleOpts extends CateUtils {
   implicit val parser: Parser[SingleOpts, AnchorEither] = new Parser[SingleOpts, AnchorEither] {
     override def parse(a: SingleOpts)(implicit c: Context): AnchorEither = {
       val arg = a.arg
+
+      interceptPrior(arg).map { priorNode => return c.anchors(priorNode) }
 
       val matchOpt =
         c.getUpstreamLeftOpts.find(_.entity.abbr.exists(abbr => abbr == arg.take(abbr.length))) //match first letter
@@ -121,6 +123,8 @@ private object LongOpt extends CateUtils {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
       val arg = a.arg
 
+      interceptPrior(arg).map { priorNode => return c.anchors(priorNode) }
+
       arg match {
         case EqualLiteral(argName, e_Value) =>
           val valueOpt = Option(e_Value).map(_.drop(1))
@@ -170,6 +174,8 @@ private object ParamOrCmd extends CateUtils {
     override def parse(a: ParamOrCmd)
                       (implicit c: Context): AnchorEither = {
       val arg = a.arg
+
+      interceptPrior(arg).map { priorNode => return c.anchors(priorNode) }
 
       c.nextParamNode match {
         //there's still params to match:
@@ -274,6 +280,12 @@ private sealed trait CateUtils extends SimpleLogging {
       case _ =>
         throw new AssertionError(s"Boolean value cannot be variable." +
           s" Node:${n.entity.name}")
+    }
+  }
+
+  protected def interceptPrior(arg: String)(implicit c: Context): Option[PriorNode] = {
+    c.getCurrentCmdNode.priors.find { pn =>
+      pn.entity.alias.contains(arg) || (pn.entity.matchName && pn.entity.name == arg)
     }
   }
 }

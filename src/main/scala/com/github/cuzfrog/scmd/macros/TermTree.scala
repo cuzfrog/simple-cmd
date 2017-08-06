@@ -84,10 +84,10 @@ private object TermArgTree {
   implicit val convert2NodeSeq: Convertible[TermArgTree, immutable.Seq[TermArg]] =
     (a: TermArgTree) => {
       def recConvertTermCmdNode2NodeSeq(tn: TermCmdNode): immutable.Seq[TermArg] = {
-        tn.params ++ tn.opts ++
+        tn.params ++ tn.opts ++ tn.priors ++
           tn.subCmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq) :+ tn.cmd
       }
-      a.props ++ a.topParams ++ a.topOpts ++
+      a.props ++ a.topParams ++ a.topOpts ++ a.topPriors ++
         a.cmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq)
     }
 }

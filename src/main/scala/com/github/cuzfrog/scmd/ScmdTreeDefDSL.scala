@@ -37,4 +37,11 @@ object ScmdTreeDefDSL {
     /** Both of (mutually inclusive) */
     def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyDependent = g
   }
+
+  // ------- Built in args --------
+  /** Match: -help and --help */
+  val help: PriorArg = Argument.BuiltInArgs.help
+  /** Match: -version and --version */
+  val version: PriorArg = Argument.BuiltInArgs.version
+
 }

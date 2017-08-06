@@ -250,3 +250,17 @@ private object ArgValue {
     override def value: Seq[T] = Nil
   }
 }
+
+private object Argument {
+  object BuiltInArgs {
+    val help: PriorArg =
+      PriorArg("help", Seq("-help", "--help"), description = Some("show help info."))
+    val version: PriorArg =
+      PriorArg("version", Seq("-version", "--version"), description = Some("print version info."))
+  }
+
+  val builtInArgs: Map[scala.Symbol, PriorArg] = Map(
+    'help -> BuiltInArgs.help,
+    'version -> BuiltInArgs.version
+  )
+}

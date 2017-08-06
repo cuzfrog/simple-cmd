@@ -14,8 +14,6 @@ private object OpenStack {
     val service = cmdDef(description = "chose service to print")
     val project = cmdDef(description = "chose project to print")
 
-    val version = cmdDef(description = "print version info.")
-
     val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
     val inTable = optDef[Boolean](description = "print in table.", default = true)
 
@@ -24,7 +22,7 @@ private object OpenStack {
     argTreeDef(
       verbose,
       inTable,
-      version,
+      version, //built-in
       nova(
         list(service ?, project), //cmds under list are optional.
         //equivalent to list(service ?, project ?)

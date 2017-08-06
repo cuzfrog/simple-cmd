@@ -28,7 +28,7 @@ private object TermArg extends SimpleLogging {
 
     val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
 
-    stats collect {
+    val collected: immutable.Seq[TermArg] = stats collect {
       case q"val $argName: $_ = $defName(..$params)" if defName.isInstanceOf[Term.Name] =>
         implicit val pos: Position = argName.pos
         val name = Lit.String(argName.syntax)
@@ -43,8 +43,8 @@ private object TermArg extends SimpleLogging {
           case q"priorDef" =>
             val alias = extract[Term](params)
             val matchName = extract[Boolean](params).getOrElse(Defaults.priorMatchName)
-            if(alias.isEmpty && !matchName)
-              abort(pos,s"PriorArg ${name.value} can never be matched," +
+            if (alias.isEmpty && !matchName)
+              abort(pos, s"PriorArg ${name.value} can never be matched," +
                 s" no alias defined and not going to match name.")
             val term =
               q"""runtime.buildPriorArg($TERM_NAME = $name,
@@ -132,6 +132,7 @@ private object TermArg extends SimpleLogging {
         if defName.syntax.contains("Def") =>
         abort(s"No type found for argument def: $stat")
     }
+    builtInArgs(topCmdSymbol) ++ collected //builtIn must precede, order affects tree building.
   }
   //todo: add name conflict check.
 
@@ -139,19 +140,32 @@ private object TermArg extends SimpleLogging {
     q"""runtime.buildSingleValue[$tpe]($default)"""
   private def variableValue(tpe: Type, default: Term): Term =
     q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
+
+  //todo: (low level) make builtInArgs more generic.
+  private def builtInArgs(topCmdSymbol: Lit.Symbol): immutable.Seq[TermArg] = {
+    val help = new TermPrior("help",
+      q"""runtime.builtInArgs('help)""",
+      Position.None, topCmdSymbol) with BuiltInArg
+    val version =
+      new TermPrior("version",q"""runtime.builtInArgs('version)""",
+        Position.None, topCmdSymbol) with BuiltInArg
+    List(help, version)
+  }
+
+  sealed trait BuiltInArg { this: TermArg => }
 }
 
 private sealed trait TermValueArg extends TermArg
 private final case class TermCmd(name: String, term: Term, pos: Position) extends TermArg {
   val tpe: Type.Name = TYPE_NOTHING
 }
-private final case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
+private sealed case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
                                    parent: Lit.Symbol) extends TermValueArg
-private final case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
+private sealed case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
                                  parent: Lit.Symbol) extends TermValueArg
-private final case class TermProp(name: String, flag: String,
+private sealed case class TermProp(name: String, flag: String,
                                   term: Term, pos: Position, tpe: Type) extends TermArg
-private final case class TermPrior(name: String, term: Term, pos: Position,
+private sealed case class TermPrior(name: String, term: Term, pos: Position,
                                    parent: Lit.Symbol) extends TermArg {
   val tpe: Type.Name = TYPE_NOTHING
 }

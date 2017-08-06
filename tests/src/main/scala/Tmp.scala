@@ -20,7 +20,7 @@ object Tmp {
 
     val properties = propDef[Int](flag = "D")
 
-    val help = priorDef(alias = Seq("-help", "--help"))
+    val help1 = priorDef(alias = Seq("-help1", "--help1"))
     //    import scmdTreeDefDSL._
     //
     //    argTreeDef(
@@ -67,9 +67,9 @@ object Tmp {
 
   }
 
-  import scmdValueConverter._
 
   def main(args: Array[String]): Unit = {
+    import scmdValueConverter._
     val conf = (new CatDef(args))
       .withValidation(new CatValidation(_))
     println("-----------App info------------")

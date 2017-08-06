@@ -212,12 +212,13 @@ private final class DslTermNodeBuilder(appName: String,
     val topNode = recResolve(None, dslStats)
     val props = argDefs.collect { case prop: TermProp => prop }
     val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
+    val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with TermArg.BuiltInArg => builtIn }
 
     val tree = TermArgTree(
       appName = Lit.String(appName),
       topParams = topNode.params,
       topOpts = topNode.opts,
-      topPriors = topNode.priors,
+      topPriors = (topBuiltInPriors ++ topNode.priors).distinct,
       props = props,
       cmdEntry = topNode.subCmdEntry,
       topLimitations = topNode.limitations,
@@ -237,7 +238,9 @@ private final class DslTermNodeBuilder(appName: String,
     val strippedStats = dslStats.map {
       case Term.Select(cmdTerm, Term.Name("?")) =>
         isCmdEntryOptional = true
-        cmdTerm //strip off ?
+        cmdTerm //strip off "?"
+      case bad: Term.Select =>
+        abort(bad.pos, s"Only use val name in tree DSL, ${bad.syntax} is not supported.")
       case other => other
     }
 

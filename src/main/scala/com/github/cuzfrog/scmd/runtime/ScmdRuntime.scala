@@ -49,6 +49,8 @@ sealed trait ScmdRuntime {
                     description: Option[String],
                     matchName: Boolean): Int
 
+  def builtInArgs(name: scala.Symbol): Int
+
   def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int
 
   def buildSingleValue[T](_default: Option[T]): SingleValue[T]
@@ -221,6 +223,13 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.put(id, Box(a))
     id
   }
+  override def builtInArgs(name: scala.Symbol): Int = {
+    val id = idGen.getAndIncrement()
+    val a = Argument.builtInArgs.getOrElse(name,
+      throw new IllegalArgumentException(s"Cannot find built in arg:${name.name}"))
+    repository.put(id, Box(a))
+    id
+  }
   override def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int = {
     val id = idGen.getAndIncrement()
     val a = CommandEntry(isMandatory)
@@ -266,7 +275,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildPriorNode(entity: Int, parent: scala.Symbol): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[PriorArg](entity)
-    val a = PriorNode(e,parent)
+    val a = PriorNode(e, parent)
     repository.put(id, Box(a))
     nodeRefs.put(scala.Symbol(e.name), a)
     id

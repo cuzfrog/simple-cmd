@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
-import com.github.cuzfrog.scmd.{Limitation, MutualLimitation}
+import com.github.cuzfrog.scmd.{BuiltInArg, Command, Limitation, MutualLimitation}
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -177,6 +177,7 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
   private[this] var params: immutable.Seq[TermParam] = sharedParams
   private[this] var opts: immutable.Seq[TermOpt] = immutable.Seq.empty
   private[this] var priors: immutable.Seq[TermPrior] = immutable.Seq.empty
+  private val scopeCmdSymbol = Lit.Symbol(scala.Symbol(cmd.name))
 
   def add(arg: TermArg): IdxTermNodeBuilder = arg match {
     case cmd: TermCmd => new IdxTermNodeBuilder(cmd, sharedParams, Option(this))
@@ -185,15 +186,15 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
     case prior: TermPrior => this.priors :+= prior; this
     case _: TermProp => this //ignore props
   }
-
+  
   //non-defensive
   private def build: TermCmdNode = {
     //these CmdNodes are flat at level1 (level0 is the top)
     TermCmdNode(
       cmd,
-      params,
-      opts,
-      priors,
+      params.map(_.copy(parent = scopeCmdSymbol)),
+      opts.map(_.copy(parent = scopeCmdSymbol)),
+      priors.map(_.copy(parent = scopeCmdSymbol)),
       subCmdEntry = TermCommandEntry.placeHolder)
   }
 
@@ -212,7 +213,7 @@ private final class DslTermNodeBuilder(appName: String,
     val topNode = recResolve(None, dslStats)
     val props = argDefs.collect { case prop: TermProp => prop }
     val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
-    val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with TermArg.BuiltInArg => builtIn }
+    val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with BuiltInArg => builtIn }
 
     val tree = TermArgTree(
       appName = Lit.String(appName),
@@ -286,12 +287,13 @@ private final class DslTermNodeBuilder(appName: String,
         TermCommandEntry.getTerm(sortedChildCmdNodes.nonEmpty && !isCmdEntryOptional)
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
-    //todo: change term's parent to scoped cmd
+
+    val scopeCmdSymbol = Lit.Symbol(scala.Symbol(termCmdOpt.map(_.name).getOrElse(appName)))
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
-      params = termArgs.collect { case a: TermParam => a },
-      opts = termArgs.collect { case a: TermOpt => a },
-      priors = termArgs.collect { case a: TermPrior => a },
+      params = termArgs.collect { case a: TermParam => a.copy(parent = scopeCmdSymbol) },
+      opts = termArgs.collect { case a: TermOpt => a.copy(parent = scopeCmdSymbol) },
+      priors = termArgs.collect { case a: TermPrior => a.copy(parent = scopeCmdSymbol) },
       subCmdEntry = subCmdEntry,
       limitations = groupArgs.map(LimitationGroup.fromTuple)
     )

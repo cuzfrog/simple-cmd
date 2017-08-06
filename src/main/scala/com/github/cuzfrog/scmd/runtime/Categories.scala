@@ -11,7 +11,10 @@ import scala.reflect.ClassTag
  */
 
 private sealed trait CateArg {
+  /** Arg (with prefix stripped off). */
   def arg: String
+  /** original arg without any change. */
+  def original: String
 }
 private object CateArg {
   implicit val parser: Parser[CateArg, AnchorEither] = new Parser[CateArg, AnchorEither] {
@@ -25,14 +28,18 @@ private object CateArg {
 }
 
 /** Opt(s) with single letter. "-" has been stripped off. */
-private case class SingleOpts(arg: String) extends CateArg
+private case class SingleOpts(arg: String, original: String) extends CateArg
 /** Opt with full name. One "-" of the "--" has been stripped off. */
-private case class LongOpt(arg: String) extends CateArg
+private case class LongOpt(arg: String, original: String) extends CateArg
 /** Param or Cmd with no prefix "-". */
-private case class ParamOrCmd(arg: String) extends CateArg
+private case class ParamOrCmd(arg: String) extends CateArg{
+  val original: String = arg
+}
 /** Properties arg, with flag dropped. */
 private case class PropsCate(arg: String, key: String, value: String,
-                             prop: PropNode[_]) extends CateArg
+                             prop: PropNode[_]) extends CateArg{
+  val original: String = arg
+}
 /**
   * Option with single hyphen -
   * e.g. -p -P
@@ -48,13 +55,13 @@ private object SingleOpts extends CateUtils {
     override def parse(a: SingleOpts)(implicit c: Context): AnchorEither = {
       val arg = a.arg
 
-      interceptPrior(arg).map { priorNode => return c.anchors(priorNode) }
+      interceptPrior(a.original).map { priorNode => return c.anchors(priorNode) }
 
       val matchOpt =
         c.getUpstreamLeftOpts.find(_.entity.abbr.exists(abbr => abbr == arg.take(abbr.length))) //match first letter
       matchOpt match {
         case Some(optNode1) =>
-          trace(s"parse SingleOpts $arg matched -> ${optNode1.entity.name}[${optNode1.tpe}]")
+          trace(s"parse SingleOpts ${a.original} matched -> ${optNode1.entity.name}[${optNode1.tpe}]")
           optNode1.tpe match {
             //found argDef for type Boolean
             case ClassTag.Boolean =>
@@ -101,7 +108,7 @@ private object SingleOpts extends CateUtils {
                   case ValueFolding(argAbbr, v) if optNode1.entity.abbr.contains(argAbbr) => v
                   case single if optNode1.entity.abbr.contains(single) => c.nextArg.getOrElse(
                     throw ArgParseException(
-                      s"No value found for opt -$arg with type[${otherTpe.name}].", c))
+                      s"No value found for opt ${a.original} with type[${otherTpe.name}].", c))
                   case bad => throw ArgParseException(s"Malformed opt -$bad", c)
                 }
                 c.anchors(optNode1.addValue(value))
@@ -110,7 +117,7 @@ private object SingleOpts extends CateUtils {
               }
           }
         case None =>
-          ArgParseException(s"Unknown opt -$arg", c)
+          ArgParseException(s"Unknown opt ${a.original}", c)
       }
     }
   }
@@ -123,7 +130,7 @@ private object LongOpt extends CateUtils {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
       val arg = a.arg
 
-      interceptPrior(arg).map { priorNode => return c.anchors(priorNode) }
+      interceptPrior(a.original).map { priorNode => return c.anchors(priorNode) }
 
       arg match {
         case EqualLiteral(argName, e_Value) =>
@@ -133,14 +140,14 @@ private object LongOpt extends CateUtils {
           }
           matchOpt match {
             case Some(optNode) =>
-              trace(s"Parse LongOpt $arg -> matched [${optNode.tpe}]")
+              trace(s"Parse LongOpt ${a.original} -> matched [${optNode.tpe}]")
               optNode.tpe match {
                 //arg def of type Boolean
                 case ClassTag.Boolean =>
                   valueOpt match {
                     case Some(boolStr) => parseBoolStr(boolStr) match {
                       case Some(b) => c.anchors(optNode.addValue(b))
-                      case None => ArgParseException(s"Unknown bool literal: -$arg", c)
+                      case None => ArgParseException(s"Unknown bool literal: ${a.original}", c)
                     }
                     case None =>
                       c.anchors(optNode.addValue(extractBooleanValue(optNode)))
@@ -156,15 +163,15 @@ private object LongOpt extends CateUtils {
                     case Some(v) => c.anchors(optNode.addValue(v))
                     case None =>
                       ArgParseException(
-                        s"No value found for opt -$arg with type[${otherTpe.name}].", c)
+                        s"No value found for opt ${a.original} with type[${otherTpe.name}].", c)
                   }
               }
 
             case None =>
-              trace(s"Parse LongOpt $arg -> not-matched.")
-              ArgParseException(s"Unknown option: -$arg", c)
+              trace(s"Parse LongOpt ${a.original} -> not-matched.")
+              ArgParseException(s"Unknown option: ${a.original}", c)
           }
-        case bad => ArgParseException(s"Malformed option: $bad", c)
+        case _ => ArgParseException(s"Malformed option: ${a.original}", c)
       }
     }
   }
@@ -175,7 +182,7 @@ private object ParamOrCmd extends CateUtils {
                       (implicit c: Context): AnchorEither = {
       val arg = a.arg
 
-      interceptPrior(arg).map { priorNode => return c.anchors(priorNode) }
+      interceptPrior(a.original).map { priorNode => return c.anchors(priorNode) }
 
       c.nextParamNode match {
         //there's still params to match:
@@ -183,7 +190,7 @@ private object ParamOrCmd extends CateUtils {
           val anchorsWithValue: Seq[Anchor] =
             if (paramNode.isVariable) {
               //variable/multiple args:
-              trace(s"Parse ParamOrCmd:${a.arg} -> param...")
+              trace(s"Parse ParamOrCmd:${a.original} -> param...")
 
               /** Pop args from context and create anchors along the way. */
               @tailrec
@@ -205,7 +212,7 @@ private object ParamOrCmd extends CateUtils {
 
             else {
               //single arg:
-              trace(s"Parse ParamOrCmd:${a.arg} -> param single")
+              trace(s"Parse ParamOrCmd:${a.original} -> param single")
               if (paramNode.isMandatory) c.anchors(paramNode.copy(value = Seq(arg)))
               else { //if the param is optional.
                 val newAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
@@ -229,7 +236,7 @@ private object ParamOrCmd extends CateUtils {
           anchorsWithValue ++ possibleCmdAnchor
         //there's no params (left) before, a cmd should be matched:
         case None =>
-          trace(s"Parse ParamOrCmd:${a.arg} -> cmd")
+          trace(s"Parse ParamOrCmd:${a.original} -> cmd")
           this.consumeCmd(arg, c)
       }
     }

@@ -52,6 +52,7 @@ trait ScmdApi {
 
 object DummyApi {
   final def cmdDef: Command = DummyCommand
+  final def priorDef: PriorArg = DummyPriorArg
 
   final def ParameterSingleValue[T]: Parameter[T] with SingleValue[T] = DummyParameterS
   final def ParameterSingleValueMandatory[T]: Parameter[T] with SingleValue[T] with Mandatory = DummyParameterSM

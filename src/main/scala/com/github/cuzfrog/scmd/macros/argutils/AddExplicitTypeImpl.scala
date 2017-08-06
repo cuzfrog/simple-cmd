@@ -24,7 +24,12 @@ private object AddExplicitTypeImpl {
 
       case q"val $opt:$_ = optDefVariable[$tpe](..$params)" =>
         getDummyApi(opt, Types.optionArg, tpe, Types.variableValue, params)
-      //todo: is it necessary to add for props?
+
+      case q"val $prop:$_ = propDef[$tpe](..$params)" =>
+        getDummyApi(prop, Types.propertyArg, tpe, Types.variableValue, params)
+
+      case q"val $prior:$_ = priorDef(..$params)" =>
+        q"val ${prior.asInstanceOf[Pat.Var.Term]}: PriorArg = DummyApi.priorDef"
 
       case other => other
     }

@@ -19,6 +19,12 @@ private object ConvertParsedImpl extends SimpleLogging {
             scmdRuntime.getEvaluatedArgumentByName
             [Boolean,Command](${Lit.Symbol(scala.Symbol(cmd.syntax))})
           }"""
+      case q"val $prior:$_ = priorDef(..$params)" =>
+        q"""override val ${prior.asInstanceOf[Pat.Var.Term]}: PriorArg = {
+            scmdRuntime.getEvaluatedArgumentByName
+            [Boolean,PriorArg](${Lit.Symbol(scala.Symbol(prior.syntax))})
+          }"""
+
       case stat@q"val $para:$_ = paramDef[$tpe](..$params)" =>
         typedVal(para, Types.parameter, tpe, Types.singleValue, params, stat)
       case stat@q"val $opt:$_ = optDef[$tpe](..$params)" =>

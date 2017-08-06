@@ -66,7 +66,8 @@ sealed case class
 PriorArg private[scmd](name: String,
                        alias: Seq[String] = Nil,
                        matchName: Boolean = true,
-                       description: Option[String] = None) extends Argument[Nothing]
+                       description: Option[String] = None,
+                       private[scmd] val met: Boolean = false) extends Argument[Nothing]
 
 sealed trait ArgValue[+T] {
   private[scmd] def isVariable: Boolean
@@ -86,6 +87,7 @@ sealed trait VariableValue[+T] extends ArgValue[T] {
 sealed trait Mandatory
 sealed trait WithDefault
 
+//todo: check if adding lazy val will aid performance.
 private[scmd] object DummyArgument {
   def DummyCommand: Command = Command("")
   def DummyPriorArg: PriorArg = PriorArg("")

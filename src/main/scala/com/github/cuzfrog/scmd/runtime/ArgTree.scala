@@ -1,13 +1,14 @@
 package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd.internal.EqualityOverridingMacro
-import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, MutualLimitation, OptionArg, Parameter, PropertyArg, ValueArgument, VariableValue}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, MutualLimitation, OptionArg, Parameter, PriorArg, PropertyArg, ValueArgument, VariableValue}
 
 import scala.reflect.ClassTag
 
 private final case class ArgTree(appName: String,
                                  topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
+                                 topPriors: Seq[PriorNode],
                                  props: Seq[PropNode[_]],
                                  cmdEntry: CmdEntryNode,
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
@@ -16,6 +17,7 @@ private final case class ArgTree(appName: String,
     entity = Command.topCmd(appName),
     params = topParams,
     opts = topOpts,
+    priors = topPriors,
     subCmdEntry = cmdEntry,
     limitations = topLimitations
   )
@@ -28,6 +30,7 @@ private sealed trait Node {
 private case class CmdNode(entity: Command,
                            params: Seq[ParamNode[_]],
                            opts: Seq[OptNode[_]],
+                           priors: Seq[PriorNode],
                            subCmdEntry: CmdEntryNode,
                            limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) extends Node
 
@@ -36,7 +39,7 @@ private case class CmdEntryNode(entity: CommandEntry,
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
 
-
+private case class PriorNode(entity: PriorArg, parent: scala.Symbol) extends Node
 
 private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]
 
@@ -115,6 +118,8 @@ private object Node {
   private def recPrettyString[N <: Node](a: N): String = a match {
     case n: CmdNode =>
       s"cmd:${n.entity.name} +params(${n.params.size}) +opts(${n.opts.size})"
+    case n: PriorNode =>
+      s"prior: ${n.entity.name} alias:${n.entity.alias.mkString(",")}"
     case n: ParamNode[_] =>
       val ifVariable = if (n.isVariable) "..." else ""
       s"param$ifVariable: ${n.entity.name}[${n.tpe}] = ${n.value}"

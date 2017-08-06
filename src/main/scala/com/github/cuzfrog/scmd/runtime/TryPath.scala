@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.{CanFormPrettyString, Convertible}
 import com.github.cuzfrog.scmd.runtime.logging.TryPathLogging
+import com.github.cuzfrog.scmd.{CanFormPrettyString, Convertible}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -88,7 +88,7 @@ private class TryPath(argAnchor: Anchor) {
       path.branches match {
         case arr if arr.contains(TryPath.CompletePath) => None
         case arr if arr.size == 1 => checkUniqueness(arr.head)
-        case arr => Some(path)
+        case _ => Some(path)
       }
     }
     checkUniqueness(this.toTop)
@@ -150,7 +150,8 @@ private object TryPath {
 
     def recMkPrettyString(p: TryPath, indent: String = ""): Seq[String] = {
       val thisP = p.anchor.node match {
-        case n: CmdNode => s"${indent}cmd  [${n.entity.name}]"
+        case n: CmdNode => s"${indent}cmd - ${n.entity.name}"
+        case n: PriorNode => s"${indent}prior - ${n.entity.name}"
         case n: ParamNode[_] =>
           s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
         case n: OptNode[_] =>

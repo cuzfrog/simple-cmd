@@ -70,4 +70,3 @@ object DummyApi {
   final def PropertyArgVariableValue[T]: PropertyArg[T] with VariableValue[(String, T)] = DummyProp
   final def PropertyArgVariableValueDefault[T]: PropertyArg[T] with VariableValue[(String, T)] with WithDefault = DummyPropD
 }
-

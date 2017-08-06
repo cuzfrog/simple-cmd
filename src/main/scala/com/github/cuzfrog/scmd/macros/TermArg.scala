@@ -47,7 +47,7 @@ private object TermArg extends SimpleLogging {
                                         alias = $alias,
                                         $TERM_DESCRIPTION = $description,
                                         matchName = ${matchName.defnTerm})"""
-            TermPrior(name.value, term, pos)
+            TermPrior(name.value, term, pos, topCmdSymbol)
         }
       case q"val $argName: $_ = $defName[$tpe](..$params)" =>
         debug(s"Collected $defName: $argName[$tpe]")
@@ -147,7 +147,8 @@ private final case class TermOpt(name: String, term: Term, pos: Position, tpe: T
                                  parent: Lit.Symbol) extends TermValueArg
 private final case class TermProp(name: String, flag: String,
                                   term: Term, pos: Position, tpe: Type) extends TermArg
-private final case class TermPrior(name: String, term: Term, pos: Position) extends TermArg {
+private final case class TermPrior(name: String, term: Term, pos: Position,
+                                   parent: Lit.Symbol) extends TermArg {
   val tpe: Type.Name = TYPE_NOTHING
 }
 private final
@@ -182,6 +183,15 @@ private object TermProp {
     q"""runtime.buildPropNode[${a.tpe}](
             entity = ${a.term},
             value = Nil
+        )"""
+  }
+}
+
+private object TermPrior {
+  implicit val definable: Definable[TermPrior] = (a: TermPrior) => {
+    q"""runtime.buildPriorNode[${a.tpe}](
+            entity = ${a.term},
+            parent = ${a.parent}
         )"""
   }
 }

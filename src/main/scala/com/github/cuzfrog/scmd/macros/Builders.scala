@@ -283,7 +283,7 @@ private final class DslTermNodeBuilder(appName: String,
         TermCommandEntry.getTerm(sortedChildCmdNodes.nonEmpty && !isCmdEntryOptional)
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
-
+    //todo: change term's parent to scoped cmd
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
       params = termArgs.collect { case a: TermParam => a },

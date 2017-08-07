@@ -6,7 +6,7 @@ sealed trait ArgRoute {
   def execute: Boolean
 }
 
-sealed class CmdRoute private[scmd](cmd: Command,
+private sealed class CmdRoute private[scmd](cmd: Command,
                                     conditions: Seq[RouteCondition] = Nil) extends ArgRoute {
 
   def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
@@ -21,7 +21,7 @@ sealed class CmdRoute private[scmd](cmd: Command,
   }
 }
 
-sealed class SingleValueRoute[+T] private[scmd](value: Option[T]) extends ArgRoute {
+private sealed class SingleValueRoute[+T] private[scmd](value: Option[T]) extends ArgRoute {
   def withValue[R](innerF: Option[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
     new SingleValueRoute[T](value) {
       override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
@@ -32,7 +32,7 @@ sealed class SingleValueRoute[+T] private[scmd](value: Option[T]) extends ArgRou
   override def execute: Boolean = next.forall(_.execute)
 }
 
-sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRoute {
+private sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRoute {
   def withValue[R](innerF: Seq[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
     new VariableValueRoute[T](value) {
       override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
@@ -55,14 +55,14 @@ sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRout
 //    }
 //}
 
-final class RunRoute[T] private[scmd](runF: (T => R) forSome {type R},
+private final class RunRoute[T] private[scmd](runF: (T => R) forSome {type R},
                                       lastValue: T) extends ArgRoute {
   override def execute: Boolean = {
     runF(lastValue)
     true
   }
 }
-final case class MergeRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
+private final case class MergeRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
   override def execute: Boolean = seq.exists(_.execute)
 }
 

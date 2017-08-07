@@ -66,7 +66,10 @@ object Tmp {
     } ~
       cat.run {
         num.withValue { nums =>
-          println(s"Numbers are: ${nums.mkString(",")}")
+          files.withValue { files =>
+            println(s"Numbers are: ${nums.mkString(",")}")
+            println(s"Files are: ${files.mkString(",")}")
+          }
         }
       }
 

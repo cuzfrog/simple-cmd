@@ -33,6 +33,14 @@ object ScmdRouteDSL {
     def expectFalse: RouteCondition = new RouteCondition(a.value.contains(false))
   }
 
+  implicit final class PropertyArgOps[T](a: PropertyArg[T] with VariableValue[(String, T)]) {
+    def expectByKey(key: String)(compareF: Option[T] => Boolean): RouteCondition = {
+      val foundValue = a.value.collect { case (k, v) if k == key => v }.lastOption
+      new RouteCondition(compareF(foundValue))
+    }
+
+  }
+
   implicit final class VariableValueOps[T](a: VariableValue[T]) {
     def expect(compareF: Seq[T] => Boolean): RouteCondition = new RouteCondition(compareF(a.value))
   }

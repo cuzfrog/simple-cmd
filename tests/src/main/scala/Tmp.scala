@@ -59,9 +59,10 @@ object Tmp {
     import scmdValueConverter._
 
     cat.onConditions(
-      newLine.expectTrue
+      newLine.expectTrue,
+      properties.expectByKey("key1")(_.forall(_ > 6))
     ).run {
-      println(s"Numbers are: ${num.value.mkString(",")} (with new line)")
+      println(s"Numbers are: ${num.value.mkString(",")} (with new line (and key1's value >6) )")
     } ~
       cat.run {
         println(s"Numbers are: ${num.value.mkString(",")}")

@@ -56,21 +56,16 @@ object Tmp {
 
     import scmdRouteDSL._
     import argDef._
+    import scmdValueConverter._
 
     cat.onConditions(
       newLine.expectTrue
     ).run {
-      num.withValue { nums =>
-        println(s"Numbers are: ${nums.mkString(",")} (with new line)")
-      }
+      println(s"Numbers are: ${num.value.mkString(",")} (with new line)")
     } ~
       cat.run {
-        num.withValue { nums =>
-          files.withValue { files =>
-            println(s"Numbers are: ${nums.mkString(",")}")
-            println(s"Files are: ${files.mkString(",")}")
-          }
-        }
+        println(s"Numbers are: ${num.value.mkString(",")}")
+        println(s"Files are: ${files.value.mkString(",")}")
       }
 
   }

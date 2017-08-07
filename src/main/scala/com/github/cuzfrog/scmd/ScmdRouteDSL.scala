@@ -17,8 +17,15 @@ object ScmdRouteDSL {
   implicit final class SingleValueOps[T](a: SingleValue[T]) {
     def expect(compareF: Option[T] => Boolean): RouteCondition =
       new RouteCondition(compareF(a.value))
-    def withValue[R](innerF: Option[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-      new SingleValueRoute[T](a.value).withValue(innerF)
+    def expectEmpty: RouteCondition = new RouteCondition(a.value.isEmpty)
+    def expectNonEmpty: RouteCondition = new RouteCondition(a.value.nonEmpty)
+  }
+
+  implicit final class SingleValueMandatoryOps[T](a: SingleValue[T] with Mandatory) {
+    def expectMandatory(compareF: T => Boolean): RouteCondition =
+      new RouteCondition(compareF(a.value.getOrElse(
+        throw new IllegalArgumentException(
+          s"Mandatory arg: ${a.asInstanceOf[Argument[T]].originalName} of empty value."))))
   }
 
   implicit final class SingleValueBooleanOps(a: SingleValue[Boolean]) {
@@ -28,8 +35,6 @@ object ScmdRouteDSL {
 
   implicit final class VariableValueOps[T](a: VariableValue[T]) {
     def expect(compareF: Seq[T] => Boolean): RouteCondition = new RouteCondition(compareF(a.value))
-    def withValue[R](innerF: Seq[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-      new VariableValueRoute[T](a.value).withValue(innerF)
   }
 
   implicit final class ScmdRouteOps(in: ArgRoute) {
@@ -38,5 +43,4 @@ object ScmdRouteDSL {
       case other: ArgRoute => MergeRoute(Seq(other, that))
     }
   }
-
 }

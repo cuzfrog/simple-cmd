@@ -1,6 +1,7 @@
 import java.nio.file.{Path, Paths}
 
 import Scmd._
+import com.github.cuzfrog.scmd.ArgRoute
 
 object Tmp {
 
@@ -54,16 +55,16 @@ object Tmp {
   class CatRoute(argDef: CatDef) {
 
     import scmdRouteDSL._
+    import argDef._
 
-    val route =
-      cmd(argDef.cat) {
-        opt(argDef.newLine) { nl =>
-          expectParam(argDef.files) { files =>
-            println(nl)
-            println(files)
-          }
-        }
+    val route = cat.onConditions(
+      newLine.expectTrue
+    ).run{
+      num.withValue{ nums=>
+        println(s"Numbers are: ${nums.mkString(",")}")
       }
+    }
+
   }
 
 
@@ -75,13 +76,16 @@ object Tmp {
     println(conf.appInfoString)
     println("-----------Arg tree------------")
     println(conf.argTreeString)
-    val parsed: CatDef = conf.parsed
-    println("---------Parsed node sequence:----------")
-    println(conf.parsedSeqString)
-    println("---------Parsed values:----------")
-    val files = parsed.files.value
-    println(files)
-    println(parsed.properties("key2"))
+
+    val result = conf.runWithRoute(new CatRoute(_).route)
+    println(s"Run with route result: $result")
+//    val parsed: CatDef = conf.parsed
+//    println("---------Parsed node sequence:----------")
+//    println(conf.parsedSeqString)
+//    println("---------Parsed values:----------")
+//    val files = parsed.files.value
+//    println(files)
+//    println(parsed.properties("key2"))
   }
 }
 

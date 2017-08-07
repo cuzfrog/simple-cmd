@@ -109,6 +109,7 @@ private class ScmdDefMacro extends ScmdMacro {
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
       public_def_addValidation,
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
+      q"def runWithRoute[T](route: $name => ArgRoute): Boolean = {route(this.parsed).run}",
       public_def_parsed,
       q"def parse():Unit = scmdRuntime.parse($argsParam)"
     )

@@ -418,8 +418,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     argument.asInstanceOf[A]
   }
   override def runBuiltInPriors(): Unit = {
-
-    ???
+    //todo: implementation
   }
   override def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing = {
     implicitly[ScmdExceptionHandler[E]].handle(e)

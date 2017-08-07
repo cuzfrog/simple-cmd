@@ -208,7 +208,7 @@ private final class DslTermNodeBuilder(appName: String,
                                        argDefs: immutable.Seq[TermArg],
                                        dslStats: immutable.Seq[Term.Arg],
                                        globalLimitationsStats: immutable.Seq[Term.Arg]) {
-
+  //todo: forbid duplicates along lineage.
   def resolve: TermArgTree = {
     val topNode = recResolve(None, dslStats)
     val props = argDefs.collect { case prop: TermProp => prop }
@@ -225,10 +225,11 @@ private final class DslTermNodeBuilder(appName: String,
       topLimitations = topNode.limitations,
       globalLimitations = globalLimitations
     )
+
     val argDifference = argDefs.map(_.name)
       .diff(tree.convertTo[immutable.Seq[TermArg]].map(_.name))
     if (argDifference.nonEmpty)
-      abort(s"Arg not defined in tree dsl:${argDifference.mkString(",")}." +
+      abort(s"Arg not defined in tree dsl: ${argDifference.mkString(",")}." +
         s" Comment these argDefs out or put them in the tree.")
     tree
   }

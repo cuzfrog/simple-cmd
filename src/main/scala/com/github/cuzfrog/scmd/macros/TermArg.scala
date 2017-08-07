@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{Command, Defaults}
+import com.github.cuzfrog.scmd.{BuiltInArg, Command, Defaults}
 import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
 import com.github.cuzfrog.scmd.macros.Constants._
 
@@ -151,8 +151,6 @@ private object TermArg extends SimpleLogging {
         Position.None, topCmdSymbol) with BuiltInArg
     List(help, version)
   }
-
-  sealed trait BuiltInArg { this: TermArg => }
 }
 
 private sealed trait TermValueArg extends TermArg

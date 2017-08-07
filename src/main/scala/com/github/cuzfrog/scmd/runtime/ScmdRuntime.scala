@@ -413,7 +413,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
 
       case rc if rc == classOf[PriorArg] =>
         val node = this.getNodeByName[PriorNode](name)
-        node.entity.copy(met = parsedNodes.get(name).nonEmpty)
+        node.entity.copy(met = parsedNode[PriorNode].map(_.parent))
     }
     argument.asInstanceOf[A]
   }

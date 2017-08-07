@@ -67,7 +67,7 @@ PriorArg private[scmd](name: String,
                        alias: Seq[String] = Nil,
                        matchName: Boolean = Defaults.priorMatchName,
                        description: Option[String] = None,
-                       private[scmd] val met: Boolean = false) extends Argument[Nothing]
+                       private[scmd] val met: Option[scala.Symbol] = None) extends Argument[Nothing]
 
 sealed trait ArgValue[+T] {
   private[scmd] def isVariable: Boolean
@@ -86,6 +86,7 @@ sealed trait VariableValue[+T] extends ArgValue[T] {
 
 sealed trait Mandatory
 sealed trait WithDefault
+private trait BuiltInArg
 
 //todo: check if adding lazy val will aid performance.
 private[scmd] object DummyArgument {
@@ -253,10 +254,10 @@ private object ArgValue {
 
 private object Argument {
   object BuiltInArgs {
-    val help: PriorArg =
-      PriorArg("help", Seq("-help", "--help"), description = Some("show help info."))
-    val version: PriorArg =
-      PriorArg("version", Seq("-version", "--version"), description = Some("print version info."))
+    val help: PriorArg = new PriorArg("help", Seq("-help", "--help"),
+      description = Some("show help info.")) with BuiltInArg
+    val version: PriorArg = new PriorArg("version", Seq("-version", "--version"),
+      description = Some("print version info.")) with BuiltInArg
   }
 
   val builtInArgs: Map[scala.Symbol, PriorArg] = Map(

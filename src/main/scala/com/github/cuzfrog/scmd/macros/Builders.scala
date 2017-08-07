@@ -56,17 +56,17 @@ private object TreeBuilder {
         else recAdd(builder.add(args.head), args.tail)
       }
       val props = idxDefs.collect { case prop: TermProp => prop }
+      val priors = idxDefs.collect { case prior: TermPrior => prior }
 
       idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
         case None =>
           val params = idxDefs.collect { case param: TermParam => param }
           val opts = idxDefs.collect { case opt: TermOpt => opt }
-          val priors = idxDefs.collect { case prior: TermPrior => prior }
           TermArgTree(
             appName = Lit.String(appName),
             topParams = params,
             topOpts = opts,
-            topPriors = priors,
+            priors = priors,
             props = props,
             cmdEntry = TermCommandEntry.placeHolder,
             globalLimitations = globalLimitations)
@@ -77,7 +77,6 @@ private object TreeBuilder {
           /** param defs above first cmd will be shared by all cmd as their first param. */
           val topParams = topValueArgs.collect { case param: TermParam => param }
           val topOpts = topValueArgs.collect { case opt: TermOpt => opt }
-          val topPriors = topValueArgs.collect { case prior: TermPrior => prior }
 
           val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
           val builder = NodeBuilder.newIdxTermBuilder(cmd1, topParams)
@@ -87,7 +86,7 @@ private object TreeBuilder {
             appName = Lit.String(appName),
             topParams = Nil,
             topOpts = topOpts,
-            topPriors = topPriors,
+            priors = priors,
             props = props,
             cmdEntry = TermCommandEntry.createWithCmdNodes(commands),
             globalLimitations = globalLimitations)
@@ -176,17 +175,16 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
 
   private[this] var params: immutable.Seq[TermParam] = sharedParams
   private[this] var opts: immutable.Seq[TermOpt] = immutable.Seq.empty
-  private[this] var priors: immutable.Seq[TermPrior] = immutable.Seq.empty
   private val scopeCmdSymbol = Lit.Symbol(scala.Symbol(cmd.name))
 
   def add(arg: TermArg): IdxTermNodeBuilder = arg match {
     case cmd: TermCmd => new IdxTermNodeBuilder(cmd, sharedParams, Option(this))
     case param: TermParam => this.params :+= param; this
     case opt: TermOpt => this.opts :+= opt; this
-    case prior: TermPrior => this.priors :+= prior; this
+    case _: TermPrior => this //ignore priors
     case _: TermProp => this //ignore props
   }
-  
+
   //non-defensive
   private def build: TermCmdNode = {
     //these CmdNodes are flat at level1 (level0 is the top)
@@ -194,7 +192,6 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
       cmd,
       params.map(_.copy(parent = scopeCmdSymbol)),
       opts.map(_.copy(parent = scopeCmdSymbol)),
-      priors.map(_.copy(parent = scopeCmdSymbol)),
       subCmdEntry = TermCommandEntry.placeHolder)
   }
 
@@ -212,14 +209,15 @@ private final class DslTermNodeBuilder(appName: String,
   def resolve: TermArgTree = {
     val topNode = recResolve(None, dslStats)
     val props = argDefs.collect { case prop: TermProp => prop }
+    val priors = argDefs.collect { case prior: TermPrior => prior }
     val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
-    val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with BuiltInArg => builtIn }
+    //val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with BuiltInArg => builtIn }
 
     val tree = TermArgTree(
       appName = Lit.String(appName),
       topParams = topNode.params,
       topOpts = topNode.opts,
-      topPriors = (topBuiltInPriors ++ topNode.priors).distinct,
+      priors = priors,
       props = props,
       cmdEntry = topNode.subCmdEntry,
       topLimitations = topNode.limitations,
@@ -294,7 +292,6 @@ private final class DslTermNodeBuilder(appName: String,
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
       params = termArgs.collect { case a: TermParam => a.copy(parent = scopeCmdSymbol) },
       opts = termArgs.collect { case a: TermOpt => a.copy(parent = scopeCmdSymbol) },
-      priors = termArgs.collect { case a: TermPrior => a.copy(parent = scopeCmdSymbol) },
       subCmdEntry = subCmdEntry,
       limitations = groupArgs.map(LimitationGroup.fromTuple)
     )

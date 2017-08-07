@@ -291,7 +291,7 @@ private sealed trait CateUtils extends SimpleLogging {
   }
 
   protected def interceptPrior(arg: String)(implicit c: Context): Option[PriorNode] = {
-    c.getCurrentCmdNode.priors.find { pn =>
+    c.getPriors.find { pn =>
       pn.entity.alias.contains(arg) || (pn.entity.matchName && pn.entity.name == arg)
     }
   }

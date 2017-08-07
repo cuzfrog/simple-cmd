@@ -10,7 +10,6 @@ private final
 case class TermCmdNode(cmd: TermCmd,
                        params: immutable.Seq[TermParam],
                        opts: immutable.Seq[TermOpt],
-                       priors: immutable.Seq[TermPrior],
                        subCmdEntry: TermCommandEntry,
                        limitations: immutable.Seq[LimitationGroup] = Nil)
 
@@ -18,7 +17,7 @@ private final
 case class TermArgTree(appName: Lit.String,
                        topParams: immutable.Seq[TermParam],
                        topOpts: immutable.Seq[TermOpt],
-                       topPriors: immutable.Seq[TermPrior],
+                       priors: immutable.Seq[TermPrior],
                        props: immutable.Seq[TermProp],
                        cmdEntry: TermCommandEntry,
                        topLimitations: immutable.Seq[LimitationGroup] = Nil,
@@ -45,7 +44,6 @@ private object TermCmdNode {
     val entity = a.cmd.term
     val params = q"$TERM_immutable.Seq(..${a.params.map(_.defnTerm)})"
     val opts = q"$TERM_immutable.Seq(..${a.opts.map(_.defnTerm)})"
-    val priors = q"$TERM_immutable.Seq(..${a.priors.map(_.defnTerm)})"
     val subCmdEntry = a.subCmdEntry.defnTerm
     val limitations = q"$TERM_immutable.Seq(..${a.limitations.map(_.defnTerm)})"
 
@@ -53,7 +51,6 @@ private object TermCmdNode {
           entity = $entity,
           params = $params,
           opts = $opts,
-          priors = $priors,
           subCmdEntry = $subCmdEntry,
           limitations = $limitations
         )"""
@@ -64,7 +61,7 @@ private object TermArgTree {
   implicit val definable: Definable[TermArgTree] = (a: TermArgTree) => {
     val topParams = a.topParams.map(_.defnTerm)
     val topOpts = a.topOpts.map(_.defnTerm)
-    val topPriors = a.topPriors.map(_.defnTerm)
+    val priors = a.priors.map(_.defnTerm)
     val props = a.props.map(_.defnTerm)
     val cmdEntry = a.cmdEntry.defnTerm
     val topLimitations = q"$TERM_immutable.Seq(..${a.topLimitations.map(_.defnTerm)})"
@@ -73,7 +70,7 @@ private object TermArgTree {
           appName = ${a.appName},
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
-          topPriors = $TERM_immutable.Seq(..$topPriors),
+          priors = $TERM_immutable.Seq(..$priors),
           props = $TERM_immutable.Seq(..$props),
           cmdEntry = $cmdEntry,
           topLimitations = $topLimitations,
@@ -84,10 +81,10 @@ private object TermArgTree {
   implicit val convert2NodeSeq: Convertible[TermArgTree, immutable.Seq[TermArg]] =
     (a: TermArgTree) => {
       def recConvertTermCmdNode2NodeSeq(tn: TermCmdNode): immutable.Seq[TermArg] = {
-        tn.params ++ tn.opts ++ tn.priors ++
+        tn.params ++ tn.opts ++
           tn.subCmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq) :+ tn.cmd
       }
-      a.props ++ a.topParams ++ a.topOpts ++ a.topPriors ++
+      a.props ++ a.priors ++ a.topParams ++ a.topOpts ++
         a.cmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq)
     }
 }

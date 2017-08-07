@@ -71,14 +71,13 @@ sealed trait ScmdRuntime {
   def buildCmdNode(entity: Int,
                    params: Seq[Int],
                    opts: Seq[Int],
-                   priors: Seq[Int],
                    subCmdEntry: Int,
                    limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): Int
 
   def buildArgTree(appName: String,
                    topParams: Seq[Int],
                    topOpts: Seq[Int],
-                   topPriors: Seq[Int],
+                   priors: Seq[Int],
                    props: Seq[Int],
                    cmdEntry: Int,
                    topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
@@ -295,16 +294,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildCmdNode(entity: Int,
                             params: Seq[Int],
                             opts: Seq[Int],
-                            priors: Seq[Int],
                             subCmdEntry: Int,
                             limitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Command](entity)
     val p = params.map(getEntity[ParamNode[_]])
     val o = opts.map(getEntity[OptNode[_]])
-    val pr = priors.map(getEntity[PriorNode])
     val se = getEntity[CmdEntryNode](subCmdEntry)
-    val a = CmdNode(e, p, o, pr, se, limitations)
+    val a = CmdNode(e, p, o, se, limitations)
     repository.put(id, Box(a))
     nodeRefs.put(scala.Symbol(e.name), a)
     id
@@ -312,17 +309,17 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   override def buildArgTree(appName: String,
                             topParams: Seq[Int],
                             topOpts: Seq[Int],
-                            topPriors: Seq[Int],
+                            priors: Seq[Int],
                             props: Seq[Int],
                             cmdEntry: Int,
                             topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])],
                             globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): this.type = {
     val tp = topParams.map(getEntity[ParamNode[_]])
     val to = topOpts.map(getEntity[OptNode[_]])
-    val tpr = topPriors.map(getEntity[PriorNode])
+    val pr = priors.map(getEntity[PriorNode])
     val ps = props.map(getEntity[PropNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)
-    argTree = Some(ArgTree(appName, tp, to, tpr, ps, ce, topLimitations, globalLimitations))
+    argTree = Some(ArgTree(appName, tp, to, pr, ps, ce, topLimitations, globalLimitations))
     repository.clear()
     this
   }

@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 private final case class ArgTree(appName: String,
                                  topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
-                                 topPriors: Seq[PriorNode],
+                                 priors: Seq[PriorNode],
                                  props: Seq[PropNode[_]],
                                  cmdEntry: CmdEntryNode,
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
@@ -17,7 +17,6 @@ private final case class ArgTree(appName: String,
     entity = Command.topCmd(appName),
     params = topParams,
     opts = topOpts,
-    priors = topPriors,
     subCmdEntry = cmdEntry,
     limitations = topLimitations
   )
@@ -30,7 +29,6 @@ private sealed trait Node {
 private case class CmdNode(entity: Command,
                            params: Seq[ParamNode[_]],
                            opts: Seq[OptNode[_]],
-                           priors: Seq[PriorNode],
                            subCmdEntry: CmdEntryNode,
                            limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) extends Node
 
@@ -38,7 +36,7 @@ private case class CmdEntryNode(entity: CommandEntry,
                                 children: Seq[CmdNode]) {
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
-//todo: prior arg do not need to scope when define.
+
 private case class PriorNode(entity: PriorArg, parent: scala.Symbol) extends Node
 
 private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]
@@ -88,9 +86,10 @@ private object ArgTree {
     }
 
     def recMkPrettyString(cmdNode: CmdNode, indent: String = "",
-                          props: Seq[PropNode[_]] = Nil): String = {
+                          props: Seq[PropNode[_]] = Nil,
+                          priors: Seq[PriorNode] = Nil): String = {
       val cmd = indent + cmdNode.entity.name
-      val priors = cmdNode.priors.map { n =>
+      val priorsStr = priors.map { n =>
         s"$indent+-prior: ${n.entity.name} alias: ${n.entity.alias.mkString(",")}"
       }
       val propsStr =
@@ -107,11 +106,11 @@ private object ArgTree {
         cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
       val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
       val result: Seq[String] =
-        Seq(cmd) ++ propsStr ++ priors ++ params ++ opts ++  cmdEntry ++ subCmds
+        Seq(cmd) ++ propsStr ++ priorsStr ++ params ++ opts ++ cmdEntry ++ subCmds
       result.mkString(NEWLINE)
     }
 
-    recMkPrettyString(cmdNode, props = a.props)
+    recMkPrettyString(cmdNode, props = a.props, priors = a.priors)
   }
 }
 

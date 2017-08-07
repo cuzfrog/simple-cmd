@@ -53,6 +53,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def getCurrentCmdNode: CmdNode = this.currentCmdNode //return immutable object.
   def getParamCursor: Int = paramCursor
   def getCurrentArg: TypedArg[CateArg] = currentCateArg
+  def getPriors:Seq[PriorNode] = argTree.priors
 
   /** Return not yet consumed opts accumulated upstream. */
   def getUpstreamLeftOpts: Seq[OptNode[_]] = this.synchronized {
@@ -79,8 +80,9 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
         propsRepo.add(updated)
         updated
       case priorNode: PriorNode =>
-        priorRegister = Some(priorNode)
-        priorNode
+        val updated = priorNode.copy(parent = currentCmdNode.entity.symbol)
+        priorRegister = Some(updated)
+        updated
       case otherNode => otherNode //nothing needed to do.
     }
     Anchor(updatedNode, this)

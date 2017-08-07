@@ -7,56 +7,28 @@ sealed trait ArgRoute {
 }
 
 private sealed class CmdRoute private[scmd](cmd: Command,
-                                    conditions: Seq[RouteCondition] = Nil) extends ArgRoute {
+                                            conditions: Seq[RouteCondition] = Nil,
+                                            priorActions: Seq[(PriorArg, () => Unit)]) extends ArgRoute {
 
   def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-    new CmdRoute(cmd, conditions) {
+    new CmdRoute(cmd, conditions, priorActions) {
       override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
         case Some(_) => Option(innerF)
         case None => Option(new RunRoute((_: Unit) => innerF, ()))
       }
     }
   override def execute: Boolean = {
-    conditions.forall(_.condition == true) && next.forall(_.execute)
+    val actions = priorActions collect {
+      case (prior, action) if prior.met.contains(cmd.symbol) => action()
+    }
+    if (actions.isEmpty)
+      conditions.forall(_.condition == true) && next.forall(_.execute)
+    else true
   }
 }
 
-private sealed class SingleValueRoute[+T] private[scmd](value: Option[T]) extends ArgRoute {
-  def withValue[R](innerF: Option[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-    new SingleValueRoute[T](value) {
-      override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
-        case Some(_) => Option(innerF(value))
-        case None => Option(new RunRoute(innerF, value))
-      }
-    }
-  override def execute: Boolean = next.forall(_.execute)
-}
-
-private sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRoute {
-  def withValue[R](innerF: Seq[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-    new VariableValueRoute[T](value) {
-      override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
-        case Some(_) => Option(innerF(value))
-        case None => Option(new RunRoute(innerF, value))
-      }
-    }
-  override def execute: Boolean = next.forall(_.execute)
-}
-
-//sealed class MandatoryValueRoute[+T] private[scmd](valueName: String,
-//                                                   value: => T) extends ArgRoute {
-//
-//  def withValue[R](inner: T => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-//    new MandatoryValueRoute[T](valueName, value) {
-//      override private[scmd] val next = Option(ev) match {
-//        case Some(_) => Option(inner(value))
-//        case None => Option(new RunRoute(inner))
-//      }
-//    }
-//}
-
 private final class RunRoute[T] private[scmd](runF: (T => R) forSome {type R},
-                                      lastValue: T) extends ArgRoute {
+                                              lastValue: T) extends ArgRoute {
   override def execute: Boolean = {
     runF(lastValue)
     true
@@ -65,7 +37,3 @@ private final class RunRoute[T] private[scmd](runF: (T => R) forSome {type R},
 private final case class MergeRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
   override def execute: Boolean = seq.exists(_.execute)
 }
-
-sealed class RouteCondition private[scmd](private[scmd] val condition: Boolean)
-sealed class RouteConditions private[scmd](private[scmd] val cmd: Command,
-                                           private[scmd] val conditions: Seq[RouteCondition])

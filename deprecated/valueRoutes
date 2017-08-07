@@ -1,0 +1,33 @@
+//private sealed class SingleValueRoute[+T] private[scmd](value: Option[T]) extends ArgRoute {
+//  def withValue[R](innerF: Option[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
+//    new SingleValueRoute[T](value) {
+//      override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
+//        case Some(_) => Option(innerF(value))
+//        case None => Option(new RunRoute(innerF, value))
+//      }
+//    }
+//  override def execute: Boolean = next.forall(_.execute)
+//}
+//
+//private sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRoute {
+//  def withValue[R](innerF: Seq[T] => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
+//    new VariableValueRoute[T](value) {
+//      override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
+//        case Some(_) => Option(innerF(value))
+//        case None => Option(new RunRoute(innerF, value))
+//      }
+//    }
+//  override def execute: Boolean = next.forall(_.execute)
+//}
+
+//sealed class MandatoryValueRoute[+T] private[scmd](valueName: String,
+//                                                   value: => T) extends ArgRoute {
+//
+//  def withValue[R](inner: T => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
+//    new MandatoryValueRoute[T](valueName, value) {
+//      override private[scmd] val next = Option(ev) match {
+//        case Some(_) => Option(inner(value))
+//        case None => Option(new RunRoute(inner))
+//      }
+//    }
+//}

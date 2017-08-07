@@ -1,18 +1,13 @@
 package com.github.cuzfrog.scmd
 
 object ScmdRouteDSL {
-  implicit final class RouteConditionsOps(in: RouteConditions) {
-    def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-      new CmdRoute(in.cmd, in.conditions).run(innerF)
+
+  implicit final class CommandOps(cmd: Command) extends RouteCommandOperations {
+    protected val rcmd: RouteCommand = cmd
   }
 
-  implicit final class CommandOps(cmd: Command) {
-    def onConditions(cond1: RouteCondition,
-                     condMore: RouteCondition*): RouteConditions =
-      new RouteConditions(cmd, cond1 +: condMore)
-    def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute =
-      new CmdRoute(cmd).run(innerF)
-  }
+  implicit final class RouteCommandOps(protected val rcmd: RouteCommand)
+    extends RouteCommandOperations
 
   implicit final class SingleValueOps[T](a: SingleValue[T]) {
     def expect(compareF: Option[T] => Boolean): RouteCondition =
@@ -50,5 +45,29 @@ object ScmdRouteDSL {
       case mergeRoute: MergeRoute => mergeRoute.copy(mergeRoute.seq :+ that)
       case other: ArgRoute => MergeRoute(Seq(other, that))
     }
+  }
+}
+
+sealed case
+class RouteCommand private[scmd](private[scmd] val cmd: Command,
+                                 private[scmd] val priorActions: Seq[(PriorArg, () => Unit)],
+                                 private[scmd] val conditions: Seq[RouteCondition])
+private object RouteCommand {
+  implicit def fromCommand(cmd: Command): RouteCommand = RouteCommand(cmd, Nil, Nil)
+}
+sealed class RouteCondition private[scmd](private[scmd] val condition: Boolean)
+
+/** Use shared trait instead of chained implicit conversion to better adapt IDE. */
+sealed trait RouteCommandOperations {
+  protected def rcmd: RouteCommand
+  def onConditions(cond1: RouteCondition,
+                   condMore: RouteCondition*): RouteCommand = {
+    rcmd.copy(conditions = rcmd.conditions ++ (cond1 +: condMore))
+  }
+  def runOnPrior(a: PriorArg)(action: => Unit): RouteCommand = {
+    rcmd.copy(priorActions = rcmd.priorActions :+ (a -> (() => action)))
+  }
+  def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
+    new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF)
   }
 }

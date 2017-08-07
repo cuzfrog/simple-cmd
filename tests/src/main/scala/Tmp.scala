@@ -57,8 +57,9 @@ object Tmp {
     import scmdRouteDSL._
     import argDef._
     import scmdValueConverter._
-
-    cat.onConditions(
+    cat.runOnPrior(help1) {
+      println("PriorArg help1 triggered.")
+    }.onConditions(
       newLine.expectTrue,
       properties.expectByKey("key1")(_.forall(_ > 6))
     ).run {

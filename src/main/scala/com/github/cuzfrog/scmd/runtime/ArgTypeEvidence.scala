@@ -9,6 +9,9 @@ trait ArgTypeEvidence[V] {
 }
 
 object ArgTypeEvidence {
+  implicit val nothingEv:ArgTypeEvidence[Nothing] = (v:String) =>
+    throw new UnsupportedOperationException("ArgTypeEvidence[Nothing] should not be used.")
+
   implicit val stringEv: ArgTypeEvidence[String] = (v: String) => v
   implicit val booleanEv: ArgTypeEvidence[Boolean] = (v: String) => v.toBoolean
   implicit val intEv: ArgTypeEvidence[Int] = (v: String) => v.toInt

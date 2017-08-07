@@ -50,7 +50,11 @@ sealed trait ScmdRuntime {
                     description: Option[String],
                     matchName: Boolean): Int
 
+  /** Build built-in args */
   def builtInArgs(name: scala.Symbol): Int
+
+  def getBuiltInPrior(symbol: scala.Symbol): PriorArg = Argument.builtInArgs.getOrElse(symbol,
+    throw new IllegalArgumentException(s"Cannot find built-in prior by name:$symbol"))
 
   def buildCmdEntry(isMandatory: Boolean = Defaults.isMandatory): Int
 

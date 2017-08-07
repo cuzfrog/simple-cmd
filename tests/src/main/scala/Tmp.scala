@@ -6,7 +6,7 @@ import com.github.cuzfrog.scmd.ArgRoute
 object Tmp {
 
   @ScmdDef
-  class CatDef(args: Seq[String]) {
+  class CatDef(args: Seq[String]) extends ScmdDefStub[CatDef] {
     appDef(name = "cat", shortDescription = "Concatenate files.", fullDescription = null)
     appDefCustom(
       "About" -> "this is a test app",
@@ -14,7 +14,7 @@ object Tmp {
       "null" -> null)
 
     val sharedParam = paramDef[String](description = "this should be shared by cmds below.")
-    val cat = cmdDef(description = "Concatenate contents of files.")
+    val cat1 = cmdDef(description = "Concatenate contents of files.")
     val files = paramDefVariable[Path](description = "Paths of files to concatenate.", isMandatory = true)
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
     val num = optDefVariable[Long](abbr = "N")
@@ -59,17 +59,18 @@ object Tmp {
     import scmdValueConverter._
     app.runOnPrior(help1) {
       println("println help1 info.")
-
+      println(help1)
     }.run {
-      cat.runOnPrior(help1) {
+      cat1.runOnPrior(help1) {
         println("PriorArg help1 triggered.")
+        println(help1)
       }.onConditions(
         newLine.expectTrue,
         properties.expectByKey("key1")(_.forall(_ > 6))
       ).run {
         println(s"Numbers are: ${num.value.mkString(",")} (with new line (and key1's value >6) )")
       } ~
-        cat.run {
+        cat1.run {
           println(s"Numbers are: ${num.value.mkString(",")}")
           println(s"Files are: ${files.value.mkString(",")}")
         }
@@ -86,15 +87,14 @@ object Tmp {
     println("-----------Arg tree------------")
     println(conf.argTreeString)
 
-    val result = conf.runWithRoute(CatRoute)
-    println(s"Run with route result: $result")
-    //    val parsed: CatDef = conf.parsed
-    //    println("---------Parsed node sequence:----------")
-    //    println(conf.parsedSeqString)
-    //    println("---------Parsed values:----------")
-    //    val files = parsed.files.value
-    //    println(files)
-    //    println(parsed.properties("key2"))
+    //    val result = conf.runWithRoute(CatRoute)
+    //    println(s"Run with route result: $result")
+    val parsed: CatDef = conf.parsed
+    println("---------Parsed node sequence:----------")
+    println(conf.parsedSeqString)
+    println("---------Parsed values:----------")
+    println("Help prior: "+parsed.help)
+    println("props key2: "+parsed.properties("key2"))
   }
 }
 

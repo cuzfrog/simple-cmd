@@ -5,14 +5,15 @@ import scala.meta._
 
 
 private class ScmdValidMacro extends ScmdMacro {
-  final def expand(mods: immutable.Seq[Mod],
-                   name: Type.Name,
-                   ctorMods: immutable.Seq[Mod],
-                   paramss: immutable.Seq[immutable.Seq[Term.Param]],
-                   stats: immutable.Seq[Stat]): Stat = {
+  final def expand(cls: Defn.Class): Stat = {
+    val mods = cls.mods
+    val name = cls.name
+    val ctorMods = cls.ctor.mods
+    val paramss = cls.ctor.paramss
+    val stats = cls.templ.stats.getOrElse(Nil)
 
     val defClassName = paramss.flatten.headOption match {
-      case Some(param"..$mods $name:$tpe") => name
+      case Some(param"..$_ $name:$_") => name
       case _ => abort("ValidationClass should have DefClass as its first argument.")
     }
 

@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.macros.argutils
 
-import com.github.cuzfrog.scmd.Defaults
-import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
+import com.github.cuzfrog.scmd.Argument
+import com.github.cuzfrog.scmd.internal.SimpleLogging
 
 import scala.collection.immutable
 import scala.meta._
@@ -13,7 +13,7 @@ private object ConvertParsedImpl extends SimpleLogging {
   override protected val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
 
   def convertParsed(stats: immutable.Seq[Stat]): immutable.Seq[Stat] = {
-    stats collect {
+    val collected = stats collect {
       case q"val $cmd:$_ = cmdDef(..$params)" =>
         q"""override val ${cmd.asInstanceOf[Pat.Var.Term]}: Command = {
             scmdRuntime.getEvaluatedArgumentByName
@@ -36,7 +36,15 @@ private object ConvertParsedImpl extends SimpleLogging {
       case stat@q"val $opt:$_ = propDef[$tpe](..$params)" =>
         typedVal(opt, Types.propertyArg, tpe, Types.variableValue, params, stat)
     }
+    builtInPriors ++ collected
   }
+
+  private def builtInPriors: immutable.Seq[Defn.Val] = Argument.builtInArgs.map {
+    case (symbol, _) =>
+      q"""override val ${Pat.Var.Term(Term.Name(symbol.name))}: PriorArg = {
+            scmdRuntime.getEvaluatedArgumentByName[Nothing,PriorArg](${Lit.Symbol(symbol)})
+        }"""
+  }.to[immutable.Seq]
 
   private def typedVal(argName: Pat, arg: Type, tpe: Type, argValue: Type,
                        params: immutable.Seq[Term.Arg], stat: Stat): Defn.Val = {

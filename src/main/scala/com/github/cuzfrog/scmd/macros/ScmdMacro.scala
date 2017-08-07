@@ -7,11 +7,7 @@ import scala.meta._
   * Macro implementation interface.
   */
 private trait ScmdMacro {
-  def expand(mods: immutable.Seq[Mod],
-             name: Type.Name,
-             ctorMods: immutable.Seq[Mod],
-             paramss: immutable.Seq[immutable.Seq[Term.Param]],
-             stats: immutable.Seq[Stat]): Stat
+  def expand(cls: Defn.Class): Stat
 }
 
 /** Entry for scmd macro, this has to be public for client Api package Scmd does not enclose this. */
@@ -25,16 +21,11 @@ object MacroUtil {
     }
     //todo: mods cannot contain final
     defn match {
-      case q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }" =>
-        macroImpl.expand(mods, name, ctorMods, paramss, stats)
-      case Term.Block(
-      Seq(q"..$mods class $name ..$ctorMods (...$paramss) { ..$stats }",
-      companion: Defn.Object)) =>
-        Term.Block(
-          immutable.Seq(macroImpl.expand(mods, name, ctorMods, paramss, stats), companion)
-        )
+      case cls: Defn.Class => macroImpl.expand(cls)
+      case Term.Block(Seq(cls: Defn.Class, companion: Defn.Object)) =>
+        Term.Block(immutable.Seq(macroImpl.expand(cls), companion))
       case _ =>
-        abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class without type parameters.")
+        abort(s"@${macroImpl.getClass.getSimpleName} must annotate a class.")
     }
   }
 }

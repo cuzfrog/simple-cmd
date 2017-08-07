@@ -4,7 +4,6 @@ package com.github.cuzfrog.scmd.macros
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
 
-import scala.collection.immutable
 import scala.meta._
 
 private class ScmdDefMacro extends ScmdMacro {
@@ -13,11 +12,13 @@ private class ScmdDefMacro extends ScmdMacro {
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
 
-  final def expand(mods: immutable.Seq[Mod],
-                   name: Type.Name,
-                   ctorMods: immutable.Seq[Mod],
-                   paramss: immutable.Seq[immutable.Seq[Term.Param]],
-                   stats: immutable.Seq[Stat]): Stat = {
+  final def expand(cls: Defn.Class): Stat = {
+    val mods = cls.mods
+    val name = cls.name
+    val ctorMods = cls.ctor.mods
+    val paramss = cls.ctor.paramss
+    val stats = cls.templ.stats.getOrElse(Nil)
+
     /** For testing. */
     val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
 
@@ -120,6 +121,7 @@ private class ScmdDefMacro extends ScmdMacro {
           import $TERM_pkg_scmd._
           import $TERM_pkg_scmd.runtime._
           import runtime.ScmdRuntime
+          ..${ArgUtils.builtInPriorsStub}
           ..${stats.map(ArgUtils.addExplicitType)}
           ..$addMethods
         }"""

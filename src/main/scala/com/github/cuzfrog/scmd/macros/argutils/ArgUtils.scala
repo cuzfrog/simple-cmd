@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros.argutils
 
-import com.github.cuzfrog.scmd.Defaults
+import com.github.cuzfrog.scmd.{Argument, Defaults}
 import com.github.cuzfrog.scmd.internal.RawArgMacro
 
 import scala.collection.immutable
@@ -17,6 +17,13 @@ private[macros] object ArgUtils {
 
   /** Scala meta generated fields need explicit types to inform IDE. */
   def addExplicitType(stat: Stat): Stat = AddExplicitTypeImpl.addExplicitType(stat)
+
+  def builtInPriorsStub: immutable.Seq[Defn.Def] = Argument.builtInArgs.map {
+    case (symbol, _) =>
+      q"""def ${Term.Name(symbol.name)}: PriorArg = {
+            scmdRuntime.getBuiltInPrior(${Lit.Symbol(symbol)})
+          }"""
+  }.to[immutable.Seq]
 
   // ------------------- Shared helpers ----------------------
   private[argutils] def getComposedTpe(params: immutable.Seq[Term.Arg],

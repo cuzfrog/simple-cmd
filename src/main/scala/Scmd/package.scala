@@ -1,4 +1,4 @@
-import com.github.cuzfrog.scmd.{ScmdApi, ScmdRouteDSL, ScmdTreeDefDSL, ScmdValueConverter, ScmdValueImplicitConversion}
+import com.github.cuzfrog.scmd.{ArgRoute, PriorArg, ScmdApi, ScmdRouteDSL, ScmdTreeDefDSL, ScmdValueConverter, ScmdValueImplicitConversion}
 import com.github.cuzfrog.scmd.macros.MacroUtil
 
 import scala.annotation.StaticAnnotation
@@ -22,6 +22,14 @@ package object Scmd extends ScmdApi {
     inline def apply(defn: Any): Any = meta {
       MacroUtil('Valid, defn)
     }
+  }
+
+  abstract class ScmdDefStub[D] {
+    def withValidation[T](vali: D => T): this.type
+    def runWithRoute(toRoute: D => ArgRoute): Boolean
+    def parsed: D
+    val help: PriorArg
+    val version: PriorArg
   }
 }
 

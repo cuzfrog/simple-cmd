@@ -57,13 +57,19 @@ object Tmp {
     import scmdRouteDSL._
     import argDef._
 
-    val route = cat.onConditions(
-      newLine.expectTrue
-    ).run{
-      num.withValue{ nums=>
-        println(s"Numbers are: ${nums.mkString(",")}")
-      }
-    }
+    val route: ArgRoute =
+      cat.onConditions(
+        newLine.expectTrue
+      ).run {
+        num.withValue { nums =>
+          println(s"Numbers are: ${nums.mkString(",")} (with new line)")
+        }
+      } ~
+        cat.run {
+          num.withValue { nums =>
+            println(s"Numbers are: ${nums.mkString(",")}")
+          }
+        }
 
   }
 
@@ -79,13 +85,13 @@ object Tmp {
 
     val result = conf.runWithRoute(new CatRoute(_).route)
     println(s"Run with route result: $result")
-//    val parsed: CatDef = conf.parsed
-//    println("---------Parsed node sequence:----------")
-//    println(conf.parsedSeqString)
-//    println("---------Parsed values:----------")
-//    val files = parsed.files.value
-//    println(files)
-//    println(parsed.properties("key2"))
+    //    val parsed: CatDef = conf.parsed
+    //    println("---------Parsed node sequence:----------")
+    //    println(conf.parsedSeqString)
+    //    println("---------Parsed values:----------")
+    //    val files = parsed.files.value
+    //    println(files)
+    //    println(parsed.properties("key2"))
   }
 }
 

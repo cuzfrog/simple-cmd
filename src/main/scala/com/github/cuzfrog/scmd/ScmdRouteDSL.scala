@@ -1,20 +1,6 @@
 package com.github.cuzfrog.scmd
 
 object ScmdRouteDSL {
-  //  def cmd(cmd: Command): CmdRoute = new CmdRoute(cmd)
-  //
-  //  def param[T](param: Parameter[T]): OptionalValueRoute[T] = DummyOptionalValueRoute
-  //
-  //  def opt[T](opt: OptionArg[T]): OptionalValueRoute[T] = DummyOptionalValueRoute
-  //
-  //  def expectParam[T](opt: Parameter[T] with Mandatory): MandatoryValueRoute[T] = ???
-  //
-  //  def expectOpt[T](opt: OptionArg[T] with Mandatory): MandatoryValueRoute[T] = ???
-  //
-  //  def expectTrue(opt: OptionArg[Boolean], opts: OptionArg[Boolean]*) = ???
-  //
-  //  def expectFalse(opt: OptionArg[Boolean], opts: OptionArg[Boolean]*) = ???
-
   implicit final def cmd2CmdRoute(cmd: Command): CmdRoute = new CmdRoute(cmd)
 
   implicit final class CommandOps(cmd: Command) {
@@ -40,11 +26,10 @@ object ScmdRouteDSL {
       new VariableValueRoute[T](a.value).withValue(innerF)
   }
 
-
   implicit class ScmdRouteOps(in: ArgRoute) {
     def ~(that: ArgRoute): ArgRoute = in match {
       case mergeRoute: MergeRoute => mergeRoute.copy(mergeRoute.seq :+ that)
-      case other: ArgRoute => MergeRoute(Seq(in, other))
+      case other: ArgRoute => MergeRoute(Seq(other, that))
     }
   }
 

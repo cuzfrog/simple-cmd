@@ -3,7 +3,7 @@ package com.github.cuzfrog.scmd
 sealed trait ArgRoute {
   private[scmd] def next: Option[ArgRoute] = None
   /** */
-  def run: Boolean
+  def execute: Boolean
 }
 
 sealed class CmdRoute private[scmd](cmd: Command,
@@ -16,8 +16,8 @@ sealed class CmdRoute private[scmd](cmd: Command,
         case None => Option(new RunRoute((_: Unit) => innerF, ()))
       }
     }
-  override def run: Boolean = {
-    conditions.forall(_.condition == true) && next.forall(_.run)
+  override def execute: Boolean = {
+    conditions.forall(_.condition == true) && next.forall(_.execute)
   }
 }
 
@@ -29,7 +29,7 @@ sealed class SingleValueRoute[+T] private[scmd](value: Option[T]) extends ArgRou
         case None => Option(new RunRoute(innerF, value))
       }
     }
-  override def run: Boolean = next.forall(_.run)
+  override def execute: Boolean = next.forall(_.execute)
 }
 
 sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRoute {
@@ -40,7 +40,7 @@ sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRout
         case None => Option(new RunRoute(innerF, value))
       }
     }
-  override def run: Boolean = next.forall(_.run)
+  override def execute: Boolean = next.forall(_.execute)
 }
 
 //sealed class MandatoryValueRoute[+T] private[scmd](valueName: String,
@@ -57,13 +57,13 @@ sealed class VariableValueRoute[+T] private[scmd](value: Seq[T]) extends ArgRout
 
 final class RunRoute[T] private[scmd](runF: (T => R) forSome {type R},
                                       lastValue: T) extends ArgRoute {
-  override def run: Boolean = {
+  override def execute: Boolean = {
     runF(lastValue)
     true
   }
 }
 final case class MergeRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
-  override def run: Boolean = seq.forall(_.run)
+  override def execute: Boolean = seq.exists(_.execute)
 }
 
 //private object DummyCmdRoute extends CmdRoute("DummyRoute")

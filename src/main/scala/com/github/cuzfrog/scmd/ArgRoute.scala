@@ -66,9 +66,6 @@ final case class MergeRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
   override def execute: Boolean = seq.exists(_.execute)
 }
 
-//private object DummyCmdRoute extends CmdRoute("DummyRoute")
-//private object DummyOptionalValueRoute extends SingleValueRoute[Nothing]("DummyRoute", None)
-//private object DummyMandatoryValueRoute extends MandatoryValueRoute[Nothing]("DummyRoute", Empty)
-
-
 sealed class RouteCondition private[scmd](private[scmd] val condition: Boolean)
+sealed class RouteConditions private[scmd](private[scmd] val cmd: Command,
+                                           private[scmd] val conditions: Seq[RouteCondition])

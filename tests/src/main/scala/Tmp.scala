@@ -52,24 +52,23 @@ object Tmp {
   }
 
 
-  class CatRoute(argDef: CatDef) {
+  def CatRoute(argDef: CatDef): ArgRoute = {
 
     import scmdRouteDSL._
     import argDef._
 
-    val route: ArgRoute =
-      cat.onConditions(
-        newLine.expectTrue
-      ).run {
+    cat.onConditions(
+      newLine.expectTrue
+    ).run {
+      num.withValue { nums =>
+        println(s"Numbers are: ${nums.mkString(",")} (with new line)")
+      }
+    } ~
+      cat.run {
         num.withValue { nums =>
-          println(s"Numbers are: ${nums.mkString(",")} (with new line)")
+          println(s"Numbers are: ${nums.mkString(",")}")
         }
-      } ~
-        cat.run {
-          num.withValue { nums =>
-            println(s"Numbers are: ${nums.mkString(",")}")
-          }
-        }
+      }
 
   }
 
@@ -83,7 +82,7 @@ object Tmp {
     println("-----------Arg tree------------")
     println(conf.argTreeString)
 
-    val result = conf.runWithRoute(new CatRoute(_).route)
+    val result = conf.runWithRoute(CatRoute)
     println(s"Run with route result: $result")
     //    val parsed: CatDef = conf.parsed
     //    println("---------Parsed node sequence:----------")

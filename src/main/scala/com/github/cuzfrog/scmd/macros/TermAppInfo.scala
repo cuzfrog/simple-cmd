@@ -9,13 +9,13 @@ private case class TermAppInfo(term: Term, appInfo: AppInfo)
 
 private object TermAppInfo {
 
-  def collectAppInfo(stats: Seq[Stat]): TermAppInfo = {
+  def collectAppInfo(stats: Seq[Stat], inferredName: String): TermAppInfo = {
 
     val basicSeq = stats zip stats.map(_.pos) collect {
       case (q"appDef(..$params)", pos) =>
-        implicit val position = pos
+        implicit val position: Position = pos
         import RawArgMacro.extract
-        val name = extract[String](params)
+        val name = extract[String](params).getOrElse(inferredName)
         val shortDescription = extract[String](params)
         val fullDescription = extract[String](params)
         val version = extract[String](params)
@@ -29,7 +29,7 @@ private object TermAppInfo {
         val custom = params.collect {
           case q"${Lit.String(n)} -> ${Lit.String(v)}" if Option(v).nonEmpty => n -> v
         }
-        AppInfo(custom = custom)
+        AppInfo(inferredName, custom = custom)
     }
 
     if (basicSeq.size > 1 || customSeq.size > 1) abort(stats.last.pos, "appDef cannot be duplicated.")
@@ -38,11 +38,10 @@ private object TermAppInfo {
       case (Some(basic), Some(custom)) => basic.copy(custom = custom.custom)
       case (Some(basic), None) => basic
       case (None, Some(custom)) => custom
-      case (None, None) => AppInfo()
+      case (None, None) => AppInfo(inferredName)
     }
     TermAppInfo(appInfo.defnTerm, appInfo)
   }
-
 
   implicit val definable: Definable[AppInfo] = (a: AppInfo) => {
 

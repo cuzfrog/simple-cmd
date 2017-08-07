@@ -5,13 +5,13 @@ import com.github.cuzfrog.scmd.internal.AppInfoMacro
 import scala.collection.immutable
 
 @AppInfoMacro
-private case class AppInfo(name: Option[String] = None,
-                           shortDescription: Option[String] = None,
-                           fullDescription: Option[String] = None,
-                           version: Option[String] = None,
-                           license: Option[String] = None,
-                           author: Option[String] = None,
-                           custom: immutable.Seq[(String, String)] = immutable.Seq.empty)
+sealed case class AppInfo(name: String,
+                          shortDescription: Option[String] = None,
+                          fullDescription: Option[String] = None,
+                          version: Option[String] = None,
+                          license: Option[String] = None,
+                          author: Option[String] = None,
+                          custom: immutable.Seq[(String, String)] = immutable.Seq.empty)
 
 private object AppInfo {
   /**

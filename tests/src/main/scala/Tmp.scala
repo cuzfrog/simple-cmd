@@ -57,19 +57,23 @@ object Tmp {
     import scmdRouteDSL._
     import argDef._
     import scmdValueConverter._
-    cat.runOnPrior(help1) {
-      println("PriorArg help1 triggered.")
-    }.onConditions(
-      newLine.expectTrue,
-      properties.expectByKey("key1")(_.forall(_ > 6))
-    ).run {
-      println(s"Numbers are: ${num.value.mkString(",")} (with new line (and key1's value >6) )")
-    } ~
-      cat.run {
-        println(s"Numbers are: ${num.value.mkString(",")}")
-        println(s"Files are: ${files.value.mkString(",")}")
-      }
+    app.runOnPrior(help1) {
+      println("println help1 info.")
 
+    }.run {
+      cat.runOnPrior(help1) {
+        println("PriorArg help1 triggered.")
+      }.onConditions(
+        newLine.expectTrue,
+        properties.expectByKey("key1")(_.forall(_ > 6))
+      ).run {
+        println(s"Numbers are: ${num.value.mkString(",")} (with new line (and key1's value >6) )")
+      } ~
+        cat.run {
+          println(s"Numbers are: ${num.value.mkString(",")}")
+          println(s"Files are: ${files.value.mkString(",")}")
+        }
+    }
   }
 
 

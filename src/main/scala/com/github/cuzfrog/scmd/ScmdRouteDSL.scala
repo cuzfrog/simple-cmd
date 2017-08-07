@@ -2,6 +2,8 @@ package com.github.cuzfrog.scmd
 
 object ScmdRouteDSL {
 
+  final def app(implicit appInfo: AppInfo): RouteCommand = Command.topCmd(appInfo.name)
+
   implicit final class CommandOps(cmd: Command) extends RouteCommandOperations {
     protected val rcmd: RouteCommand = cmd
   }
@@ -33,7 +35,6 @@ object ScmdRouteDSL {
       val foundValue = a.value.collect { case (k, v) if k == key => v }.lastOption
       new RouteCondition(compareF(foundValue))
     }
-
   }
 
   implicit final class VariableValueOps[T](a: VariableValue[T]) {
@@ -46,6 +47,12 @@ object ScmdRouteDSL {
       case other: ArgRoute => MergeRoute(Seq(other, that))
     }
   }
+
+//  // ------- Built in args --------
+//  /** Match: -help and --help */
+//  def help: PriorArg = Argument.BuiltInArgs.help
+//  /** Match: -version and --version */
+//  def version: PriorArg = Argument.BuiltInArgs.version
 }
 
 sealed case
@@ -71,3 +78,4 @@ sealed trait RouteCommandOperations {
     new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF)
   }
 }
+//todo: add scope to param and opt to limit them to their cmd.

@@ -38,7 +38,7 @@ private case class CmdEntryNode(entity: CommandEntry,
                                 children: Seq[CmdNode]) {
   lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
 }
-
+//todo: prior arg do not need to scope when define.
 private case class PriorNode(entity: PriorArg, parent: scala.Symbol) extends Node
 
 private[runtime] sealed trait NodeTag[+N <: NodeTag[N]]

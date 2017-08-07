@@ -88,6 +88,7 @@ sealed trait Mandatory
 sealed trait WithDefault
 private trait BuiltInArg
 
+
 //todo: check if adding lazy val will aid performance.
 private[scmd] object DummyArgument {
   def DummyCommand: Command = Command("")

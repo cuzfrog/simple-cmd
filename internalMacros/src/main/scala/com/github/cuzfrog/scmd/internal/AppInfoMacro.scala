@@ -12,6 +12,8 @@ private[scmd] class AppInfoMacro extends StaticAnnotation {
         val basics = paramss.head.collect {
           case param"..$mods $name: Option[String] = $_" =>
             q"${Term.Name(name.value)}.map(v=>(${Lit.String(name.value)},v))"
+          case param"..$mods $name: String = $_" =>
+            q"Option((${Lit.String(name.value)},${Term.Name(name.value)}))"
         }
 
         val combineDef =

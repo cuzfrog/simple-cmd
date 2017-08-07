@@ -17,13 +17,14 @@ import scala.reflect.ClassTag
   * to privatize/encapsulate other scmd classes for not to pollute client workspace.
   */
 sealed trait ScmdRuntime {
-  def addAppInfo(name: Option[String] = None,
+  def addAppInfo(name: String,
                  shortDescription: Option[String] = None,
                  fullDescription: Option[String] = None,
                  version: Option[String] = None,
                  license: Option[String] = None,
                  author: Option[String] = None,
                  custom: Seq[(String, String)] = Seq.empty): this.type
+  def getAppInfo: AppInfo
 
   def buildCommand(name: String,
                    description: Option[String]): Int
@@ -168,7 +169,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
   private def getEntity[T: ClassTag](e: Int): T =
     repository.getOrElse(e, throw new AssertionError("Recursive build failed.")).unbox[T]
 
-  override def addAppInfo(name: Option[String],
+  override def addAppInfo(name: String,
                           shortDescription: Option[String],
                           fullDescription: Option[String],
                           version: Option[String],
@@ -184,6 +185,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
       custom = custom.to[scala.collection.immutable.Seq]))
     this
   }
+  override def getAppInfo: AppInfo = appInfo
   override def buildCommand(name: String, description: Option[String]): Int = {
     val id = idGen.getAndIncrement()
     val a = Command(name = name, description = description)

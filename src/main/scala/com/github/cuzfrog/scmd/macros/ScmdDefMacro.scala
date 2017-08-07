@@ -28,11 +28,11 @@ private class ScmdDefMacro extends ScmdMacro {
     }
 
 
-    val appInfo = TermAppInfo.collectAppInfo(stats)
-    val appName: String = {
+    val appInfo = {
       val inferredName = if (name.value.endsWith("Def")) name.value.dropRight(3) else name.value
-      appInfo.appInfo.name.getOrElse(inferredName.toLowerCase)
+      TermAppInfo.collectAppInfo(stats, inferredName.toLowerCase)
     }
+    val appName: String = appInfo.appInfo.name
     /**
       * A TermArg is macro time term of arg Node.
       *
@@ -104,12 +104,13 @@ private class ScmdDefMacro extends ScmdMacro {
              $argTreeBuild //execute scmdRuntime to build an argTree
              runtime
           }""",
+      q"implicit final def appInfo:AppInfo = scmdRuntime.getAppInfo",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
       public_def_addValidation,
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
-      q"def runWithRoute[T](route: $name => ArgRoute): Boolean = {route(this.parsed).execute}",
+      q"def runWithRoute(route: $name => ArgRoute): Boolean = {route(this.parsed).execute}",
       public_def_parsed,
       q"def parse():Unit = scmdRuntime.parse($argsParam)"
     )

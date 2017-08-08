@@ -17,11 +17,8 @@ import DummyArgument._
   * For `Boolean` value, the "default of the default" value is false.<br>
   * @define TYPE_T
   * Type of argument value.
-  * @define VALIDATION_F
-  * the validation statement.
-  * Note: statement returns a Unit, and should use exceptions to indicate a failure.
   */
-trait ScmdApi {
+trait ScmdDefApi {
   // --------------------- Def methods ----------------------
   /**
     * Define a command. Name of the named-parameter cannot be omitted.
@@ -59,8 +56,8 @@ trait ScmdApi {
     * <br><br>
     * $DEFAULT
     *
-    * @param abbr abbreviation of this opt.
-    *             Abbr may consist of multiple letters, though this is not recommended.
+    * @param abbr        abbreviation of this opt.
+    *                    Abbr may consist of multiple letters, though this is not recommended.
     * @param isMandatory $isMandatory<br>
     * @tparam T $TYPE_T<br>
     */
@@ -78,8 +75,8 @@ trait ScmdApi {
     * }}}
     * $DEFAULT
     *
-    * @param abbr abbreviation of this opt.
-    *             Abbr may consist of multiple letters, though this is not recommended.
+    * @param abbr        abbreviation of this opt.
+    *                    Abbr may consist of multiple letters, though this is not recommended.
     * @param isMandatory $isMandatory<br>
     * @tparam T $TYPE_T<br>
     */
@@ -117,9 +114,9 @@ trait ScmdApi {
     * //prior2 will be matched and scoped to command2
     * }}}
     * Scmd provides built-in prior args: "help" and "version"
-    * @see [[com.github.cuzfrog.scmd.Argument.BuiltInArgs]]
     *
-    * @param alias a prior arg can have other names. e.g. "-help", "--help"
+    * @see [[com.github.cuzfrog.scmd.Argument.BuiltInArgs]]
+    * @param alias     a prior arg can have other names. e.g. "-help", "--help"
     * @param matchName if the val name of this prior arg def will be matched.
     */
   final def priorDef(alias: Seq[String] = Nil,
@@ -145,12 +142,19 @@ trait ScmdApi {
     * the place defined in custom info.
     */
   def appDefCustom(item: (String, String)*): Unit = ()
+}
 
+/**
+  * @define VALIDATION_F
+  * the validation statement.
+  * Note: statement returns a Unit, and should use exceptions to indicate a failure.
+  */
+trait ScmdValidationApi {
   /**
     * Define a validation against an argument.
     *
     * @param arg the argument to validate.
-    * @param f $VALIDATION_F <br>
+    * @param f   $VALIDATION_F <br>
     * @tparam T the type of the value of the argument, inferred and delivered to validation function.
     */
   def validation[T](arg: SingleValue[T])(f: T => Unit): T => Unit = f
@@ -158,7 +162,7 @@ trait ScmdApi {
     * Define a validation against an argument.
     *
     * @param arg the argument to validate.
-    * @param f $VALIDATION_F <br>
+    * @param f   $VALIDATION_F <br>
     * @tparam T the type of the value of the argument, inferred and delivered to validation function.
     */
   def validation[T](arg: VariableValue[T])(f: List[T] => Unit): List[T] => Unit = f

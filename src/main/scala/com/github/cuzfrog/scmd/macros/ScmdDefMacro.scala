@@ -119,6 +119,8 @@ private class ScmdDefMacro extends ScmdMacro {
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd._
+          private val defApiImport = new ScmdDefApi{}
+          import defApiImport._
           import $TERM_pkg_scmd.runtime._
           import runtime.ScmdRuntime
           ..${ArgUtils.builtInPriorsStub}

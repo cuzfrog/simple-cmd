@@ -1,11 +1,11 @@
-import com.github.cuzfrog.scmd.{ArgRoute, PriorArg, ScmdApi, ScmdRouteDSL, ScmdSafeValueConverter, ScmdTreeDefDSL, ScmdValueConverter, ScmdValueImplicitConversion}
 import com.github.cuzfrog.scmd.macros.MacroUtil
+import com.github.cuzfrog.scmd._
 
 import scala.annotation.StaticAnnotation
 import scala.meta._
 
 /** Helper for client importing. */
-package object Scmd extends ScmdApi {
+package object Scmd extends ScmdValidationApi {
 
   final val scmdTreeDefDSL: ScmdTreeDefDSL.type = ScmdTreeDefDSL
   final val scmdRouteDSL: ScmdRouteDSL.type = ScmdRouteDSL
@@ -23,14 +23,6 @@ package object Scmd extends ScmdApi {
     inline def apply(defn: Any): Any = meta {
       MacroUtil('Valid, defn)
     }
-  }
-
-  abstract class ScmdDefStub[D] {
-    def withValidation[T](vali: D => T): this.type
-    def runWithRoute(toRoute: D => ArgRoute): Boolean
-    def parsed: D
-    val help: PriorArg
-    val version: PriorArg
   }
 }
 

@@ -17,7 +17,7 @@ sealed trait Argument[+T] {
 sealed case class
 Command private[scmd](name: String,
                       description: Option[String] = None,
-                      private[scmd] val met: Boolean = false) extends Argument[Nothing]
+                      met: Boolean = false) extends Argument[Nothing]
 
 
 sealed case class

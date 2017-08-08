@@ -1,4 +1,4 @@
-import com.github.cuzfrog.scmd.{ArgRoute, PriorArg, ScmdApi, ScmdRouteDSL, ScmdTreeDefDSL, ScmdValueConverter, ScmdValueImplicitConversion}
+import com.github.cuzfrog.scmd.{ArgRoute, PriorArg, ScmdApi, ScmdRouteDSL, ScmdSafeValueConverter, ScmdTreeDefDSL, ScmdValueConverter, ScmdValueImplicitConversion}
 import com.github.cuzfrog.scmd.macros.MacroUtil
 
 import scala.annotation.StaticAnnotation
@@ -11,6 +11,7 @@ package object Scmd extends ScmdApi {
   final val scmdRouteDSL: ScmdRouteDSL.type = ScmdRouteDSL
   final val scmdValueImplicitConversion: ScmdValueImplicitConversion.type = ScmdValueImplicitConversion
   final val scmdValueConverter: ScmdValueConverter.type = ScmdValueConverter
+  final val scmdSafeValueConverter: ScmdSafeValueConverter.type = ScmdSafeValueConverter
 
   // --------------------- Macro Annotations ----------------------
   final class ScmdDef extends StaticAnnotation {

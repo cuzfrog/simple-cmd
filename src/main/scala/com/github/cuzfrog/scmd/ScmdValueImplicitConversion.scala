@@ -31,21 +31,7 @@ object ScmdValueImplicitConversion {
   //           optVM same as above
 }
 
-/**
-  * Provide explicit method to get value of Argument.
-  */
-object ScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
-
-  implicit final class ValueConversionOps
-  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R], ev1: A <:< Argument[T]) {
-    def value: R = ev.convert(arg)
-  }
-
-  implicit val cmd2Value: ValueConvertible[Nothing, Command, Boolean] =
-    new ValueConvertible[Nothing, Command, Boolean] {
-      override def convert(a: Command): Boolean = a.met
-    }
-
+sealed trait AbstractScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
   implicit def paramSM2value[T]: ValueConvertible
     [T, Parameter[T] with SingleValue[T] with Mandatory, T] =
     new ValueConvertible[T, Parameter[T] with SingleValue[T] with Mandatory, T] {
@@ -78,10 +64,63 @@ object ScmdValueConverter extends LowLevelImplicitsOfScmdValueConverter {
   }
 }
 
-sealed trait LowLevelImplicitsOfScmdValueConverter {
-  sealed trait ValueConvertible[T, -A, +R] {
-    def convert(a: A): R
+/**
+  * Provide explicit method to get value of Argument.
+  */
+object ScmdValueConverter extends AbstractScmdValueConverter {
+
+  implicit final class ValueConversionOps
+  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R], ev1: A <:< Argument[T]) {
+    def value: R = ev.convert(arg)
   }
+
+  implicit val cmd2Value: ValueConvertible[Nothing, Command, Boolean] =
+    new ValueConvertible[Nothing, Command, Boolean] {
+      override def convert(a: Command): Boolean = a.met
+    }
+}
+
+/**
+  * Provide explicit method to get value of Argument.
+  */
+object ScmdSafeValueConverter extends AbstractScmdValueConverter {
+
+  implicit final class ValueConversionOpsM
+  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R],
+                    ev1: A <:< Argument[T] with Mandatory) {
+    def value: R = ev.convert(arg)
+  }
+
+  implicit final class ValueConversionOpsD
+  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R],
+                    ev1: A <:< Argument[T] with WithDefault) {
+    def valueWithDefault: R = ev.convert(arg)
+  }
+
+  implicit final class ValueConversionOpsS
+  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R],
+                    ev1: A <:< Argument[T] with SingleValue[T],
+                    ev2: R <:< Option[T]) {
+    def valueOpt: R = ev.convert(arg)
+  }
+
+  implicit final class ValueConversionOpsV
+  [T, A, R](arg: A)(implicit ev: ValueConvertible[T, A, R],
+                    ev1: A <:< Argument[T] with VariableValue[T],
+                    ev2: R <:< Seq[T]) {
+    def valueSeq: R = ev.convert(arg)
+  }
+
+  implicit class Cmd2ValueOps(in: Command) {
+    def value: Boolean = in.met
+  }
+}
+
+sealed trait ValueConvertible[T, -A, +R] {
+  def convert(a: A): R
+}
+
+sealed trait LowLevelImplicitsOfScmdValueConverter {
 
   implicit def paramS2value[T]: ValueConvertible[T, Parameter[T] with SingleValue[T], Option[T]] =
     new ValueConvertible[T, Parameter[T] with SingleValue[T], Option[T]] {

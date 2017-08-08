@@ -56,8 +56,15 @@ private object TermArg extends SimpleLogging {
       case q"val $argName: $_ = $defName[$tpe](..$params)" =>
         debug(s"Collected $defName: $argName[$tpe]")
         implicit val pos: Position = argName.pos
+        val name = Lit.String(argName.syntax)
         val description = extract[String](params).defnTerm
-        val isMandatory = extract[Boolean](params).getOrElse(Defaults.isMandatory)
+        val isMandatory = extract[Boolean](params) match {
+          case Some(isM) =>
+            if (tpe.syntax == "Boolean")
+              abort(pos, s"Boolean arg: ${name.value} cannot be mandatory.")
+            isM
+          case None => Defaults.isMandatory
+        }
         val isMandatoryTerm = isMandatory.defnTerm
         val abbr = extract[String](params).map {
           case ab if ab.matches("""\w+""") => ab
@@ -72,7 +79,7 @@ private object TermArg extends SimpleLogging {
           if (default.isEmpty && tpe.syntax == "Boolean") q"Option(false)"
           else default.defnTerm
         }
-        val name = Lit.String(argName.syntax)
+
         defName match {
           case q"paramDef" =>
             val term =
@@ -147,7 +154,8 @@ private object TermArg extends SimpleLogging {
       q"""runtime.builtInArgs('help)""",
       Position.None, topCmdSymbol) with BuiltInArg
     val version =
-      new TermPrior("version",q"""runtime.builtInArgs('version)""",
+      new TermPrior("version",
+        q"""runtime.builtInArgs('version)""",
         Position.None, topCmdSymbol) with BuiltInArg
     List(help, version)
   }
@@ -158,13 +166,13 @@ private final case class TermCmd(name: String, term: Term, pos: Position) extend
   val tpe: Type.Name = TYPE_NOTHING
 }
 private sealed case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
-                                   parent: Lit.Symbol) extends TermValueArg
+                                    parent: Lit.Symbol) extends TermValueArg
 private sealed case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
-                                 parent: Lit.Symbol) extends TermValueArg
+                                  parent: Lit.Symbol) extends TermValueArg
 private sealed case class TermProp(name: String, flag: String,
-                                  term: Term, pos: Position, tpe: Type) extends TermArg
+                                   term: Term, pos: Position, tpe: Type) extends TermArg
 private sealed case class TermPrior(name: String, term: Term, pos: Position,
-                                   parent: Lit.Symbol) extends TermArg {
+                                    parent: Lit.Symbol) extends TermArg {
   val tpe: Type.Name = TYPE_NOTHING
 }
 private final

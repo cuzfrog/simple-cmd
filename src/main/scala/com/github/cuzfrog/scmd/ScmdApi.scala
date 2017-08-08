@@ -31,40 +31,25 @@ trait ScmdDefApi {
 
   /**
     * Define a parameter with single value.
-    * <br><br>
-    * $DEFAULT
     *
-    * @param isMandatory $isMandatory<br>
     * @tparam T $TYPE_T<br>
     */
-  final def paramDef[T](description: String = "",
-                        isMandatory: Boolean = false,
-                        default: => T = Empty): Parameter[T] with SingleValue[T] = DummyParameterS
+  final def paramDef[T](description: String = ""): Parameter[T] with SingleValue[T] = DummyParameterS
   /**
     * Define a variable parameter.
-    * <br><br>
-    * $DEFAULT
     *
-    * @param isMandatory $isMandatory<br>
     * @tparam T $TYPE_T<br>
     */
-  final def paramDefVariable[T](description: String = "",
-                                isMandatory: Boolean = false,
-                                default: => T = Empty): Parameter[T] with VariableValue[T] = DummyParameterV
+  final def paramDefVariable[T](description: String = ""): Parameter[T] with VariableValue[T] = DummyParameterV
   /**
     * Define an opt with single value.
-    * <br><br>
-    * $DEFAULT
     *
     * @param abbr        abbreviation of this opt.
     *                    Abbr may consist of multiple letters, though this is not recommended.
-    * @param isMandatory $isMandatory<br>
     * @tparam T $TYPE_T<br>
     */
   final def optDef[T](abbr: String = "",
-                      description: String = "",
-                      isMandatory: Boolean = false,
-                      default: => T = Empty): OptionArg[T] with SingleValue[T] = DummyOptionArgS
+                      description: String = ""): OptionArg[T] with SingleValue[T] = DummyOptionArgS
   /**
     * Define a variable opt.
     * <br><br>
@@ -77,13 +62,10 @@ trait ScmdDefApi {
     *
     * @param abbr        abbreviation of this opt.
     *                    Abbr may consist of multiple letters, though this is not recommended.
-    * @param isMandatory $isMandatory<br>
     * @tparam T $TYPE_T<br>
     */
   final def optDefVariable[T](abbr: String = "",
-                              description: String = "",
-                              isMandatory: Boolean = false,
-                              default: => T = Empty): OptionArg[T] with VariableValue[T] = DummyOptionArgV
+                              description: String = ""): OptionArg[T] with VariableValue[T] = DummyOptionArgV
 
   /**
     * Define a properties.
@@ -97,8 +79,7 @@ trait ScmdDefApi {
     * @tparam T $TYPE_T<br>
     */
   final def propDef[T](flag: String = "",
-                       description: String = "",
-                       default: => Seq[(String, T)] = Empty): PropertyArg[T] with VariableValue[(String, T)] = DummyProp
+                       description: String = ""): PropertyArg[T] with VariableValue[(String, T)] = DummyProp
 
   /**
     * Define a prior argument.

@@ -27,7 +27,7 @@ private object TermArg extends SimpleLogging {
     import RawArgMacro.extract
 
     val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
-
+    //todo: recursively strip off Term.Select to extract mandatory/default
     val collected: immutable.Seq[TermArg] = stats collect {
       case q"val $argName: $_ = $defName(..$params)" if defName.isInstanceOf[Term.Name] =>
         implicit val pos: Position = argName.pos

@@ -143,10 +143,19 @@ trait ScmdDefApi {
     */
   def appDefCustom(item: (String, String)*): Unit = ()
 
-  implicit final class MandatoryOps
-  [T, A](in: A)
-           (implicit ev1: A <:< ValueArgument[T] with ArgValue[T]) {
+  implicit final class MandatoryOps[T, A]
+  (in: A)(implicit ev1: A <:< ValueArgument[T] with ArgValue[T]) {
     def mandatory: A with Mandatory = ???
+  }
+
+  implicit final class WithDefaultOps[T, A]
+  (in: A)(implicit ev1: A <:< ValueArgument[T] with ArgValue[T]) {
+    def withDefault(defaultValue: T): A with WithDefault = ???
+  }
+
+  implicit final class WithDefaultPropsOps[T, A]
+  (in: PropertyArg[T] with VariableValue[(String, T)]) {
+    def withDefault(defaultValue: Seq[(String, T)]): A with WithDefault = ???
   }
 }
 

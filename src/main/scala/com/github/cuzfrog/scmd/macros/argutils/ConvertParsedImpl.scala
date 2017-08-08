@@ -28,17 +28,8 @@ private object ConvertParsedImpl extends SimpleLogging {
             [Boolean,PriorArg](${Lit.Symbol(scala.Symbol(r.name))})
           }"""
 
-      case r: RawParam if !r.isVariable =>
-        typedVal(r.name, Types.parameter, r.tpe, Types.singleValue, r.isMandatory, r.hasDefault)
-      case r: RawOpt if !r.isVariable =>
-        typedVal(r.name, Types.optionArg, r.tpe, Types.singleValue, r.isMandatory, r.hasDefault)
-      case r: RawParam if r.isVariable =>
-        typedVal(r.name, Types.parameter, r.tpe, Types.variableValue, r.isMandatory, r.hasDefault)
-      case r: RawOpt if r.isVariable =>
-        typedVal(r.name, Types.optionArg, r.tpe, Types.variableValue, r.isMandatory, r.hasDefault)
-      case r: RawProp =>
-        typedVal(r.name, Types.propertyArg, r.tpe, Types.variableValue,
-          isMandatory = false, hasDefault = r.hasDefault)
+      case r: RawTypedArg =>
+        typedVal(r.name, r.tpe, r.composedTpe)
     }
     builtInPriors ++ parsed
   }
@@ -50,16 +41,12 @@ private object ConvertParsedImpl extends SimpleLogging {
         }"""
   }.to[immutable.Seq]
 
-  private def typedVal(argName: Pat, arg: Type, tpe: Type, argValue: Type,
-                       isMandatory: Boolean, hasDefault: Boolean): Defn.Val = {
+  private def typedVal(argName: Pat, tpe: Type, composedTpe: Type): Defn.Val = {
     implicit val pos: Position = argName.pos
-    val (_, _, composedTpe) = ArgUtils.getComposedTpe(isMandatory, hasDefault, arg, tpe, argValue)
     debug(s"GetEvaluatedArument $argName of type[$composedTpe]")
     q"""override val ${argName.asInstanceOf[Pat.Var.Term]}: $composedTpe = {
           scmdRuntime.getEvaluatedArgumentByName
           [$tpe,$composedTpe](${Lit.Symbol(scala.Symbol(argName.syntax))})
         }"""
   }
-
-  private implicit def string2PatTerm(in: String): Pat.Var.Term = Pat.Var.Term(Term.Name(in))
 }

@@ -8,25 +8,33 @@ import scala.collection.immutable
 import scala.meta._
 
 /** Collected from statements, not fully type safe. */
-private[macros] trait RawArg
+private[macros] sealed trait RawArg {
+  def name: String
+}
+private[macros] sealed trait RawTypedArg extends RawArg{
+  def tpe: Type
+  def composedTpe: Type
+}
 private[macros] object RawArg {
   case class RawCommand(name: String, description: Option[String], pos: Position) extends RawArg
   case class RawPrior(name: String, description: Option[String], matchName: Boolean,
                       alias: Option[Term], pos: Position) extends RawArg
   case class RawParam(name: String, description: Option[String], tpe: Type, isMandatory: Boolean,
                       hasDefault: Boolean, isVariable: Boolean,
-                      argValue: Term, pos: Position) extends RawArg
+                      argValue: Term, pos: Position, composedTpe: Type) extends RawTypedArg
   case class RawOpt(name: String, abbr: Option[String], description: Option[String], tpe: Type,
                     isMandatory: Boolean, hasDefault: Boolean, isVariable: Boolean,
-                    argValue: Term, pos: Position) extends RawArg
+                    argValue: Term, pos: Position, composedTpe: Type) extends RawTypedArg
   case class RawProp(name: String, flag: String, description: Option[String], tpe: Type,
-                     hasDefault: Boolean, variableValue: Term, pos: Position) extends RawArg
+                     hasDefault: Boolean, variableValue: Term, pos: Position,
+                     composedTpe: Type) extends RawTypedArg
 }
 
 private object ArgCollectImpl extends SimpleLogging {
 
   import RawArg._
   import com.github.cuzfrog.scmd.macros.DefineTermOps
+  import ArgUtils.getComposedTpe
 
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
 
@@ -72,18 +80,28 @@ private object ArgCollectImpl extends SimpleLogging {
         }
         defName match {
           case q"paramDef" =>
+            val composedTpe =
+              getComposedTpe(isMandatory, hasDefault, Types.parameter, tpe, Types.singleValue)
             RawParam(name, description, tpe, isMandatory, hasDefault, isVariable = false,
-              singleValue(tpe, defaultTerm), pos)
+              singleValue(tpe, defaultTerm), pos, composedTpe)
           case q"paramDefVariable" =>
+            val composedTpe =
+              getComposedTpe(isMandatory, hasDefault, Types.parameter, tpe, Types.variableValue)
             RawParam(name, description, tpe, isMandatory, hasDefault, isVariable = true,
-              variableValue(tpe, defaultTerm), pos)
+              variableValue(tpe, defaultTerm), pos, composedTpe)
           case q"optDef" =>
+            val composedTpe =
+              getComposedTpe(isMandatory, hasDefault, Types.optionArg, tpe, Types.singleValue)
             RawOpt(name, abbr, description, tpe, isMandatory, hasDefault, isVariable = false,
-              singleValue(tpe, defaultTerm), pos)
+              singleValue(tpe, defaultTerm), pos, composedTpe)
           case q"optDefVariable" =>
+            val composedTpe =
+              getComposedTpe(isMandatory, hasDefault, Types.optionArg, tpe, Types.variableValue)
             RawOpt(name, abbr, description, tpe, isMandatory, hasDefault, isVariable = true,
-              variableValue(tpe, defaultTerm), pos)
+              variableValue(tpe, defaultTerm), pos, composedTpe)
           case q"propDef" =>
+            val composedTpe =
+              getComposedTpe(isMandatory, hasDefault, Types.propertyArg, tpe, Types.variableValue)
             val argValueType = Type.Name(s"(String,${tpe.syntax})")
             val flag = extract[String](params) match {
               case Some(f) =>
@@ -97,7 +115,7 @@ private object ArgCollectImpl extends SimpleLogging {
                 name
             }
             RawProp(name, flag, description, tpe, hasDefault,
-              variableValue(argValueType, defaultTerm), pos)
+              variableValue(argValueType, defaultTerm), pos, composedTpe)
         }
       case stat@q"val $argName: $_ = $defName(..$params)"
         if defName.syntax.contains("Def") =>

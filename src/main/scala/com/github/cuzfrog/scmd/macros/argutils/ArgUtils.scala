@@ -21,7 +21,8 @@ private[macros] object ArgUtils {
     ConvertParsedImpl.convertParsed(rawArgs)
 
   /** Scala meta generated fields need explicit types to inform IDE. */
-  def addExplicitType(stat: Stat): Stat = AddExplicitTypeImpl.addExplicitType(stat)
+  def addExplicitType(rawArgs: immutable.Seq[RawArg]): immutable.Seq[Stat] =
+    AddExplicitTypeImpl.addExplicitType(rawArgs)
 
   //todo: (low priority) make builtInArgs more generic.
   /** Used in ScmdDefMacro to generate built-in args. */

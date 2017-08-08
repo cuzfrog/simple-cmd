@@ -7,9 +7,8 @@ import scala.collection.immutable
 import scala.meta._
 
 private object AddExplicitTypeImpl {
-  def addExplicitType(stat: Stat): Stat = {
-    implicit val pos: Position = stat.pos
-    stat match {
+  def addExplicitType(rawArgs: immutable.Seq[RawArg]): immutable.Seq[Stat] = {
+    rawArgs map {
       case q"val $cmd:$_ = cmdDef(..$params)" =>
         q"val ${cmd.asInstanceOf[Pat.Var.Term]}: Command = DummyApi.cmdDef"
 
@@ -36,8 +35,8 @@ private object AddExplicitTypeImpl {
   }
 
   private def getDummyApi(argName: Pat, arg: Type, tpe: Type, argValue: Type,
-                         params: immutable.Seq[Term.Arg])
-                        (implicit pos: Position): Defn.Val = {
+                          params: immutable.Seq[Term.Arg]): Defn.Val = {
+    implicit val pos: Position = argName.pos
     val (isMandatory, withDefault, composedTpe) =
       ArgUtils.getComposedTpe(params, arg, tpe, argValue)
     val metaApi = {

@@ -1,9 +1,9 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{BuiltInArg, Command, Defaults}
+import com.github.cuzfrog.scmd.{AppInfo, BuiltInArg, Command, Defaults}
 import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
 import com.github.cuzfrog.scmd.macros.Constants._
-import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
+import com.github.cuzfrog.scmd.macros.argutils.{ArgUtils, RawArg}
 
 import scala.collection.immutable
 import scala.meta._
@@ -24,144 +24,56 @@ private sealed trait TermArg {
 }
 private object TermArg extends SimpleLogging {
   override protected val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
-  def collectTermArg(stats: immutable.Seq[Stat], appName: String): immutable.Seq[TermArg] = {
-    import RawArgMacro.extract
+  def toTermArg(rawArg: RawArg)(implicit appInfo: AppInfo): TermArg = {
+    import RawArg._
 
-    val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
-    //todo: recursively strip off Term.Select to extract mandatory/default
+    val topCmdSymbol = Lit.Symbol(Command.topCmd(appInfo.name).symbol)
 
-    import ArgUtils.{Selection, extractSelection}
+    rawArg match {
+      case r: RawCommand =>
+        val term =
+          q"""runtime.buildCommand($TERM_NAME = ${r.name.defnTerm},
+                                   $TERM_DESCRIPTION = ${r.description.defnTerm})"""
+        TermCmd(r.name, term, r.pos)
+      case r: RawPrior =>
+        val term =
+          q"""runtime.buildPriorArg($TERM_NAME = ${r.name.defnTerm},
+                                    alias = ${r.alias.getOrElse(q"Nil")},
+                                    $TERM_DESCRIPTION = ${r.description.defnTerm},
+                                    matchName = ${r.matchName.defnTerm})"""
+        TermPrior(r.name, term, r.pos, topCmdSymbol)
 
-    val collected: immutable.Seq[TermArg] = (stats zip stats.map(extractSelection)) collect {
-      case (q"val $argName: $_ = $defName(..$params)", _) if defName.isInstanceOf[Term.Name] =>
-        implicit val pos: Position = argName.pos
-        val name = Lit.String(argName.syntax)
-        val description = extract[String](params).defnTerm
-        defName match {
-          case q"cmdDef" =>
-            if (!name.value.matches("""\w+.*""")) abort(pos, "Command can only start with letter.")
-            val term =
-              q"""runtime.buildCommand($TERM_NAME = $name,
-                                       $TERM_DESCRIPTION = $description)"""
-            TermCmd(name.value, term, pos)
-          case q"priorDef" =>
-            val alias = extract[Term](params)
-            val matchName = extract[Boolean](params).getOrElse(Defaults.priorMatchName)
-            if (alias.isEmpty && !matchName)
-              abort(pos, s"PriorArg ${name.value} can never be matched," +
-                s" no alias defined and not going to match name.")
-            val term =
-              q"""runtime.buildPriorArg($TERM_NAME = $name,
-                                        alias = ${alias.getOrElse(q"Nil")},
-                                        $TERM_DESCRIPTION = $description,
-                                        matchName = ${matchName.defnTerm})"""
-            TermPrior(name.value, term, pos, topCmdSymbol)
-        }
-      case (q"val $argName: $_ = $defName[$tpe](..$params)", selections) =>
-        debug(s"Collected $defName: $argName[$tpe]")
-        implicit val pos: Position = argName.pos
-        val name = Lit.String(argName.syntax)
-        val description = extract[String](params).defnTerm
-        val isMandatory: Boolean = {
-          val isM = selections.contains(Selection.Mandatory)
-          if (isM && tpe.syntax == "Boolean")
-            abort(pos, s"Boolean arg: ${name.value} cannot be mandatory.")
-          isM
-        }
-        val isMandatoryTerm = isMandatory.defnTerm
-        val abbr = extract[String](params).map {
-          case ab if ab.matches("""\w+""") => ab
-          case bad => abort(pos, s"Opt abbreviation can only contain letter:$bad")
-        }.defnTerm
 
-        val defaultTerm = {
-          val default = selections.collectFirst { case Selection.WithDefault(v) => v }
-          if (isMandatory && default.nonEmpty)
-            abort(pos, s"Mandatory arg ${argName.syntax} cannot have default value.")
-          //default for Boolean is false.
-          if (default.isEmpty && tpe.syntax == "Boolean") q"Option(false)"
-          else default.defnTerm
-        }
+      case r: RawParam =>
+        val term =
+          q"""runtime.buildParameter[${r.tpe}]($TERM_NAME = ${r.name.defnTerm},
+                                               $TERM_DESCRIPTION = ${r.description.defnTerm},
+                                               $TERM_IS_MANDATORY = ${r.isMandatory.defnTerm},
+                                               argValue = ${r.argValue})"""
+        TermParam(r.name, term, r.pos, r.tpe, topCmdSymbol)
 
-        defName match {
-          case q"paramDef" =>
-            val term =
-              q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
-                                               $TERM_DESCRIPTION = $description,
-                                               $TERM_IS_MANDATORY = $isMandatoryTerm,
-                                               argValue = ${singleValue(tpe, defaultTerm)})"""
-            TermParam(name.value, term, pos, tpe, topCmdSymbol)
-          case q"paramDefVariable" =>
-            val term =
-              q"""runtime.buildParameter[$tpe]($TERM_NAME = $name,
-                                               $TERM_DESCRIPTION = $description,
-                                               $TERM_IS_MANDATORY = $isMandatoryTerm,
-                                               argValue = ${variableValue(tpe, defaultTerm)})"""
-            TermParam(name.value, term, pos, tpe, topCmdSymbol)
-          case q"optDef" =>
-            val term =
-              q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
-                                               $TERM_ABBREVIATION = $abbr,
-                                               $TERM_DESCRIPTION = $description,
-                                               $TERM_IS_MANDATORY = $isMandatoryTerm,
-                                               argValue = ${singleValue(tpe, defaultTerm)})"""
-            TermOpt(name.value, term, pos, tpe, topCmdSymbol)
-          case q"optDefVariable" =>
-            val term =
-              q"""runtime.buildOptionArg[$tpe]($TERM_NAME = $name,
-                                               $TERM_ABBREVIATION = $abbr,
-                                               $TERM_DESCRIPTION = $description,
-                                               $TERM_IS_MANDATORY = $isMandatoryTerm,
-                                               argValue = ${variableValue(tpe, defaultTerm)})"""
-            TermOpt(name.value, term, pos, tpe, topCmdSymbol)
-          case q"propDef" =>
-            val argValueType = Type.Name(s"(String,${tpe.syntax})")
-            val flagTerm = {
-              val flag = extract[String](params)
-              flag match {
-                case Some(f) =>
-                  if (!f.matches("""[A-Z]{1}"""))
-                    abort(pos, s"Flag of prop ${argName.syntax}  must be of one upper case letter.")
-                  f.defnTerm
-                case None =>
-                  if (!name.value.matches("""[A-Z]{1}"""))
-                    abort(pos, s"If flag not specified," +
-                      s" prop ${argName.syntax} must have one upper case letter as its name.")
-                  name
-              }
-            }
-            val term =
-              q"""runtime
-                  .buildPropertyArg[$tpe]($TERM_NAME = $name,
-                                          flag = $flagTerm,
-                                          $TERM_DESCRIPTION = $description,
-                                          variableValue = ${variableValue(argValueType, defaultTerm)})"""
-            TermProp(name.value, flagTerm.syntax, term, pos, tpe)
-        }
-      case stat@q"val $argName: $_ = $defName(..$params)"
-        if defName.syntax.contains("Def") =>
-        abort(s"No type found for argument def: $stat")
+      case r: RawOpt =>
+        val term =
+          q"""runtime.buildOptionArg[${r.tpe}]($TERM_NAME = ${r.name.defnTerm},
+                                               $TERM_ABBREVIATION = ${r.abbr.defnTerm},
+                                               $TERM_DESCRIPTION = ${r.description.defnTerm},
+                                               $TERM_IS_MANDATORY = ${r.isMandatory.defnTerm},
+                                               argValue = ${r.argValue})"""
+        TermOpt(r.name, term, r.pos, r.tpe, topCmdSymbol)
+
+      case r: RawProp =>
+        val term =
+          q"""runtime
+                  .buildPropertyArg[${r.tpe}]($TERM_NAME = ${r.name.defnTerm},
+                                          flag = ${r.flag.defnTerm},
+                                          $TERM_DESCRIPTION = ${r.description.defnTerm},
+                                          variableValue = ${r.variableValue})"""
+        TermProp(r.name, r.flag, term, r.pos, r.tpe)
     }
-    builtInArgs(topCmdSymbol) ++ collected //builtIn must precede, order affects tree building.
+    //builtInArgs(topCmdSymbol) ++ collected //builtIn must precede, order affects tree building.
   }
   //todo: add name conflict check.
 
-  private def singleValue(tpe: Type, default: Term): Term =
-    q"""runtime.buildSingleValue[$tpe]($default)"""
-  private def variableValue(tpe: Type, default: Term): Term =
-    q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
-
-  //todo: (low priority) make builtInArgs more generic.
-  private def builtInArgs(topCmdSymbol: Lit.Symbol): immutable.Seq[TermArg] = {
-    val help = new TermPrior("help",
-      q"""runtime.builtInArgs('help)""",
-      Position.None, topCmdSymbol) with BuiltInArg
-    val version =
-      new TermPrior("version",
-        q"""runtime.builtInArgs('version)""",
-        Position.None, topCmdSymbol) with BuiltInArg
-    List(help, version)
-  }
 }
 
 private sealed trait TermValueArg extends TermArg

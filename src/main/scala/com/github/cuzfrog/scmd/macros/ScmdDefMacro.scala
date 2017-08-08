@@ -1,6 +1,7 @@
 package com.github.cuzfrog.scmd.macros
 
 
+import com.github.cuzfrog.scmd.AppInfo
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
 
@@ -33,6 +34,7 @@ private class ScmdDefMacro extends ScmdMacro {
       val inferredName = if (name.value.endsWith("Def")) name.value.dropRight(3) else name.value
       TermAppInfo.collectAppInfo(stats, inferredName.toLowerCase)
     }
+    implicit val _appInfo: AppInfo = appInfo.appInfo
     val appName: String = appInfo.appInfo.name
     /**
       * A TermArg is macro time term of arg Node.
@@ -40,7 +42,7 @@ private class ScmdDefMacro extends ScmdMacro {
       * This step collects arg defs from source code, checking syntax,
       * then turn them into Node terms.
       */
-    val argDefs = TermArg.collectTermArg(stats, appName)
+    val argDefs = ArgUtils.collectRawArg(stats).map(TermArg.toTermArg)
 
     /**
       * ArgTree represents structure of user defined args.

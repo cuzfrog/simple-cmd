@@ -1,7 +1,8 @@
 package com.github.cuzfrog.scmd.macros.argutils
 
-import com.github.cuzfrog.scmd.{Argument, Defaults}
+import com.github.cuzfrog.scmd.{AppInfo, Argument, BuiltInArg, Command, Defaults}
 import com.github.cuzfrog.scmd.internal.RawArgMacro
+import com.github.cuzfrog.scmd.macros.{TermArg, TermPrior}
 
 import scala.collection.immutable
 import scala.meta._
@@ -11,6 +12,10 @@ import scala.meta._
  */
 
 private[macros] object ArgUtils {
+
+  def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] =
+    ArgCollectImpl.collectRawArg(stats)
+
   /** Generate fields of parsed arguments for newly created argDef class. */
   def convertParsed(stats: immutable.Seq[Stat]): immutable.Seq[Stat] =
     ConvertParsedImpl.convertParsed(stats)
@@ -18,35 +23,22 @@ private[macros] object ArgUtils {
   /** Scala meta generated fields need explicit types to inform IDE. */
   def addExplicitType(stat: Stat): Stat = AddExplicitTypeImpl.addExplicitType(stat)
 
+  //todo: (low priority) make builtInArgs more generic.
+  /** Used in ScmdDefMacro to generate built-in args. */
+  def builtInArgs(implicit appInfo: AppInfo): immutable.Seq[TermArg] = Argument.builtInArgs.map {
+    case (symbol, _) =>
+      val topCmdSymbol = Lit.Symbol(Command.topCmd(appInfo.name).symbol)
+      new TermPrior(symbol.name,
+        q"runtime.builtInArgs(${Lit.Symbol(symbol)})", Position.None, topCmdSymbol) with BuiltInArg
+  }.to[immutable.Seq]
+
+  /** Used in ScmdDefMacro as api stub.  */
   def builtInPriorsStub: immutable.Seq[Defn.Def] = Argument.builtInArgs.map {
     case (symbol, _) =>
       q"""def ${Term.Name(symbol.name)}: PriorArg = {
             scmdRuntime.getBuiltInPrior(${Lit.Symbol(symbol)})
           }"""
   }.to[immutable.Seq]
-
-  def extractSelection(stat: Stat): Seq[Selection] = {
-    val selections = stat match {
-      case q"val $argName: $_ = $defName(..$params).$s1" => Seq(s1)
-      case q"val $argName: $_ = $defName(..$params).$s1.$s2" => Seq(s1, s2)
-      case _ => Nil
-    }
-    selections.map {
-      case q"mandatory" => Selection.Mandatory
-      case q"withDefault($param)" =>
-        val value = param match {
-          case Term.Arg.Named(_, v) => v
-          case v => v
-        }
-        Selection.WithDefault(value)
-    }
-  }
-
-  sealed trait Selection
-  object Selection {
-    case object Mandatory extends Selection
-    case class WithDefault(v: Term.Arg) extends Selection
-  }
 
   // ------------------- Shared helpers ----------------------
   private[argutils] def getComposedTpe(params: immutable.Seq[Term.Arg],

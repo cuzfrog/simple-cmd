@@ -25,6 +25,29 @@ private[macros] object ArgUtils {
           }"""
   }.to[immutable.Seq]
 
+  def extractSelection(stat: Stat): Seq[Selection] = {
+    val selections = stat match {
+      case q"val $argName: $_ = $defName(..$params).$s1" => Seq(s1)
+      case q"val $argName: $_ = $defName(..$params).$s1.$s2" => Seq(s1, s2)
+      case _ => Nil
+    }
+    selections.map {
+      case q"mandatory" => Selection.Mandatory
+      case q"withDefault($param)" =>
+        val value = param match {
+          case Term.Arg.Named(_, v) => v
+          case v => v
+        }
+        Selection.WithDefault(value)
+    }
+  }
+
+  sealed trait Selection
+  object Selection {
+    case object Mandatory extends Selection
+    case class WithDefault(v: Term.Arg) extends Selection
+  }
+
   // ------------------- Shared helpers ----------------------
   private[argutils] def getComposedTpe(params: immutable.Seq[Term.Arg],
                                        arg: Type,
@@ -50,4 +73,7 @@ private[macros] object ArgUtils {
     }
     (isMandatory, withDefault, composedTpe)
   }
+
+
 }
+

@@ -11,6 +11,13 @@ object ScmdRouteDSL {
   implicit final class RouteCommandOps(protected val rcmd: RouteCommand)
     extends RouteCommandOperations
 
+  implicit final class RouteConditionOps(in: RouteCondition) {
+    def ||(that: RouteCondition): RouteCondition =
+      new RouteCondition(in.condition || that.condition)
+    def &&(that: RouteCondition): RouteCondition =
+      new RouteCondition(in.condition && that.condition)
+  }
+
   implicit final class SingleValueOps[T](a: SingleValue[T]) {
     def expect(compareF: Option[T] => Boolean): RouteCondition =
       new RouteCondition(compareF(a.value))
@@ -48,11 +55,11 @@ object ScmdRouteDSL {
     }
   }
 
-//  // ------- Built in args --------
-//  /** Match: -help and --help */
-//  def help: PriorArg = Argument.BuiltInArgs.help
-//  /** Match: -version and --version */
-//  def version: PriorArg = Argument.BuiltInArgs.version
+  //  // ------- Built in args --------
+  //  /** Match: -help and --help */
+  //  def help: PriorArg = Argument.BuiltInArgs.help
+  //  /** Match: -version and --version */
+  //  def version: PriorArg = Argument.BuiltInArgs.version
 }
 
 sealed case
@@ -78,4 +85,5 @@ sealed trait RouteCommandOperations {
     new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF)
   }
 }
+
 //todo: add scope to param and opt to limit them to their cmd.

@@ -8,16 +8,13 @@ import DummyArgument._
   * @define isMandatory
   * If the arg is required from cmd-line.
   * This affects styles of <strong>route-api</strong> and <strong>value-extraction-api</strong>.
-  * <br><br>
+  * <br>
   * see [[com.github.cuzfrog.scmd.ScmdRouteDSL]]<br>
   * see [[com.github.cuzfrog.scmd.ScmdValueConverter]]<br>
-  * see [[com.github.cuzfrog.scmd.ScmdValueImplicitConversion]]
-  *
+  * see [[com.github.cuzfrog.scmd.ScmdValueImplicitConversion]]<br>
   * @define DEFAULT
-  * The default value of the arg. This cannot be specified together with "isMandatory".
-  * <br><br>
-  * For `Boolean` value, the "default of the default" value is false.
-  *
+  * Mandatory param cannot have default value.
+  * For `Boolean` value, the "default of the default" value is false.<br>
   * @define TYPE_T
   * Type of argument value.
   */
@@ -33,30 +30,72 @@ trait ScmdApi {
   final def cmdDef(description: String = ""): Command = DummyCommand
 
   /**
-    * Define a parameter.
+    * Define a parameter with single value.
+    * <br><br>
+    * $DEFAULT
     *
-    * @param isMandatory $isMandatory
-    * @param default $DEFAULT
-    * @tparam T $TYPE_T
+    * @param isMandatory $isMandatory<br>
+    * @tparam T $TYPE_T<br>
     */
   final def paramDef[T](description: String = "",
                         isMandatory: Boolean = false,
                         default: => T = Empty): Parameter[T] with SingleValue[T] = DummyParameterS
-
+  /**
+    * Define a variable parameter.
+    * <br><br>
+    * $DEFAULT
+    *
+    * @param isMandatory $isMandatory<br>
+    * @tparam T $TYPE_T<br>
+    */
   final def paramDefVariable[T](description: String = "",
                                 isMandatory: Boolean = false,
                                 default: => T = Empty): Parameter[T] with VariableValue[T] = DummyParameterV
-
+  /**
+    * Define an opt with single value.
+    * <br><br>
+    * $DEFAULT
+    *
+    * @param abbr abbreviation of this opt.
+    *             Abbr may consist of multiple letters, though this is not recommended.
+    * @param isMandatory $isMandatory<br>
+    * @tparam T $TYPE_T<br>
+    */
   final def optDef[T](abbr: String = "",
                       description: String = "",
                       isMandatory: Boolean = false,
                       default: => T = Empty): OptionArg[T] with SingleValue[T] = DummyOptionArgS
-
+  /**
+    * Define a variable opt.
+    * <br><br>
+    * A variable opt may have multiple value. It can be specified multiple times in the cmd-line args:
+    * {{{
+    * --variable-opt=value1 --variable-opt value2 ...etc
+    * //value will be stored in Seq
+    * }}}
+    * $DEFAULT
+    *
+    * @param abbr abbreviation of this opt.
+    *             Abbr may consist of multiple letters, though this is not recommended.
+    * @param isMandatory $isMandatory<br>
+    * @tparam T $TYPE_T<br>
+    */
   final def optDefVariable[T](abbr: String = "",
                               description: String = "",
                               isMandatory: Boolean = false,
                               default: => T = Empty): OptionArg[T] with VariableValue[T] = DummyOptionArgV
 
+  /**
+    * Define a properties.
+    * <br><br>
+    * $DEFAULT
+    *
+    * @param flag
+    * @param description
+    * @param default
+    * @tparam T
+    * @return
+    */
   final def propDef[T](flag: String = "",
                        description: String = "",
                        default: => Seq[(String, T)] = Empty): PropertyArg[T] with VariableValue[(String, T)] = DummyProp

@@ -12,13 +12,13 @@ import scala.meta._
  */
 
 private[macros] object ArgUtils {
-
+  /** Collect arg info from statements. */
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] =
     ArgCollectImpl.collectRawArg(stats)
 
   /** Generate fields of parsed arguments for newly created argDef class. */
-  def convertParsed(stats: immutable.Seq[Stat]): immutable.Seq[Stat] =
-    ConvertParsedImpl.convertParsed(stats)
+  def convertParsed(rawArgs: immutable.Seq[RawArg]): immutable.Seq[Stat] =
+    ConvertParsedImpl.convertParsed(rawArgs)
 
   /** Scala meta generated fields need explicit types to inform IDE. */
   def addExplicitType(stat: Stat): Stat = AddExplicitTypeImpl.addExplicitType(stat)
@@ -41,29 +41,20 @@ private[macros] object ArgUtils {
   }.to[immutable.Seq]
 
   // ------------------- Shared helpers ----------------------
-  private[argutils] def getComposedTpe(params: immutable.Seq[Term.Arg],
-                                       arg: Type,
-                                       tpe: Type,
-                                       argValue: Type)
-                                      (implicit pos: Position): (Boolean, Boolean, Type) = {
-    val isMandatory = RawArgMacro.extract[Boolean](params).getOrElse(Defaults.isMandatory)
-    val withDefault = {
-      val default = RawArgMacro.extract[Term.Arg](params)
-      if (default.isEmpty && tpe.syntax == "Boolean" &&
-        argValue.structure == Types.singleValue.structure) true
-      else default.nonEmpty
-    }
+  private[argutils] def getComposedTpe(isMandatory: Boolean, hasDefault: Boolean,
+                                       arg: Type, tpe: Type, argValue: Type)
+                                      (implicit pos: Position): Type = {
     val argValueTpe = if (arg.structure == Types.propertyArg.structure) t"(String,$tpe)" else tpe
-    val composedTpe = if (isMandatory && withDefault) {
+    val composedTpe = if (isMandatory && hasDefault) {
       throw new AssertionError("Argument cannot be mandatory while with default value.")
     } else if (isMandatory) {
       t"$arg[$tpe] with $argValue[$argValueTpe] with Mandatory"
-    } else if (withDefault) {
+    } else if (hasDefault) {
       t"$arg[$tpe] with $argValue[$argValueTpe] with WithDefault"
     } else {
       t"$arg[$tpe] with $argValue[$argValueTpe]"
     }
-    (isMandatory, withDefault, composedTpe)
+    composedTpe
   }
 
 

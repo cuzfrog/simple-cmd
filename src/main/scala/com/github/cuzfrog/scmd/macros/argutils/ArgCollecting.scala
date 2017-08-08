@@ -14,9 +14,10 @@ private[macros] object RawArg {
   case class RawPrior(name: String, description: Option[String], matchName: Boolean,
                       alias: Option[Term], pos: Position) extends RawArg
   case class RawParam(name: String, description: Option[String], tpe: Type, isMandatory: Boolean,
-                      hasDefault: Boolean, argValue: Term, pos: Position) extends RawArg
+                      hasDefault: Boolean, isVariable: Boolean,
+                      argValue: Term, pos: Position) extends RawArg
   case class RawOpt(name: String, abbr: Option[String], description: Option[String], tpe: Type,
-                    isMandatory: Boolean, hasDefault: Boolean,
+                    isMandatory: Boolean, hasDefault: Boolean, isVariable: Boolean,
                     argValue: Term, pos: Position) extends RawArg
   case class RawProp(name: String, flag: String, description: Option[String], tpe: Type,
                      hasDefault: Boolean, variableValue: Term, pos: Position) extends RawArg
@@ -71,16 +72,16 @@ private object ArgCollectImpl extends SimpleLogging {
         }
         defName match {
           case q"paramDef" =>
-            RawParam(name, description, tpe, isMandatory, hasDefault,
+            RawParam(name, description, tpe, isMandatory, hasDefault, isVariable = false,
               singleValue(tpe, defaultTerm), pos)
           case q"paramDefVariable" =>
-            RawParam(name, description, tpe, isMandatory, hasDefault,
+            RawParam(name, description, tpe, isMandatory, hasDefault, isVariable = true,
               variableValue(tpe, defaultTerm), pos)
           case q"optDef" =>
-            RawOpt(name, abbr, description, tpe, isMandatory, hasDefault,
+            RawOpt(name, abbr, description, tpe, isMandatory, hasDefault, isVariable = false,
               singleValue(tpe, defaultTerm), pos)
           case q"optDefVariable" =>
-            RawOpt(name, abbr, description, tpe, isMandatory, hasDefault,
+            RawOpt(name, abbr, description, tpe, isMandatory, hasDefault, isVariable = true,
               variableValue(tpe, defaultTerm), pos)
           case q"propDef" =>
             val argValueType = Type.Name(s"(String,${tpe.syntax})")

@@ -42,7 +42,8 @@ private class ScmdDefMacro extends ScmdMacro {
       * This step collects arg defs from source code, checking syntax,
       * then turn them into Node terms.
       */
-    val argDefs = ArgUtils.collectRawArg(stats).map(TermArg.toTermArg)
+    val rawArgs = ArgUtils.collectRawArg(stats)
+    val argDefs = rawArgs.map(TermArg.toTermArg)
 
     /**
       * ArgTree represents structure of user defined args.
@@ -89,7 +90,7 @@ private class ScmdDefMacro extends ScmdMacro {
               scmdRuntime.parse($argsParam)
               scmdRuntime.runBuiltInPriors()
               new ${Ctor.Ref.Name(name.value)}(...$termParamss){
-                ..${ArgUtils.convertParsed(stats)}
+                ..${ArgUtils.convertParsed(rawArgs)}
               }
             }catch{
               case e: ScmdException=> scmdRuntime.handleException(e)

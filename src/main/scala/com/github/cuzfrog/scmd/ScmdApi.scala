@@ -126,17 +126,17 @@ trait ScmdDefApi {
 
   implicit final class MandatoryOps[T, A]
   (in: A)(implicit ev1: A <:< ValueArgument[T] with ArgValue[T]) {
-    def mandatory: A with Mandatory = ???
+    def mandatory: A with Mandatory = Empty
   }
 
   implicit final class WithDefaultOps[T, A]
   (in: A)(implicit ev1: A <:< ValueArgument[T] with ArgValue[T]) {
-    def withDefault(defaultValue: T): A with WithDefault = ???
+    def withDefault(defaultValue: T): A with WithDefault = Empty
   }
 
   implicit final class WithDefaultPropsOps[T, A]
   (in: PropertyArg[T] with VariableValue[(String, T)]) {
-    def withDefault(defaultValue: Seq[(String, T)]): A with WithDefault = ???
+    def withDefault(defaultValue: Seq[(String, T)]): A with WithDefault = Empty
   }
 }
 

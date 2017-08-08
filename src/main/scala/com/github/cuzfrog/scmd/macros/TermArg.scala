@@ -28,8 +28,9 @@ private object TermArg extends SimpleLogging {
 
     val topCmdSymbol = Lit.Symbol(Command.topCmd(appName).symbol)
     //todo: recursively strip off Term.Select to extract mandatory/default
-    val collected: immutable.Seq[TermArg] = stats collect {
-      case q"val $argName: $_ = $defName(..$params)" if defName.isInstanceOf[Term.Name] =>
+
+    val collected: immutable.Seq[TermArg] = (stats zip stats.map(extractSelection)) collect {
+      case (q"val $argName: $_ = $defName(..$params)", _) if defName.isInstanceOf[Term.Name] =>
         implicit val pos: Position = argName.pos
         val name = Lit.String(argName.syntax)
         val description = extract[String](params).defnTerm
@@ -53,17 +54,16 @@ private object TermArg extends SimpleLogging {
                                         matchName = ${matchName.defnTerm})"""
             TermPrior(name.value, term, pos, topCmdSymbol)
         }
-      case q"val $argName: $_ = $defName[$tpe](..$params)" =>
+      case (q"val $argName: $_ = $defName[$tpe](..$params)", selections) =>
         debug(s"Collected $defName: $argName[$tpe]")
         implicit val pos: Position = argName.pos
         val name = Lit.String(argName.syntax)
         val description = extract[String](params).defnTerm
-        val isMandatory = extract[Boolean](params) match {
-          case Some(isM) =>
-            if (tpe.syntax == "Boolean")
-              abort(pos, s"Boolean arg: ${name.value} cannot be mandatory.")
-            isM
-          case None => Defaults.isMandatory
+        val isMandatory: Boolean = {
+          val isM = selections.contains(Selection.Mandatory)
+          if (isM && tpe.syntax == "Boolean")
+            abort(pos, s"Boolean arg: ${name.value} cannot be mandatory.")
+          isM
         }
         val isMandatoryTerm = isMandatory.defnTerm
         val abbr = extract[String](params).map {
@@ -72,7 +72,7 @@ private object TermArg extends SimpleLogging {
         }.defnTerm
 
         val defaultTerm = {
-          val default = extract[Term.Arg](params)
+          val default = selections.collectFirst { case Selection.WithDefault(v) => v}
           if (isMandatory && default.nonEmpty)
             abort(pos, s"Mandatory arg ${argName.syntax} cannot have default value.")
           //default for Boolean is false.
@@ -148,7 +148,7 @@ private object TermArg extends SimpleLogging {
   private def variableValue(tpe: Type, default: Term): Term =
     q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
 
-  //todo: (low level) make builtInArgs more generic.
+  //todo: (low priority) make builtInArgs more generic.
   private def builtInArgs(topCmdSymbol: Lit.Symbol): immutable.Seq[TermArg] = {
     val help = new TermPrior("help",
       q"""runtime.builtInArgs('help)""",
@@ -158,6 +158,29 @@ private object TermArg extends SimpleLogging {
         q"""runtime.builtInArgs('version)""",
         Position.None, topCmdSymbol) with BuiltInArg
     List(help, version)
+  }
+
+  private def extractSelection(stat: Stat): Seq[Selection] = {
+    val selections = stat match {
+      case q"val $argName: $_ = $defName(..$params).$s1" => Seq(s1)
+      case q"val $argName: $_ = $defName(..$params).$s1.$s2" => Seq(s1, s2)
+      case _ => Nil
+    }
+    selections.map {
+      case q"mandatory" => Selection.Mandatory
+      case q"withDefault($param)" =>
+        val value = param match {
+          case Term.Arg.Named(_, v) => v
+          case v => v
+        }
+        Selection.WithDefault(value)
+    }
+  }
+
+  sealed trait Selection
+  object Selection {
+    case object Mandatory extends Selection
+    case class WithDefault(v: Term.Arg) extends Selection
   }
 }
 

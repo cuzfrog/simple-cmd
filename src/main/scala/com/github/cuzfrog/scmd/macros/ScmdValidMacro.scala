@@ -1,11 +1,9 @@
 package com.github.cuzfrog.scmd.macros
 
-import scala.collection.immutable
 import scala.meta._
 
-
 private class ScmdValidMacro extends ScmdMacro {
-  final def expand(cls: Defn.Class): Stat = {
+  def expand(cls: Defn.Class): Stat = {
     val mods = cls.mods
     val name = cls.name
     val ctorMods = cls.ctor.mods

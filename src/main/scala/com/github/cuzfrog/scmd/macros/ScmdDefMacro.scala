@@ -12,7 +12,7 @@ private class ScmdDefMacro extends ScmdMacro {
   /** Override this for testing. */
   protected val isTestMode: Boolean = false
 
-  final def expand(cls: Defn.Class): Stat = {
+  def expand(cls: Defn.Class): Stat = {
     val mods = cls.mods
     val name = cls.name
     val ctorMods = cls.ctor.mods

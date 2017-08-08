@@ -5,6 +5,7 @@ import com.github.cuzfrog.scmd.internal.SimpleLogging
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+import scala.util.matching.Regex
 
 /*
  * The three categories of args provide low level parsing.
@@ -48,8 +49,8 @@ private case class PropsCate(arg: String, key: String, value: String,
   * multi-char -Pn  Pn is a single option abbreviation.
   */
 private object SingleOpts extends CateUtils {
-  private val EqualLitertal = """(\w+)\=(\w+)""".r
-  private val ValueFolding = """(\w)([^\=]{1}.*)""".r
+  private val EqualLitertal: Regex = """(\w+)\=(\w+)""".r
+  private val ValueFolding: Regex = """(\w)([^\=]{1}.*)""".r
 
   implicit val parser: Parser[SingleOpts, AnchorEither] = new Parser[SingleOpts, AnchorEither] {
     override def parse(a: SingleOpts)(implicit c: Context): AnchorEither = {
@@ -124,7 +125,7 @@ private object SingleOpts extends CateUtils {
 }
 
 private object LongOpt extends CateUtils {
-  private val EqualLiteral = """-([\-\w\d]+)(=.*)?""".r
+  private val EqualLiteral: Regex = """-([\-\w\d]+)(=.*)?""".r
 
   implicit val parser: Parser[LongOpt, AnchorEither] = new Parser[LongOpt, AnchorEither] {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
@@ -233,7 +234,7 @@ private object ParamOrCmd extends CateUtils {
             this.consumeCmd(arg, c).right.toSeq.flatten
           } else Seq.empty
 
-          anchorsWithValue ++ possibleCmdAnchor
+          anchorsWithValue ++ possibleCmdAnchor //order matters, last anchor is the current path
         //there's no params (left) before, a cmd should be matched:
         case None =>
           trace(s"Parse ParamOrCmd:${a.original} -> cmd")

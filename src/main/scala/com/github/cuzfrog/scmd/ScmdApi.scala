@@ -17,6 +17,9 @@ import DummyArgument._
   * For `Boolean` value, the "default of the default" value is false.<br>
   * @define TYPE_T
   * Type of argument value.
+  * @define VALIDATION_F
+  * the validation statement.
+  * Note: statement returns a Unit, and should use exceptions to indicate a failure.
   */
 trait ScmdApi {
   // --------------------- Def methods ----------------------
@@ -88,22 +91,44 @@ trait ScmdApi {
   /**
     * Define a properties.
     * <br><br>
+    * Properties are global, which are read from anywhere of the cmd-lin args.
+    * e.g. {{{-Dkey=value}}}.
+    * <br><br>
     * $DEFAULT
     *
-    * @param flag
-    * @param description
-    * @param default
-    * @tparam T
-    * @return
+    * @param flag the flag of this properties.
+    * @tparam T $TYPE_T<br>
     */
   final def propDef[T](flag: String = "",
                        description: String = "",
                        default: => Seq[(String, T)] = Empty): PropertyArg[T] with VariableValue[(String, T)] = DummyProp
 
+  /**
+    * Define a prior argument.
+    * <br><br>
+    * A prior argument has priority to be matched.
+    * Once they appear on cmd-lin args, the first of them will be picked, and the whole parsing ends.
+    * <br><br>
+    * Prior args are defined globally, but when matching, one is scoped to its left-closest command.
+    * e.g.{{{
+    * >app command1 prior1 param1 command2 prior2
+    * //prior1 will be matched and scoped to command1, param1 and args on its right will be ignored.
+    * >app command1 param1 command2 prior2
+    * //prior2 will be matched and scoped to command2
+    * }}}
+    * Scmd provides built-in prior args: "help" and "version"
+    * @see [[com.github.cuzfrog.scmd.Argument.BuiltInArgs]]
+    *
+    * @param alias a prior arg can have other names. e.g. "-help", "--help"
+    * @param matchName if the val name of this prior arg def will be matched.
+    */
   final def priorDef(alias: Seq[String] = Nil,
                      description: String = "",
                      matchName: Boolean = false): PriorArg = DummyPriorArg
 
+  /**
+    * Define app with basic info.
+    */
   final def appDef(name: String,
                    shortDescription: String = "",
                    fullDescription: String = "",
@@ -111,17 +136,37 @@ trait ScmdApi {
                    license: String = "",
                    author: String = ""): Unit = ()
 
+  /**
+    * Define app with custom info.
+    * <br><br>
+    * If basic info exists, basic info and custom info will be merged,
+    * with basic info preceding.
+    * If custom info contains a basic info key, the basic info will take
+    * the place defined in custom info.
+    */
   def appDefCustom(item: (String, String)*): Unit = ()
 
-
+  /**
+    * Define a validation against an argument.
+    *
+    * @param arg the argument to validate.
+    * @param f $VALIDATION_F <br>
+    * @tparam T the type of the value of the argument, inferred and delivered to validation function.
+    */
   def validation[T](arg: SingleValue[T])(f: T => Unit): T => Unit = f
+  /**
+    * Define a validation against an argument.
+    *
+    * @param arg the argument to validate.
+    * @param f $VALIDATION_F <br>
+    * @tparam T the type of the value of the argument, inferred and delivered to validation function.
+    */
   def validation[T](arg: VariableValue[T])(f: List[T] => Unit): List[T] => Unit = f
 
   //def validationMulti[A](args: A, f: A => Boolean): Unit = ()
-
-  //private implicit def string2option(s: String): Option[String] = if (s == "") None else Option(s)
 }
 
+/** Api managed by macro, serving type transformation. */
 object DummyApi {
   final def cmdDef: Command = DummyCommand
   final def priorDef: PriorArg = DummyPriorArg

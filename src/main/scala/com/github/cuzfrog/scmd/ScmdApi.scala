@@ -2,10 +2,43 @@ package com.github.cuzfrog.scmd
 
 import DummyArgument._
 
+/**
+  * Client api to define scmd args.
+  *
+  * @define isMandatory
+  * If the arg is required from cmd-line.
+  * This affects styles of <strong>route-api</strong> and <strong>value-extraction-api</strong>.
+  * <br><br>
+  * see [[com.github.cuzfrog.scmd.ScmdRouteDSL]]<br>
+  * see [[com.github.cuzfrog.scmd.ScmdValueConverter]]<br>
+  * see [[com.github.cuzfrog.scmd.ScmdValueImplicitConversion]]
+  *
+  * @define DEFAULT
+  * The default value of the arg. This cannot be specified together with "isMandatory".
+  * <br><br>
+  * For `Boolean` value, the "default of the default" value is false.
+  *
+  * @define TYPE_T
+  * Type of argument value.
+  */
 trait ScmdApi {
   // --------------------- Def methods ----------------------
+  /**
+    * Define a command. Name of the named-parameter cannot be omitted.
+    * e.g.{{{
+    * val command = cmdDef(description = "this is a command.")
+    * //the "description" cannot be omitted.
+    * }}}
+    */
   final def cmdDef(description: String = ""): Command = DummyCommand
 
+  /**
+    * Define a parameter.
+    *
+    * @param isMandatory $isMandatory
+    * @param default $DEFAULT
+    * @tparam T $TYPE_T
+    */
   final def paramDef[T](description: String = "",
                         isMandatory: Boolean = false,
                         default: => T = Empty): Parameter[T] with SingleValue[T] = DummyParameterS

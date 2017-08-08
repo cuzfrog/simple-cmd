@@ -142,6 +142,12 @@ trait ScmdDefApi {
     * the place defined in custom info.
     */
   def appDefCustom(item: (String, String)*): Unit = ()
+
+  implicit final class MandatoryOps
+  [T, A](in: A)
+           (implicit ev1: A <:< ValueArgument[T] with ArgValue[T]) {
+    def mandatory: A with Mandatory = ???
+  }
 }
 
 /**

@@ -1,7 +1,12 @@
 package com.github.cuzfrog.scmd
 
+/**
+  * DSL to built scmd route.
+  */
 object ScmdRouteDSL {
-
+  /**
+    * Application(top command) entry.
+    */
   final def app(implicit appInfo: AppInfo): RouteCommand = Command.topCmd(appInfo.name)
 
   implicit final class CommandOps(cmd: Command) extends RouteCommandOperations {
@@ -26,7 +31,7 @@ object ScmdRouteDSL {
   }
 
   implicit final class SingleValueMandatoryOps[T](a: SingleValue[T] with Mandatory) {
-    def expectMandatory(compareF: T => Boolean): RouteCondition =
+    def expectMandatorily(compareF: T => Boolean): RouteCondition =
       new RouteCondition(compareF(a.value.getOrElse(
         throw new IllegalArgumentException(
           s"Mandatory arg: ${a.asInstanceOf[Argument[T]].originalName} of empty value."))))
@@ -49,17 +54,12 @@ object ScmdRouteDSL {
   }
 
   implicit final class ScmdRouteOps(in: ArgRoute) {
+    /** link two route together. */
     def ~(that: ArgRoute): ArgRoute = in match {
       case mergeRoute: MergeRoute => mergeRoute.copy(mergeRoute.seq :+ that)
       case other: ArgRoute => MergeRoute(Seq(other, that))
     }
   }
-
-  //  // ------- Built in args --------
-  //  /** Match: -help and --help */
-  //  def help: PriorArg = Argument.BuiltInArgs.help
-  //  /** Match: -version and --version */
-  //  def version: PriorArg = Argument.BuiltInArgs.version
 }
 
 sealed case

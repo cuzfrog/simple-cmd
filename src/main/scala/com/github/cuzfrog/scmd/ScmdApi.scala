@@ -173,18 +173,18 @@ object DummyApi {
 
   final def ParameterSingleValue[T]: Parameter[T] with SingleValue[T] = DummyParameterS
   final def ParameterSingleValueMandatory[T]: Parameter[T] with SingleValue[T] with Mandatory = DummyParameterSM
-  final def ParameterSingleValueDefault[T]: Parameter[T] with SingleValue[T] with WithDefault = DummyParameterSD
+  final def ParameterSingleValueWithDefault[T]: Parameter[T] with SingleValue[T] with WithDefault = DummyParameterSD
   final def ParameterVariableValue[T]: Parameter[T] with VariableValue[T] = DummyParameterV
   final def ParameterVariableValueMandatory[T]: Parameter[T] with VariableValue[T] with Mandatory = DummyParameterVM
-  final def ParameterVariableValueDefault[T]: Parameter[T] with VariableValue[T] with WithDefault = DummyParameterVD
+  final def ParameterVariableValueWithDefault[T]: Parameter[T] with VariableValue[T] with WithDefault = DummyParameterVD
 
   final def OptionArgSingleValue[T]: OptionArg[T] with SingleValue[T] = DummyOptionArgS
   final def OptionArgSingleValueMandatory[T]: OptionArg[T] with SingleValue[T] with Mandatory = DummyOptionArgSM
-  final def OptionArgSingleValueDefault[T]: OptionArg[T] with SingleValue[T] with WithDefault = DummyOptionArgSD
+  final def OptionArgSingleValueWithDefault[T]: OptionArg[T] with SingleValue[T] with WithDefault = DummyOptionArgSD
   final def OptionArgVariableValue[T]: OptionArg[T] with VariableValue[T] = DummyOptionArgV
   final def OptionArgVariableValueMandatory[T]: OptionArg[T] with VariableValue[T] with Mandatory = DummyOptionArgVM
-  final def OptionArgVariableValueDefault[T]: OptionArg[T] with VariableValue[T] with WithDefault = DummyOptionArgVD
+  final def OptionArgVariableValueWithDefault[T]: OptionArg[T] with VariableValue[T] with WithDefault = DummyOptionArgVD
 
   final def PropertyArgVariableValue[T]: PropertyArg[T] with VariableValue[(String, T)] = DummyProp
-  final def PropertyArgVariableValueDefault[T]: PropertyArg[T] with VariableValue[(String, T)] with WithDefault = DummyPropD
+  final def PropertyArgVariableValueWithDefault[T]: PropertyArg[T] with VariableValue[(String, T)] with WithDefault = DummyPropD
 }

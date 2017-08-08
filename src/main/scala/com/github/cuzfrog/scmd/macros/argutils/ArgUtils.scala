@@ -24,15 +24,6 @@ private[macros] object ArgUtils {
   def addExplicitType(rawArgs: immutable.Seq[RawArg]): immutable.Seq[Stat] =
     AddExplicitTypeImpl.addExplicitType(rawArgs)
 
-  //todo: (low priority) make builtInArgs more generic.
-  /** Used in ScmdDefMacro to generate built-in args. */
-  def builtInArgs(implicit appInfo: AppInfo): immutable.Seq[TermArg] = Argument.builtInArgs.map {
-    case (symbol, _) =>
-      val topCmdSymbol = Lit.Symbol(Command.topCmd(appInfo.name).symbol)
-      new TermPrior(symbol.name,
-        q"runtime.builtInArgs(${Lit.Symbol(symbol)})", Position.None, topCmdSymbol) with BuiltInArg
-  }.to[immutable.Seq]
-
   /** Used in ScmdDefMacro as api stub.  */
   def builtInPriorsStub: immutable.Seq[Defn.Def] = Argument.builtInArgs.map {
     case (symbol, _) =>

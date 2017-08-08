@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{AppInfo, BuiltInArg, Command, Defaults}
+import com.github.cuzfrog.scmd.{AppInfo, Argument, BuiltInArg, Command, Defaults}
 import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.macros.argutils.{ArgUtils, RawArg}
@@ -74,6 +74,14 @@ private object TermArg extends SimpleLogging {
   }
   //todo: add name conflict check.
 
+  //todo: (low priority) make builtInArgs more generic.
+  /** Used in ScmdDefMacro to generate built-in args. */
+  def builtInArgs(implicit appInfo: AppInfo): immutable.Seq[TermArg] = Argument.builtInArgs.map {
+    case (symbol, _) =>
+      val topCmdSymbol = Lit.Symbol(Command.topCmd(appInfo.name).symbol)
+      new TermPrior(symbol.name,
+        q"runtime.builtInArgs(${Lit.Symbol(symbol)})", Position.None, topCmdSymbol) with BuiltInArg
+  }.to[immutable.Seq]
 }
 
 private sealed trait TermValueArg extends TermArg

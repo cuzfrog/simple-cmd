@@ -14,7 +14,7 @@ object Tmp {
       "null" -> null)
 
     val sharedParam = paramDef[String](description = "this should be shared by cmds below.")
-    val m1 = optDef[String]()
+    val m1 = optDef[String]().withDefault("default m")
     val cat1 = cmdDef(description = "Concatenate contents of files.")
     val files = paramDefVariable[Path](description = "Paths of files to concatenate.").mandatory
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")

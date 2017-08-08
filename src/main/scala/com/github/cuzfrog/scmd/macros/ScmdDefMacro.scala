@@ -43,7 +43,7 @@ private class ScmdDefMacro extends ScmdMacro {
       * then turn them into Node terms.
       */
     val rawArgs = ArgUtils.collectRawArg(stats)
-    val argDefs = rawArgs.map(TermArg.toTermArg)
+    val argDefs = TermArg.builtInArgs ++ rawArgs.map(TermArg.toTermArg)
 
     /**
       * ArgTree represents structure of user defined args.

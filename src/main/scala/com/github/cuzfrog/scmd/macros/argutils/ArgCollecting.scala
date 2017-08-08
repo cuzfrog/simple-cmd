@@ -11,7 +11,7 @@ import scala.meta._
 private[macros] sealed trait RawArg {
   def name: String
 }
-private[macros] sealed trait RawTypedArg extends RawArg{
+private[macros] sealed trait RawTypedArg extends RawArg {
   def tpe: Type
   def composedTpe: Type
 }
@@ -31,6 +31,7 @@ private[macros] object RawArg {
 }
 
 private object ArgCollectImpl extends SimpleLogging {
+  override protected implicit val loggerLevel: SimpleLogging.Level = SimpleLogging.Trace
 
   import RawArg._
   import com.github.cuzfrog.scmd.macros.DefineTermOps
@@ -38,7 +39,7 @@ private object ArgCollectImpl extends SimpleLogging {
 
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
 
-    (stats zip stats.map(extractSelection)) collect {
+    stats.map(extractSelection) collect {
       case (q"val $argName: $_ = $defName(..$params)", _) if defName.isInstanceOf[Term.Name] =>
         implicit val pos: Position = argName.pos
         val name = argName.syntax
@@ -55,7 +56,7 @@ private object ArgCollectImpl extends SimpleLogging {
             RawPrior(name, description, matchName, alias, pos)
         }
       case (q"val $argName: $_ = $defName[$tpe](..$params)", selections) =>
-        debug(s"Collected $defName: $argName[$tpe]")
+        debug(s"Collected $defName: $argName[$tpe] with selections:${selections.mkString(",")}")
         implicit val pos: Position = argName.pos
         val name = argName.syntax
         val description = extract[String](params)
@@ -117,8 +118,7 @@ private object ArgCollectImpl extends SimpleLogging {
             RawProp(name, flag, description, tpe, hasDefault,
               variableValue(argValueType, defaultTerm), pos, composedTpe)
         }
-      case stat@q"val $argName: $_ = $defName(..$params)"
-        if defName.syntax.contains("Def") =>
+      case (stat@q"val $argName: $_ = $defName(..$params)", _) if defName.syntax.contains("Def") =>
         abort(s"No type found for argument def: $stat")
     }
   }
@@ -128,20 +128,31 @@ private object ArgCollectImpl extends SimpleLogging {
   private def variableValue(tpe: Type, default: Term): Term =
     q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
 
-  private def extractSelection(stat: Stat): Seq[Selection] = {
-    val selections = stat match {
-      case q"val $argName: $_ = $defName(..$params).$s1" => Seq(s1)
-      case q"val $argName: $_ = $defName(..$params).$s1.$s2" => Seq(s1, s2)
-      case _ => Nil
+  private def extractSelection(stat: Stat): (Stat, Seq[Selection]) = {
+    def valueFromParams(params: immutable.Seq[Term.Arg]): Term.Arg = params.head match {
+      case Term.Arg.Named(_, v) => v
+      case v => v
     }
-    selections.map {
-      case q"mandatory" => Selection.Mandatory
-      case q"withDefault($param)" =>
-        val value = param match {
-          case Term.Arg.Named(_, v) => v
-          case v => v
+
+    stat match {
+      case valDef: Defn.Val =>
+        val (defM, selections) = valDef.rhs match {
+          case Term.Apply(Term.Select(defMethod, q"withDefault"), params) =>
+            val value = valueFromParams(params)
+            (defMethod, Seq(Selection.WithDefault(value)))
+          case Term.Select(defMethod, q"mandatory") =>
+            (defMethod, Seq(Selection.Mandatory))
+          case Term.Apply(Term.Select(Term.Select(defMethod, q"mandatory"), q"withDefault"), params) =>
+            val value = valueFromParams(params)
+            (defMethod, Seq(Selection.Mandatory, Selection.WithDefault(value)))
+          case Term.Select(Term.Apply(Term.Select(defMethod, q"withDefault"), params), q"mandatory") =>
+            val value = valueFromParams(params)
+            (defMethod, Seq(Selection.Mandatory, Selection.WithDefault(value)))
+          case s => s -> Nil
         }
-        Selection.WithDefault(value)
+        valDef.copy(rhs = defM) -> selections
+      case other =>
+        other -> Nil
     }
   }
 

@@ -18,18 +18,18 @@ private object ConvertParsedImpl extends SimpleLogging {
   def convertParsed(rawArgs: immutable.Seq[RawArg]): immutable.Seq[Stat] = {
     val parsed = rawArgs map {
       case r: RawCommand =>
-        q"""override val ${r.name}: Command = {
+        q"""override val ${r.name.toPatTerm}: Command = {
             scmdRuntime.getEvaluatedArgumentByName
             [Boolean,Command](${Lit.Symbol(scala.Symbol(r.name))})
           }"""
       case r: RawPrior =>
-        q"""override val ${r.name}: PriorArg = {
+        q"""override val ${r.name.toPatTerm}: PriorArg = {
             scmdRuntime.getEvaluatedArgumentByName
             [Boolean,PriorArg](${Lit.Symbol(scala.Symbol(r.name))})
           }"""
 
       case r: RawTypedArg =>
-        typedVal(r.name, r.tpe, r.composedTpe)
+        typedVal(r.name.toPatTerm, r.tpe, r.composedTpe)
     }
     builtInPriors ++ parsed
   }

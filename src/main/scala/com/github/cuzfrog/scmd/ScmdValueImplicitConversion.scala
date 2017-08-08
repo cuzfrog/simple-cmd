@@ -1,7 +1,5 @@
 package com.github.cuzfrog.scmd
 
-import com.github.cuzfrog.scmd.ScmdSafeValueConverter.PropsV
-
 /**
   * Provide direct implicit conversion against Arguments.
   * <br><br>
@@ -34,21 +32,13 @@ object ScmdValueImplicitConversion {
 }
 
 sealed abstract class AbstractScmdValueConverter {
-  implicit class Cmd2ValueOps(in: Command) {
+  implicit class ValueConverterCmdOps(in: Command) {
     def value: Boolean = in.met
     def met: Boolean = in.met
   }
 
-  implicit class SingleValueMOps[T](a: Argument[T] with SingleValue[T] with Mandatory) {
-    def value: T = a.v.getOrElse(throwIfEmptyMandatory(a))
-  }
-
-  implicit class SingleValueDOps[T](a: Argument[T] with SingleValue[T] with WithDefault) {
-    def value: T = a.v.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
-  }
-
   protected type PropsV[T] = PropertyArg[T] with VariableValue[(String, T)]
-  implicit class PropsOps[T](propertyArg: PropsV[T]) {
+  implicit class ValueConverterPropsOps[T](propertyArg: PropsV[T]) {
     def apply(key: String): Option[T] =
       propertyArg.v.collectFirst { case (k, v) if k == key => v }
   }
@@ -63,15 +53,23 @@ sealed abstract class AbstractScmdValueConverter {
   * Provide explicit method to get value of Argument.
   */
 object ScmdValueConverter extends AbstractScmdValueConverter {
-  implicit class SingleValueOps[T](a: Argument[T] with SingleValue[T]) {
+  implicit class ValueConverterSingleValueMOps[T](a: ValueArgument[T] with SingleValue[T] with Mandatory) {
+    def value: T = a.v.getOrElse(throwIfEmptyMandatory(a))
+  }
+
+  implicit class ValueConverterSingleValueDOps[T](a: ValueArgument[T] with SingleValue[T] with WithDefault) {
+    def value: T = a.v.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
+  }
+
+  implicit class ValueConverterSingleValueOps[T](a: ValueArgument[T] with SingleValue[T]) {
     def value: Option[T] = a.v
   }
 
-  implicit class VariableValueOps[T](a: Argument[T] with VariableValue[T]) {
+  implicit class ValueConverterVariableValueOps[T](a: ValueArgument[T] with VariableValue[T]) {
     def value: Seq[T] = a.v
   }
 
-  implicit class PropsValueOps[T](propertyArg: PropsV[T]) {
+  implicit class ValueConverterPropsValueOps[T](propertyArg: PropsV[T]) {
     def value: Seq[(String, T)] = propertyArg.v
   }
 }
@@ -80,11 +78,19 @@ object ScmdValueConverter extends AbstractScmdValueConverter {
   * Provide explicit method to get value of Argument.
   */
 object ScmdSafeValueConverter extends AbstractScmdValueConverter {
-  implicit class SingleValueOps[T](a: Argument[T] with SingleValue[T]) {
+  implicit class SingleValueMOps[T](a: ValueArgument[T] with SingleValue[T] with Mandatory) {
+    def value: T = a.v.getOrElse(throwIfEmptyMandatory(a))
+  }
+
+  implicit class SingleValueDOps[T](a: ValueArgument[T] with SingleValue[T] with WithDefault) {
+    def valueWithDefault: T = a.v.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
+  }
+
+  implicit class SingleValueOps[T](a: ValueArgument[T] with SingleValue[T]) {
     def valueOpt: Option[T] = a.v
   }
 
-  implicit class VariableValueOps[T](a: Argument[T] with VariableValue[T]) {
+  implicit class VariableValueOps[T](a: ValueArgument[T] with VariableValue[T]) {
     def valueSeq: Seq[T] = a.v
   }
 

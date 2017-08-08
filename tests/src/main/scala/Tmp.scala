@@ -14,7 +14,7 @@ object Tmp {
       "null" -> null)
 
     val sharedParam = paramDef[String](description = "this should be shared by cmds below.")
-    val m1 = optDef[String](isMandatory = true)
+    val m1 = optDef[String]()
     val cat1 = cmdDef(description = "Concatenate contents of files.")
     val files = paramDefVariable[Path](description = "Paths of files to concatenate.", isMandatory = true)
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
@@ -57,7 +57,7 @@ object Tmp {
 
     import scmdRouteDSL._
     import argDef._
-    import scmdSafeValueConverter._
+    import scmdValueConverter._
 
     app.runOnPrior(help1) {
       println("println help1 info.")
@@ -70,14 +70,14 @@ object Tmp {
         newLine.expectTrue,
         properties.expectByKey("key1")(_.forall(_ > 6))
       ).run {
-        println(s"Numbers are: ${num.valueSeq.mkString(",")} (with new line (and key1's value >6) )")
+        println(s"Numbers are: ${num.value.mkString(",")} (with new line (and key1's value >6) )")
       } ~
         cat1.run {
-          println(s"Numbers are: ${num.valueSeq.mkString(",")}")
-          println(s"Files are: ${files.valueSeq.mkString(",")}")
+          println(s"Numbers are: ${num.value.mkString(",")}")
+          println(s"Files are: ${files.value.mkString(",")}")
           //val mOpt:Option[String] = m1.valueOpt
-          println(s"NewLine: " + newLine.valueWithDefault)
-          val m: String = m1.value
+          println(s"NewLine: " + newLine.value)
+          val m = m1.value
           println(s"M1:" + m)
         }
     }

@@ -72,14 +72,14 @@ PriorArg private[scmd](name: String,
 sealed trait ArgValue[+T] {
   private[scmd] def isVariable: Boolean
 }
-
+//todo: change value to v to aviod name conflict
 sealed trait SingleValue[+T] extends ArgValue[T] {
-  private[scmd] def value: Option[T] = None
+  private[scmd] def v: Option[T] = None
   private[scmd] def default: Option[T] = None
   private[scmd] def isVariable: Boolean = false
 }
 sealed trait VariableValue[+T] extends ArgValue[T] {
-  private[scmd] def value: Seq[T] = Nil
+  private[scmd] def v: Seq[T] = Nil
   private[scmd] def default: Seq[T] = Nil
   private[scmd] def isVariable: Boolean = true
 }
@@ -134,9 +134,9 @@ private object Parameter {
     (a: Parameter[T], stuff: V) => {
       val result = stuff match {
         case s: SingleValue[T@unchecked] =>
-          createParam[T](a.name, a.description, a.isMandatory, s.value, s.default)
+          createParam[T](a.name, a.description, a.isMandatory, s.v, s.default)
         case m: VariableValue[T@unchecked] =>
-          createParam[T](a.name, a.description, a.isMandatory, m.value, m.default)
+          createParam[T](a.name, a.description, a.isMandatory, m.v, m.default)
       }
       result.asInstanceOf[Parameter[T] with V]
     }
@@ -167,10 +167,10 @@ private object OptionArg {
     (a: OptionArg[T], stuff: V) => {
       val result = stuff match {
         case s: SingleValue[T@unchecked] =>
-          createOpt[T](a.name, a.abbr, a.description, a.isMandatory, s.value, s.default)
+          createOpt[T](a.name, a.abbr, a.description, a.isMandatory, s.v, s.default)
 
         case m: VariableValue[T@unchecked] =>
-          createOpt[T](a.name, a.abbr, a.description, a.isMandatory, m.value, m.default)
+          createOpt[T](a.name, a.abbr, a.description, a.isMandatory, m.v, m.default)
       }
       result.asInstanceOf[OptionArg[T] with V]
     }
@@ -209,7 +209,7 @@ private object PropertyArg {
 
   private[scmd] implicit def mixValueTrait[T]: CanMix[PropertyArg[T], VariableValue[(String, T)]] =
     (a: PropertyArg[T], stuff: VariableValue[(String, T)]) => {
-      createProp[T](a.name, a.flag, a.description, stuff.value, stuff.default)
+      createProp[T](a.name, a.flag, a.description, stuff.v, stuff.default)
     }
 
   private def createProp[T](name: String, flag: String, description: Option[String],
@@ -217,13 +217,13 @@ private object PropertyArg {
     if (_default.nonEmpty) {
       new PropertyArg[T](name = name, flag = flag, description = description)
         with VariableValue[(String, T)] with WithDefault {
-        override def value: Seq[(String, T)] = _value
+        override def v: Seq[(String, T)] = _value
         override def default: Seq[(String, T)] = _default
       }
     } else {
       new PropertyArg[T](name = name, flag = flag, description = description)
         with VariableValue[(String, T)] {
-        override def value: Seq[(String, T)] = _value
+        override def v: Seq[(String, T)] = _value
         override def default: Seq[(String, T)] = _default
       }
     }
@@ -245,11 +245,11 @@ private object ValueArgument {
 private object ArgValue {
   private[scmd] def single[T](_default: Option[T]): SingleValue[T] = new SingleValue[T] {
     override def default: Option[T] = _default
-    override def value: Option[T] = None
+    override def v: Option[T] = None
   }
   private[scmd] def variable[T](_default: Seq[T]): VariableValue[T] = new VariableValue[T] {
     override def default: Seq[T] = _default
-    override def value: Seq[T] = Nil
+    override def v: Seq[T] = Nil
   }
 }
 

@@ -37,7 +37,7 @@ private[scmd] class ArgCreationMacro extends StaticAnnotation {
           }
           val valueTpe = if (argValueCtor.syntax.contains("Single")) t"Option" else t"Seq"
           val stats = List(
-            q"override def value: $valueTpe[T] = _value",
+            q"override def v: $valueTpe[T] = _value",
             q"override def default: $valueTpe[T] = _default"
           )
 

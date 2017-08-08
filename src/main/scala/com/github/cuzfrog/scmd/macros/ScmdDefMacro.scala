@@ -127,7 +127,7 @@ private class ScmdDefMacro extends ScmdMacro {
           import $TERM_pkg_scmd.runtime._
           import runtime.ScmdRuntime
           ..${ArgUtils.builtInPriorsStub}
-          ..${stats.map(ArgUtils.addExplicitType)}
+          ..${ArgUtils.addExplicitType(rawArgs)}
           ..$addMethods
         }"""
   }

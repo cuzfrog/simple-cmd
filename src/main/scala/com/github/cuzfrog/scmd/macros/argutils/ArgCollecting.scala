@@ -4,6 +4,7 @@ import com.github.cuzfrog.scmd.Defaults
 import com.github.cuzfrog.scmd.internal.RawArgMacro.extract
 import com.github.cuzfrog.scmd.internal.SimpleLogging
 
+import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
 
@@ -41,6 +42,7 @@ private object ArgCollectImpl extends SimpleLogging {
 
     stats.map(extractSelection) collect {
       case (q"val $argName: $_ = $defName(..$params)", _) if defName.isInstanceOf[Term.Name] =>
+        debug(s"Collected $defName: $argName.")
         implicit val pos: Position = argName.pos
         val name = argName.syntax
         val description = extract[String](params)
@@ -56,7 +58,7 @@ private object ArgCollectImpl extends SimpleLogging {
             RawPrior(name, description, matchName, alias, pos)
         }
       case (q"val $argName: $_ = $defName[$tpe](..$params)", selections) =>
-        debug(s"Collected $defName: $argName[$tpe] with selections:${selections.mkString(",")}")
+        debug(s"Collected $defName: $argName[$tpe] with selections:$selections")
         implicit val pos: Position = argName.pos
         val name = argName.syntax
         val description = extract[String](params)
@@ -129,27 +131,24 @@ private object ArgCollectImpl extends SimpleLogging {
     q"""runtime.buildVariableValue[$tpe]($default.toSeq.flatten)"""
 
   private def extractSelection(stat: Stat): (Stat, Seq[Selection]) = {
-    def valueFromParams(params: immutable.Seq[Term.Arg]): Term.Arg = params.head match {
-      case Term.Arg.Named(_, v) => v
-      case v => v
+    val pos: Position = stat.pos
+    @tailrec
+    def recSelect(rhs: Term, acc: Seq[Selection]): (Term, Seq[Selection]) = rhs match {
+      case Term.Select(inner, selectName) =>
+        val s = Selection.fromTerm(selectName).getOrElse(
+          abort(pos, s"Calling ${selectName.value} in arg defs '${stat.syntax}' is not supported."))
+        recSelect(inner, acc :+ s)
+      case Term.Apply(Term.Select(inner, selectName), params) =>
+        val s = Selection.fromTerm(selectName, params).getOrElse(
+          abort(pos, s"Calling ${selectName.value} in arg defs '${stat.syntax}' is not supported."))
+        recSelect(inner, acc :+ s)
+      case method@Term.Apply(_: Term.Name, _) => method -> acc
+      case method@Term.Apply(_: Term.ApplyType, _) => method -> acc
     }
 
     stat match {
       case valDef: Defn.Val =>
-        val (defM, selections) = valDef.rhs match {
-          case Term.Apply(Term.Select(defMethod, q"withDefault"), params) =>
-            val value = valueFromParams(params)
-            (defMethod, Seq(Selection.WithDefault(value)))
-          case Term.Select(defMethod, q"mandatory") =>
-            (defMethod, Seq(Selection.Mandatory))
-          case Term.Apply(Term.Select(Term.Select(defMethod, q"mandatory"), q"withDefault"), params) =>
-            val value = valueFromParams(params)
-            (defMethod, Seq(Selection.Mandatory, Selection.WithDefault(value)))
-          case Term.Select(Term.Apply(Term.Select(defMethod, q"withDefault"), params), q"mandatory") =>
-            val value = valueFromParams(params)
-            (defMethod, Seq(Selection.Mandatory, Selection.WithDefault(value)))
-          case s => s -> Nil
-        }
+        val (defM, selections) = recSelect(valDef.rhs, Seq())
         valDef.copy(rhs = defM) -> selections
       case other =>
         other -> Nil
@@ -158,6 +157,22 @@ private object ArgCollectImpl extends SimpleLogging {
 
   sealed trait Selection
   object Selection {
+    def fromTerm(selectName: Term): Option[Mandatory.type] = selectName match {
+      case q"mandatory" => Some(Mandatory)
+      case _ => None
+    }
+
+    def fromTerm(selectName: Term,
+                 params: immutable.Seq[Term.Arg]): Option[WithDefault] = selectName match {
+      case q"withDefault" =>
+        val value = params.head match {
+          case Term.Arg.Named(_, v) => v
+          case v => v
+        }
+        Some(WithDefault(value))
+      case _ => None
+    }
+
     case object Mandatory extends Selection
     case class WithDefault(v: Term.Arg) extends Selection
   }

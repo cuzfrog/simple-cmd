@@ -11,7 +11,7 @@ private class ScmdDefMacro extends ScmdMacro {
 
 
   /** Override this for testing. */
-  protected val isTestMode: Boolean = false
+  protected val isTestMode: Boolean = true
 
   def expand(cls: Defn.Class): Stat = {
     val mods = cls.mods
@@ -109,15 +109,18 @@ private class ScmdDefMacro extends ScmdMacro {
              runtime
           }""",
       q"implicit final def appInfo:AppInfo = scmdRuntime.getAppInfo",
-      q"def appInfoString:String = scmdRuntime.appInfoString",
-      q"def argTreeString:String = scmdRuntime.argTreeString",
-      q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
       public_def_addValidation,
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
       q"def runWithRoute(route: $name => ArgRoute): Boolean = {route(this.parsed).execute}",
-      public_def_parsed,
-      q"def parse():Unit = scmdRuntime.parse($argsParam)"
+      public_def_parsed
     )
+
+    val testMethods = if (isTestMode) List(
+      q"def appInfoString:String = scmdRuntime.appInfoString",
+      q"def argTreeString:String = scmdRuntime.argTreeString",
+      q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
+      q"def parse():Unit = scmdRuntime.parse($argsParam)"
+    ) else Nil
 
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
@@ -129,6 +132,7 @@ private class ScmdDefMacro extends ScmdMacro {
           ..${ArgUtils.builtInPriorsStub}
           ..${ArgUtils.addExplicitType(rawArgs)}
           ..$addMethods
+          ..$testMethods
         }"""
   }
 }

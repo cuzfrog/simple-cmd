@@ -6,9 +6,9 @@ import Scmd._
 
 private object Cp {
   @ScmdDef
-  private class CpDef(args: Seq[String]) {
-    val SRC = paramDefVariable[File](isMandatory = true)
-    val DEST = paramDef[File](isMandatory = true)
+  private class CpDef(args: Seq[String]) extends ScmdDefStub{
+    val SRC = paramDefVariable[File]().mandatory
+    val DEST = paramDef[File]().mandatory
     val recursive = optDef[Boolean](abbr = "R")
   }
 

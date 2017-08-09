@@ -5,7 +5,7 @@ import com.github.cuzfrog.scmd.{OptionArg, SingleValue}
 
 private object OpenStack {
   @ScmdDef
-  private class OpenStackDef(args: Seq[String]) {
+  private class OpenStackDef(args: Seq[String]) extends ScmdDefStub{
     val nova = cmdDef(description = "nova command entry")
     val neutron = cmdDef(description = "neutron command entry")
     val cinder = cmdDef(description = "cinder command entry")
@@ -15,7 +15,7 @@ private object OpenStack {
     val project = cmdDef(description = "chose project to print")
 
     val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
-    val inTable = optDef[Boolean](description = "print in table.", default = true)
+    val inTable = optDef[Boolean](description = "print in table.").withDefault(true)
 
     import scmdTreeDefDSL._
 

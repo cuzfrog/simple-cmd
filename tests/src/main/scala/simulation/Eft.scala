@@ -6,7 +6,7 @@ import Scmd._
 
 private object Eft {
   @ScmdDef
-  private class EftDef(args: Seq[String]) {
+  private class EftDef(args: Seq[String]) extends ScmdDefStub{
     //arg tree is inferred by order below:
     val port = optDef[Int](abbr = "p", description = "manually specify tcp port to use")
     val debug = optDef[Boolean](description = "debug mode")
@@ -15,7 +15,7 @@ private object Eft {
 
     val push = cmdDef(
       description = "push a file to pull node | publish a file and wait for pulling from remote.")
-    val srcFile = paramDef[Path](description = "file to send.", isMandatory = true)
+    val srcFile = paramDef[Path](description = "file to send.").mandatory
 
     val pull = cmdDef(
       description = "pull a file from push node | establish pull service and wait for pushing from remote.")

@@ -134,6 +134,8 @@ sealed trait ScmdRuntime {
   /** Clean cache to release references. */
   def clean(): Unit
 
+  def usageString: String
+  def manualString: String
   def argTreeString: String
   def appInfoString: String
   def parsedSeqString: String
@@ -435,6 +437,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     parsedContextSnapshots.clear()
   }
 
+  override def usageString: String = useArgTree(argTree).genUsage
+  override def manualString: String = (useAppInfo(appInfo), useArgTree(argTree)).genManual
   override def argTreeString: String = useArgTree(argTree).prettyString
   override def appInfoString: String = useAppInfo(appInfo).prettyString
   override def parsedSeqString: String = parsedNodes.values.toSeq.prettyString

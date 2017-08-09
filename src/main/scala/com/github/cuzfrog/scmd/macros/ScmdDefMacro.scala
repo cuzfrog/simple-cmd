@@ -116,6 +116,7 @@ private class ScmdDefMacro extends ScmdMacro {
     )
 
     val testMethods = if (isTestMode) List(
+      q"def usageString:String = scmdRuntime.usageString",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",

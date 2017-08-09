@@ -8,7 +8,7 @@ import ScmdUtils._
 sealed trait Argument[+T] {
   def name: String
   def description: Option[String]
-  /** name prepended with hyphen if this is an opt */
+  /** Name that is meant to be on the cmd-line. */
   def originalName: String = name
   def symbol: scala.Symbol = scala.Symbol(originalName)
 }

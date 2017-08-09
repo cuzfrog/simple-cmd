@@ -41,4 +41,9 @@ package object scmd {
     */
   private[scmd] def Empty[T]: T =
     throw new IllegalArgumentException("Empty default value called. See scmd.Empty.")
+
+  private[scmd] def throwIfEmptyDefault(arg: Argument[_]): Nothing =
+    throw new IllegalArgumentException(s"Default value empty for ${arg.originalName}")
+  private[scmd] def throwIfEmptyMandatory(arg: Argument[_]): Nothing =
+    throw new IllegalArgumentException(s"Mandatory value empty for ${arg.originalName}")
 }

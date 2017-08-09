@@ -15,20 +15,21 @@ object ScmdValueImplicitConversion {
   implicit def cmd2Value(in: Command): Boolean = in.met
   implicit def paramS2value[T](in: Parameter[T] with SingleValue[T]): Option[T] = in.v
   implicit def paramSM2value[T](in: Parameter[T] with SingleValue[T] with Mandatory): T =
-    in.v.get
+    in.v.getOrElse(throwIfEmptyMandatory(in))
   implicit def paramSD2value[T](in: Parameter[T] with SingleValue[T] with WithDefault): T =
-    in.v.getOrElse(in.default.get)
+    in.v.getOrElse(in.default.getOrElse(throwIfEmptyDefault(in)))
   implicit def paramV2value[T](in: Parameter[T] with VariableValue[T]): Seq[T] =
     if (in.v.nonEmpty) in.v else in.default
   //           paramVM same as above
   implicit def optS2value[T](in: OptionArg[T] with SingleValue[T]): Option[T] = in.v
   implicit def optSM2value[T](in: OptionArg[T] with SingleValue[T] with Mandatory): T =
-    in.v.get
+    in.v.getOrElse(throwIfEmptyMandatory(in))
   implicit def optSD2value[T](in: OptionArg[T] with SingleValue[T] with WithDefault): T =
-    in.v.get
+    in.v.getOrElse(in.default.getOrElse(throwIfEmptyDefault(in)))
   implicit def optV2value[T](in: OptionArg[T] with VariableValue[T]): Seq[T] =
     if (in.v.nonEmpty) in.v else in.default
   //           optVM same as above
+
 }
 
 sealed abstract class AbstractScmdValueConverter {
@@ -42,11 +43,6 @@ sealed abstract class AbstractScmdValueConverter {
     def apply(key: String): Option[T] =
       propertyArg.v.collectFirst { case (k, v) if k == key => v }
   }
-
-  protected def throwIfEmptyDefault(arg: Argument[_]): Nothing =
-    throw new IllegalArgumentException(s"Default value empty for ${arg.originalName}")
-  protected def throwIfEmptyMandatory(arg: Argument[_]): Nothing =
-    throw new IllegalArgumentException(s"Mandatory value empty for ${arg.originalName}")
 }
 
 /**

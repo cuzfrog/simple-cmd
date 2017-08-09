@@ -134,11 +134,12 @@ sealed trait ScmdRuntime {
   /** Clean cache to release references. */
   def clean(): Unit
 
-  def usageString: String
-  def manualString: String
   def argTreeString: String
   def appInfoString: String
   def parsedSeqString: String
+
+  def usageString: String
+  def manualString: String
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl with ScmdRuntimeLogging
@@ -437,11 +438,14 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     parsedContextSnapshots.clear()
   }
 
-  override def usageString: String = useArgTree(argTree).genUsage
-  override def manualString: String = (useAppInfo(appInfo), useArgTree(argTree)).genManual
   override def argTreeString: String = useArgTree(argTree).prettyString
   override def appInfoString: String = useAppInfo(appInfo).prettyString
   override def parsedSeqString: String = parsedNodes.values.toSeq.prettyString
+
+  import console._
+
+  override def usageString: String = useArgTree(argTree).genUsage
+  override def manualString: String = (useAppInfo(appInfo), useArgTree(argTree)).genManual
 
   private implicit def useArgTree(argTreeOpt: Option[ArgTree]): ArgTree =
     argTreeOpt.getOrElse(throw new IllegalStateException("argTree not initialized."))

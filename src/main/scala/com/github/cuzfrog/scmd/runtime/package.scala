@@ -41,16 +41,4 @@ package object runtime extends ArgTreeUtils {
     /** Given a type R, try to collect all reference to R in an A. */
     def collect[R: ClassTag]: Seq[R] = collectible.collect(a)
   }
-
-  private[runtime] implicit class UsageGenerationOps[A: UsageEvidence](a: A) {
-    private val ev: UsageEvidence[A] = implicitly[UsageEvidence[A]]
-    private implicit val consoleType: ConsoleType = ConsoleType.detect
-    def genUsage: String = ev.genUsage(a)
-  }
-
-  private[runtime] implicit class ManualGenerationOps[A: ManualEvidence](a: A) {
-    private val ev: ManualEvidence[A] = implicitly[ManualEvidence[A]]
-    private implicit val consoleType: ConsoleType = ConsoleType.detect
-    def genManual: String = ev.genManual(a)
-  }
 }

@@ -11,13 +11,17 @@ private object BuilderHelper {
 
 private trait BuilderUtils {
 
+  def newline(implicit builder: StringBuilder): Unit = NEWLINE.add
+
   protected implicit class ExStringOps[S](in: S)
                                          (implicit builder: StringBuilder,
                                           conversion: S => BuilderHelper) {
-    val bh: BuilderHelper = in match {
+    private val bh: BuilderHelper = in match {
       case b: BuilderHelper => b
       case s: S@unchecked => conversion(in)
     }
+
+    @inline def add: BuilderHelper = this.add()
 
     @inline def add(bracket: Boolean = false): BuilderHelper = {
       if (bh.condition) {
@@ -29,7 +33,7 @@ private trait BuilderUtils {
     }
     @inline def line: BuilderHelper = {
       if (bh.condition) {
-        builder.append(bh.v).append(NEWLINE)
+        builder.append(NEWLINE)
       }
       bh
     }

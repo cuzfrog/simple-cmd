@@ -5,7 +5,8 @@ package object console {
   private[runtime] implicit class UsageGenerationOps[A: UsageEvidence](a: A) {
     private val ev: UsageEvidence[A] = implicitly[UsageEvidence[A]]
     private implicit val consoleType: ConsoleType = ConsoleType.detect
-    def genUsage(implicit builder: StringBuilder = StringBuilder.newBuilder): String = {
+    private implicit val indent: Indent = Indent(2)
+    def genUsage(implicit builder: StringBuilder = StringBuilder.newBuilder): StringBuilder = {
       ev.genUsage(a)
     }
   }

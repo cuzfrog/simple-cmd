@@ -2,6 +2,7 @@ package com.github.cuzfrog.scmd
 
 import com.github.cuzfrog.scmd.internal.ArgCreationMacro
 import ScmdUtils._
+
 /**
   * Exposed to macros for basic validation, so need to put in this package.
   */
@@ -39,6 +40,7 @@ OptionArg[+T] private[scmd](name: String,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
   private[scmd] val hyphenName: String = OptionArg.camelCase2hyphen(name)
   final override val originalName: String = "--" + hyphenName
+  private[scmd] val originalAbbr: Option[String] = abbr.map("-" + _)
 }
 
 sealed case class

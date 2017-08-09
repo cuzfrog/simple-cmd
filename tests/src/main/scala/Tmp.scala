@@ -18,7 +18,7 @@ object Tmp {
     val cat1 = cmdDef(description = "Concatenate contents of files.")
     val files = paramDefVariable[Path](description = "Paths of files to concatenate.").mandatory
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
-    val num = optDefVariable[Long](abbr = "N")
+    val num = optDefVariable[Long](abbr = "N", description = "test num N")
 
     val properties = propDef[Int](flag = "D")
     val help1 = priorDef(alias = Seq("-help1", "--help1"))

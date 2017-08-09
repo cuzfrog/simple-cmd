@@ -445,7 +445,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
 
   import console._
 
-  override def usageString: String = useArgTree(argTree).genUsage.mkString
+  override def usageString: String = useArgTree(argTree).convertTo[UsageArgTree].genUsage.mkString
   override def manualString: String = (useAppInfo(appInfo), useArgTree(argTree)).genManual
 
   private implicit def useArgTree(argTreeOpt: Option[ArgTree]): ArgTree =

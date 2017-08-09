@@ -15,7 +15,7 @@ private trait TreeBuilder {
     * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
     */
   @inline
-  def buildArgTreeByIdx(appName: String,
+  def buildArgTreeByIdx(appInfo: TermAppInfo,
                         argDefs: immutable.Seq[TermArg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
 
@@ -25,7 +25,7 @@ private trait TreeBuilder {
     * @see [[com.github.cuzfrog.scmd.macros.NodeBuilder]]
     * @return A TermArgTree shaped by dsl.
     */
-  def buildArgTreeByDSL(appName: String,
+  def buildArgTreeByDSL(appInfo: TermAppInfo,
                         argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
@@ -43,7 +43,7 @@ private object TreeBuilder {
       * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
       */
     @inline
-    def buildArgTreeByIdx(appName: String,
+    def buildArgTreeByIdx(appInfo: TermAppInfo,
                           argDefs: immutable.Seq[TermArg],
                           globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
       val idxDefs = argDefs.toIndexedSeq
@@ -63,7 +63,7 @@ private object TreeBuilder {
           val params = idxDefs.collect { case param: TermParam => param }
           val opts = idxDefs.collect { case opt: TermOpt => opt }
           TermArgTree(
-            appName = Lit.String(appName),
+            appInfo = appInfo,
             topParams = params,
             topOpts = opts,
             priors = priors,
@@ -83,7 +83,7 @@ private object TreeBuilder {
 
           val commands = recAdd(builder, tail).seal
           TermArgTree(
-            appName = Lit.String(appName),
+            appInfo = appInfo,
             topParams = Nil,
             topOpts = topOpts,
             priors = priors,
@@ -99,12 +99,12 @@ private object TreeBuilder {
       * @see [[com.github.cuzfrog.scmd.macros.NodeBuilder]]
       * @return A TermArgTree shaped by dsl.
       */
-    def buildArgTreeByDSL(appName: String,
+    def buildArgTreeByDSL(appInfo: TermAppInfo,
                           argDefs: immutable.Seq[TermArg],
                           dslStats: immutable.Seq[Term.Arg],
                           globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
 
-      val builder = NodeBuilder.newDslTermBuilder(appName, argDefs, dslStats, globalLimitationsStats)
+      val builder = NodeBuilder.newDslTermBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
 
       builder.resolve
     }
@@ -127,17 +127,17 @@ private object NodeBuilder {
   /**
     * Create a new dsl builder.
     *
-    * @param appName                Client defined application name i.e. top command name.
+    * @param appInfo                Client defined application info, which contains top command name.
     * @param argDefs                argument defs list that is parsed by macros earlier,
     *                               used to query argument info.
     * @param dslStats               tree def DSL statements collected.
     * @param globalLimitationsStats global mutual limitation statements collected.
     */
-  def newDslTermBuilder(appName: String,
+  def newDslTermBuilder(appInfo: TermAppInfo,
                         argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): DslTermNodeBuilder =
-    new DslTermNodeBuilder(appName, argDefs, dslStats, globalLimitationsStats)
+    new DslTermNodeBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
 
 
   /** Shared function used in both implementation. */
@@ -201,7 +201,7 @@ private final class IdxTermNodeBuilder(cmd: TermCmd,
   }
 }
 
-private final class DslTermNodeBuilder(appName: String,
+private final class DslTermNodeBuilder(appInfo: TermAppInfo,
                                        argDefs: immutable.Seq[TermArg],
                                        dslStats: immutable.Seq[Term.Arg],
                                        globalLimitationsStats: immutable.Seq[Term.Arg]) {
@@ -214,7 +214,7 @@ private final class DslTermNodeBuilder(appName: String,
     //val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with BuiltInArg => builtIn }
 
     val tree = TermArgTree(
-      appName = Lit.String(appName),
+      appInfo = appInfo,
       topParams = topNode.params,
       topOpts = topNode.opts,
       priors = priors,
@@ -287,7 +287,8 @@ private final class DslTermNodeBuilder(appName: String,
       TermCommandEntry(cmdEntryTerm, sortedChildCmdNodes)
     }
 
-    val scopeCmdSymbol = Lit.Symbol(scala.Symbol(termCmdOpt.map(_.name).getOrElse(appName)))
+    val scopeCmdSymbol = Lit.Symbol(scala.Symbol(termCmdOpt.map(_.name)
+      .getOrElse(appInfo.appInfo.name)))
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
       params = termArgs.collect { case a: TermParam => a.copy(parent = scopeCmdSymbol) },

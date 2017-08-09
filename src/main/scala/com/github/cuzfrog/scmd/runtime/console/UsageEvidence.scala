@@ -16,7 +16,7 @@ private object UsageEvidence extends BuilderUtils {
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
       ansi"%underline{Usage:}".add.line
-      ansi"  %bold{${a.appName}} ".add
+      ansi"  %bold{${a.appInfo.name}} ".add
       ansi"%yellow{parameters}"
         .condition(a.topParams.nonEmpty)
         .add(!a.topParams.exists(_.entity.isMandatory)).space
@@ -36,7 +36,7 @@ private object UsageEvidence extends BuilderUtils {
       val subCmds = a.cmdEntry.children.flatMap(_.subCmdEntry.children)
       ansi"<sub-command> ...".condition(subCmds.nonEmpty).add
       newline
-      ansi"%underline{Description:}".add.line
+      ansi"%underline{Descr:}".add.line
       a.toTopNode.genUsage
       //a.priors
       builder
@@ -54,7 +54,10 @@ private object UsageEvidence extends BuilderUtils {
     private def recGenUsage(a: CmdNode, indent: Indent)
                            (implicit builder: StringBuilder): Unit = {
       implicit val in: Indent = indent
-      ansi"%bold{${a.entity.name}} : ${a.entity.description}".indent(indent).add.line
+      ansi"%bold{${a.entity.name}}".indent(indent).add
+      a.entity.description.foreach(dscr => s" : $dscr".add)
+      newline
+
       a.params.foreach(_.genUsage)
       a.opts.foreach(_.genUsage)
       a.subCmdEntry.children.foreach { e => recGenUsage(e, indent + 2) }

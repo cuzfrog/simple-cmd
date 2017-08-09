@@ -6,7 +6,7 @@ import com.github.cuzfrog.scmd._
 
 import scala.reflect.ClassTag
 
-private final case class ArgTree(appName: String,
+private final case class ArgTree(appInfo: AppInfo,
                                  topParams: Seq[ParamNode[_]],
                                  topOpts: Seq[OptNode[_]],
                                  priors: Seq[PriorNode],
@@ -15,7 +15,7 @@ private final case class ArgTree(appName: String,
                                  topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                                  globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) {
   def toTopNode: CmdNode = CmdNode(
-    entity = Command.topCmd(appName),
+    entity = Command.topCmd(appInfo.name).copy(description = appInfo.shortDescription),
     params = topParams,
     opts = topOpts,
     subCmdEntry = cmdEntry,

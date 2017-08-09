@@ -22,7 +22,7 @@ sealed trait ScmdRuntime {
                  version: Option[String] = None,
                  license: Option[String] = None,
                  author: Option[String] = None,
-                 custom: Seq[(String, String)] = Seq.empty): this.type
+                 custom: Seq[(String, String)] = Seq.empty): AppInfo
   def getAppInfo: AppInfo
 
   def buildCommand(name: String,
@@ -77,7 +77,7 @@ sealed trait ScmdRuntime {
                    subCmdEntry: Int,
                    limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): Int
 
-  def buildArgTree(appName: String,
+  def buildArgTree(appInfo: AppInfo,
                    topParams: Seq[Int],
                    topOpts: Seq[Int],
                    priors: Seq[Int],
@@ -180,15 +180,16 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                           version: Option[String],
                           license: Option[String],
                           author: Option[String],
-                          custom: Seq[(String, String)]): this.type = {
-    appInfo = Some(AppInfo(name = name,
+                          custom: Seq[(String, String)]): AppInfo = {
+    val created = AppInfo(name = name,
       shortDescription = shortDescription,
       fullDescription = fullDescription,
       version = version,
       license = license,
       author = author,
-      custom = custom.to[scala.collection.immutable.Seq]))
-    this
+      custom = custom.to[scala.collection.immutable.Seq])
+    appInfo = Some(created)
+    created
   }
   override def getAppInfo: AppInfo = appInfo
   override def buildCommand(name: String, description: Option[String]): Int = {
@@ -312,7 +313,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     nodeRefs.put(scala.Symbol(e.name), a)
     id
   }
-  override def buildArgTree(appName: String,
+  override def buildArgTree(appInfo: AppInfo,
                             topParams: Seq[Int],
                             topOpts: Seq[Int],
                             priors: Seq[Int],
@@ -325,7 +326,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     val pr = priors.map(getEntity[PriorNode])
     val ps = props.map(getEntity[PropNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)
-    argTree = Some(ArgTree(appName, tp, to, pr, ps, ce, topLimitations, globalLimitations))
+    argTree = Some(ArgTree(appInfo, tp, to, pr, ps, ce, topLimitations, globalLimitations))
     repository.clear()
     this
   }

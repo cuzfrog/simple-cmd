@@ -27,7 +27,7 @@ private object UsageEvidence extends BuilderUtils {
         .condition(a.props.nonEmpty).add.space
       ansi"<command>".condition(a.cmdEntry.children.nonEmpty).add.space
       val subParamss = a.cmdEntry.children.flatMap(_.params)
-      ansi"%yellow{parameters}"
+      ansi"%yellow{<parameters>}"
         .condition(subParamss.nonEmpty)
         .add(!subParamss.exists(_.entity.isMandatory)).space
       val subOpts = a.cmdEntry.children.flatMap(_.opts)
@@ -68,7 +68,7 @@ private object UsageEvidence extends BuilderUtils {
     override def genUsage(a: ParamNode[T])
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
-      ansi"%yellow{${a.entity.originalName}}".indent(indent + 1).add(!a.entity.isMandatory)
+      ansi"%yellow{<${a.entity.originalName}>}".indent(indent + 1).add
       a.entity.description.foreach(dscr => s" : $dscr".add)
       newline
       builder
@@ -79,8 +79,8 @@ private object UsageEvidence extends BuilderUtils {
     override def genUsage(a: OptNode[T])
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
-      val abbr = a.entity.originalAbbr.map(ab => ansi"|%yellow{$ab}").getOrElse("")
-      ansi"%yellow{${a.entity.originalName}}$abbr".indent(indent + 1).add(!a.entity.isMandatory)
+      val abbr = a.entity.originalAbbr.map(ab => ansi"%yellow{$ab} ").getOrElse("  ")
+      ansi"$abbr%yellow{${a.entity.originalName}}".indent(indent + 1).add
       a.entity.description.foreach(dscr => s" : $dscr".add)
       newline
       builder

@@ -103,7 +103,7 @@ private class ScmdDefMacro extends ScmdMacro {
     val addMethods = List(
       q"""private[this] val scmdRuntime:ScmdRuntime = {
              val runtime = ScmdRuntime.create
-             $argTreeBuild //execute scmdRuntime to build an argTree
+             $argTreeBuild //execute scmdRuntime to build an argTree/appInfo
              runtime
           }""",
       q"implicit final def appInfo:AppInfo = scmdRuntime.getAppInfo",

@@ -2,10 +2,9 @@ package com.github.cuzfrog.scmd.runtime
 
 import java.util.concurrent.atomic.AtomicInteger
 
-
 import com.github.cuzfrog.scmd.runtime.logging.ScmdRuntimeLogging
 import com.github.cuzfrog.scmd._
-
+import ScmdUtils._
 import scala.collection.mutable
 import scala.language.reflectiveCalls
 import scala.reflect.ClassTag
@@ -147,7 +146,7 @@ object ScmdRuntime {
 private class ScmdRuntimeImpl extends ScmdRuntime {
 
   private case class Box[A: ClassTag](private val a: A) {
-    private val tpe = implicitly[ClassTag[A]]
+    private val tpe: ClassTag[A] = implicitly[ClassTag[A]]
     /** */
     def unbox[T: ClassTag]: T = {
       val tt = implicitly[ClassTag[T]]

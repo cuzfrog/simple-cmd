@@ -51,7 +51,6 @@ object Tmp {
     }
   }
 
-
   def CatRoute(argDef: CatDef): ArgRoute = {
 
     import scmdRouteDSL._
@@ -91,7 +90,6 @@ object Tmp {
     println(conf.appInfoString)
     println("-----------Arg tree------------")
     println(conf.argTreeString)
-
     val result = conf.runWithRoute(CatRoute)
     println(s"Run with route result: $result")
     //    val parsed: CatDef = conf.parsed
@@ -100,6 +98,7 @@ object Tmp {
     //    println("---------Parsed values:----------")
     //    println("Help prior: " + parsed.help)
     //    println("props key2: " + parsed.properties("key2"))
+
   }
 }
 

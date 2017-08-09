@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd
 
 import com.github.cuzfrog.scmd.internal.AppInfoMacro
-
+import ScmdUtils._
 import scala.collection.immutable
 
 @AppInfoMacro

@@ -122,13 +122,21 @@ private class ScmdDefMacro extends ScmdMacro {
       q"def parse():Unit = scmdRuntime.parse($argsParam)"
     ) else Nil
 
+    val importTypes = List(
+      importee"_",
+      importee"ConversionOps => _",
+      importee"PrettyStringBuildOps => _",
+      importee"MergeOps => _",
+      importee"MixOps => _"
+    )
+
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
           import $TERM_pkg_scmd._
           private val defApiImport = new ScmdDefApi{}
           import defApiImport._
           import $TERM_pkg_scmd.runtime._
-          import runtime.ScmdRuntime
+          //import runtime.ScmdRuntime
           ..${ArgUtils.builtInPriorsStub}
           ..${ArgUtils.addExplicitType(rawArgs)}
           ..$addMethods

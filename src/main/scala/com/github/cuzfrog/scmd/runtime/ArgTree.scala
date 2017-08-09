@@ -1,7 +1,8 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.ScmdUtils.CanFormPrettyString
 import com.github.cuzfrog.scmd.internal.EqualityOverridingMacro
-import com.github.cuzfrog.scmd.{ArgValue, Argument, CanFormPrettyString, Command, CommandEntry, MutualLimitation, OptionArg, Parameter, PriorArg, PropertyArg, ValueArgument, VariableValue}
+import com.github.cuzfrog.scmd._
 
 import scala.reflect.ClassTag
 

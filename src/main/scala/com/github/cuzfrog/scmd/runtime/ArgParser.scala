@@ -1,9 +1,11 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.internal.SimpleLogging
 
 import scala.annotation.tailrec
 import scala.language.reflectiveCalls
+import scala.util.matching.Regex
 
 private object ArgParser {
   @throws[ArgParseException]("when parsing failed.")
@@ -134,10 +136,10 @@ private object BacktrackingParser {
     TypedArg(cateArg, arg)
   }
 
-  private val SingleOptExtractor = """-(\w{1}.*)""".r
-  private val LongOptExtractor = """-((-[\w\d]+)+(=.*)?)""".r
+  private val SingleOptExtractor: Regex = """-(\w{1}.*)""".r
+  private val LongOptExtractor: Regex = """-((-[\w\d]+)+(=.*)?)""".r
   private object PropertiesExtractor {
-    private val RegexExtractor = """-([A-Z]{1})([a-z]+[\w\d]+)\=(.*)""".r
+    private val RegexExtractor: Regex = """-([A-Z]{1})([a-z]+[\w\d]+)\=(.*)""".r
     def unapply(arg: String)(implicit argTree: ArgTree): Option[PropsCate] = arg match {
       case RegexExtractor(flag, k, v) =>
         argTree.props.find(_.entity.flag == flag).map { node =>

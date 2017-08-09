@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.runtime.logging.TryPathLogging
-import com.github.cuzfrog.scmd.{CanFormPrettyString, Convertible}
 
 import scala.annotation.tailrec
 import scala.collection.mutable

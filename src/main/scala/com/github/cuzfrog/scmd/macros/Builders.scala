@@ -1,8 +1,8 @@
 package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
-import com.github.cuzfrog.scmd.{BuiltInArg, Command, Limitation, MutualLimitation}
-
+import com.github.cuzfrog.scmd._
+import ScmdUtils._
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._

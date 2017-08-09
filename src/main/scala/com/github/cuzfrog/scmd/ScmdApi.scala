@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd
 
 import DummyArgument._
-
+import ScmdUtils._
 /**
   * Client api to define scmd args.
   *

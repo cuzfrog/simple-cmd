@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.Convertible
+import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.collection.immutable

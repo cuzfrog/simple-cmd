@@ -2,6 +2,7 @@ package com.github.cuzfrog.scmd.runtime.logging
 
 import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogging}
 import com.github.cuzfrog.scmd.runtime.{Anchor, CmdNode, Context, Node, ParamNode}
+import com.github.cuzfrog.scmd.ScmdUtils._
 
 private[runtime] trait ContextLogging extends Context with SimpleLogging {
   override lazy val loggerAgent = classOf[Context].getName

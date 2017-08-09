@@ -32,7 +32,7 @@ private[macros] object RawArg {
 }
 
 private object ArgCollectImpl extends SimpleLogging {
-  override protected implicit val loggerLevel: SimpleLogging.Level = SimpleLogging.Trace
+  override protected implicit val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
 
   import RawArg._
   import com.github.cuzfrog.scmd.macros.DefineTermOps

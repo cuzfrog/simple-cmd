@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.CanFormPrettyString
+import com.github.cuzfrog.scmd.ScmdUtils._
 
 private[runtime] trait ArgTreeUtils {
 

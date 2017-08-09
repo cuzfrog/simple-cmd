@@ -1,5 +1,5 @@
 import com.github.cuzfrog.scmd.macros.MacroUtil
-import com.github.cuzfrog.scmd._
+import com.github.cuzfrog.scmd.{ScmdRouteDSL, ScmdSafeValueConverter, ScmdTreeDefDSL, ScmdValidationApi, ScmdValueConverter, ScmdValueImplicitConversion}
 
 import scala.annotation.StaticAnnotation
 import scala.meta._

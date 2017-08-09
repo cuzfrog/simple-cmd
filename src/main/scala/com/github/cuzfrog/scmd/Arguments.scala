@@ -1,7 +1,7 @@
 package com.github.cuzfrog.scmd
 
 import com.github.cuzfrog.scmd.internal.ArgCreationMacro
-
+import ScmdUtils._
 /**
   * Exposed to macros for basic validation, so need to put in this package.
   */
@@ -37,7 +37,7 @@ OptionArg[+T] private[scmd](name: String,
                             abbr: Option[String] = None,
                             description: Option[String] = None,
                             isMandatory: Boolean = Defaults.isMandatory) extends ValueArgument[T] {
-  val hyphenName: String = OptionArg.camelCase2hyphen(name)
+  private[scmd] val hyphenName: String = OptionArg.camelCase2hyphen(name)
   final override val originalName: String = "--" + hyphenName
 }
 

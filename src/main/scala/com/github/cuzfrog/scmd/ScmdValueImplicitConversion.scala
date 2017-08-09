@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd
 
+import ScmdUtils._
 /**
   * Provide direct implicit conversion against Arguments.
   * <br><br>
@@ -35,7 +36,6 @@ object ScmdValueImplicitConversion {
 sealed abstract class AbstractScmdValueConverter {
   implicit class ValueConverterCmdOps(in: Command) {
     def value: Boolean = in.met
-    def met: Boolean = in.met
   }
 
   protected type PropsV[T] = PropertyArg[T] with VariableValue[(String, T)]

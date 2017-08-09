@@ -4,13 +4,25 @@ import com.github.cuzfrog.scmd.AppInfo
 import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.runtime.{ArgTree, CmdNode, OptNode, ParamNode, PriorNode, PropNode}
 
-private sealed trait UsageNode
+private sealed trait UsageNode {
+  def name: String
+  def descrLHwidth: Int = name.length
+}
 
 private case class UsageArgTree(appInfo: AppInfo,
                                 topParams: Seq[UsageParamNode],
                                 topOpts: Seq[UsageOptNode],
                                 priors: Seq[UsagePriorNode],
-                                props: Seq[UsagePropNode])
+                                props: Seq[UsagePropNode],
+                                subCmds: Seq[UsageCmdNode]) {
+  def toTopCmdNode: UsageCmdNode = UsageCmdNode(
+    appInfo.name,
+    appInfo.shortDescription.map(s => s": $s").getOrElse(""),
+    topParams,
+    topOpts,
+    subCmds
+  )
+}
 
 private case class UsageCmdNode(name: String,
                                 description: String,
@@ -21,16 +33,26 @@ private case class UsageCmdNode(name: String,
 private case class UsageParamNode(name: String,
                                   description: String, descrOffset: Int = 0) extends UsageNode
 private case class UsageOptNode(abbr: String, name: String,
-                                description: String, descrOffset: Int = 0) extends UsageNode
+                                description: String, descrOffset: Int = 0) extends UsageNode {
+  override def descrLHwidth: Int = super.descrLHwidth + 1 + abbr.length
+}
 private case class UsagePriorNode(name: String, alias: Seq[String],
-                                  description: String, descrOffset: Int = 0) extends UsageNode
+                                  description: String, descrOffset: Int = 0) extends UsageNode {
+  override def descrLHwidth: Int = super.descrLHwidth + alias.map(_.length + 1).sum
+}
 private case class UsagePropNode(name: String, flag: String,
-                                 description: String, descrOffset: Int = 0) extends UsageNode
+                                 description: String, descrOffset: Int = 0) extends UsageNode {
+  override def descrLHwidth: Int = super.descrLHwidth + 1 + flag.length
+}
 
 private object UsageArgTree {
   implicit val argTree2usageEv: Convertible[ArgTree, UsageArgTree] = (a: ArgTree) => {
     val topParams = a.topParams.map(_.convertTo[UsageParamNode])
     val topOpts = a.topOpts.map(_.convertTo[UsageOptNode])
+    val priors = a.priors.map(_.convertTo[UsagePriorNode])
+    val props = a.props.map(_.convertTo[UsagePropNode])
+    val subCmds = a.cmdEntry.children.map(recConvertCmdNode)
+    UsageArgTree(a.appInfo, topParams, topOpts, priors, props, subCmds)
   }
 
   private def recConvertCmdNode(a: CmdNode): UsageCmdNode = {
@@ -42,8 +64,18 @@ private object UsageArgTree {
     UsageCmdNode(name, description, params, opts, subCmds)
   }
 
+  /** Align nodes by start place of description. */
   def align(seq: Seq[UsageNode]): Seq[UsageNode] = {
-    ???
+    val maxLHwidth = seq.map(_.descrLHwidth).max
+    seq.map { n =>
+      val offset = maxLHwidth - n.descrLHwidth
+      n match {
+        case n: UsageParamNode => n.copy(descrOffset = offset)
+        case n: UsageOptNode => n.copy(descrOffset = offset)
+        case n: UsagePriorNode => n.copy(descrOffset = offset)
+        case n: UsagePropNode => n.copy(descrOffset = offset)
+      }
+    }
   }
 
   implicit def paramNode2usageEv[T]: Convertible[ParamNode[T], UsageParamNode] =

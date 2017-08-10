@@ -54,10 +54,33 @@ object ScmdRouteDSL {
   }
 
   implicit final class ScmdRouteOps(in: ArgRoute) {
-    /** link two route together. */
+    /**
+      * Link two routes. Linked routes are tried to execute in order.
+      * <br><br>
+      * If a route's conditions are reached, it's executed, and the whole route ends.
+      * Except, a route built by <strong>runThrough</strong> will not end the whole route
+      * after execution.
+      */
     def ~(that: ArgRoute): ArgRoute = in match {
-      case mergeRoute: MergeRoute => mergeRoute.copy(mergeRoute.seq :+ that)
-      case other: ArgRoute => MergeRoute(Seq(other, that))
+      case linkRoute: LinkRoute => linkRoute.copy(linkRoute.seq :+ that)
+      case otherRoute => LinkRoute(Seq(otherRoute, that))
+    }
+
+    /**
+      * Merge two routes. Merged routes is executed as one route.
+      * <br><br>
+      * Merge rules:<br>
+      * 1. runOnPriors statements are merged.<br>
+      * 2. onConditions statements are merged with logic and.<br>
+      * 3. run statements are merged with the execution order same to the merged order.<br>
+      * 4. all above will be merged to the same route level.<br>
+      * 5. if one of the routes is a linked route containing multiple routes,
+      * each of the linked routes will be merged against.
+      */
+    def &(that: ArgRoute): ArgRoute = in match {
+      case linkRoute: LinkRoute => linkRoute.merge(that)
+      case cmdRoute: CmdRoute => cmdRoute.merge(that)
+      case runRoute: RunRoute => runRoute.merge(that)
     }
   }
 }

@@ -110,6 +110,7 @@ private class ScmdDefMacro extends ScmdMacro {
       val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
       q"""def parsed: $name = {
             val evaluatedDefClass = this.parsedWithoutRun
+            import ArgRoute._
             this.builtInRoute(evaluatedDefClass).execute
             evaluatedDefClass
           }"""
@@ -120,6 +121,7 @@ private class ScmdDefMacro extends ScmdMacro {
       q"""def runWithRoute(route: $name => ArgRoute): Boolean = {
             val evaluatedDefClass = this.parsedWithoutRun
             import ScmdRouteDSL._
+            import ArgRoute._
             (this.builtInRoute(evaluatedDefClass) ~ route(evaluatedDefClass)).execute
           }"""
     }

@@ -1,12 +1,11 @@
 package com.github.cuzfrog.scmd
 
-import com.github.cuzfrog.scmd.runtime.ScmdRuntime
-import com.github.cuzfrog.scmd.runtime.console.ConsoleType
+import com.github.cuzfrog.scmd.ScmdUtils.CanMerge
 
 sealed trait ArgRoute {
-  private[scmd] def next: Option[ArgRoute] = None
+  protected def next: Option[ArgRoute] = None
   /** Trigger the route to run. */
-  def execute: Boolean
+  protected def execute: Boolean
 }
 
 private sealed class CmdRoute private[scmd](cmd: Command,
@@ -15,15 +14,15 @@ private sealed class CmdRoute private[scmd](cmd: Command,
   /**
     * Add inner func, not really run or execute.
     *
-    * @param innerF code to run later, could be an inner route.
+    * @param innerF   code to run later, could be an inner route.
     * @param endRoute when inner run finishes, whether to end the route or go through and continue.
-    * @param ev to check the innerF is a route or not.
+    * @param ev       to check the innerF is a route or not.
     * @tparam R the return type of inner statement.
     * @return an ArgRoute that encapsulate inner route or inner func.
     */
   def run[R](innerF: => R, endRoute: Boolean)(implicit ev: R <:< ArgRoute = null): ArgRoute =
     new CmdRoute(cmd, conditions, priorActions) {
-      override private[scmd] val next: Option[ArgRoute] = Option(ev) match {
+      override protected val next: Option[ArgRoute] = Option(ev) match {
         case Some(_) => Option(innerF)
         case None => Option(new RunRoute(() => innerF, endRoute))
       }
@@ -37,6 +36,11 @@ private sealed class CmdRoute private[scmd](cmd: Command,
       conditions.forall(_.condition == true) && next.forall(_.execute)
     else true
   }
+
+  private[scmd] def merge[A <: ArgRoute](that: A)
+                                        (implicit canMerge: CanMerge[CmdRoute, A]): ArgRoute = {
+    implicitly[CanMerge[CmdRoute, A]].merge(this, that)
+  }
 }
 
 private final class RunRoute private[scmd](runF: (() => R) forSome {type R},
@@ -45,7 +49,26 @@ private final class RunRoute private[scmd](runF: (() => R) forSome {type R},
     runF()
     endRoute
   }
+  private[scmd] def merge[A <: ArgRoute](that: A)
+                                        (implicit canMerge: CanMerge[RunRoute, A]): ArgRoute = {
+    implicitly[CanMerge[RunRoute, A]].merge(this, that)
+  }
 }
-private final case class MergeRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
+private final case class LinkRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
   override def execute: Boolean = seq.exists(_.execute)
+  private[scmd] def merge[A <: ArgRoute](that: A)
+                                        (implicit canMerge: CanMerge[LinkRoute, A]): ArgRoute = {
+    implicitly[CanMerge[LinkRoute, A]].merge(this, that)
+  }
+}
+
+object ArgRoute {
+  /** Method execute need to be accessed publicly, yet hided during building by DSL. */
+  implicit class executionHelper(in: ArgRoute) {
+    def execute: Boolean = in.execute
+  }
+}
+
+private object CmdRoute{
+  
 }

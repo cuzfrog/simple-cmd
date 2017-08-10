@@ -4,7 +4,7 @@ import com.github.cuzfrog.scmd.AppInfo
 import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.runtime.{ArgTree, CmdNode, OptNode, ParamNode, PriorNode, PropNode}
 
-private sealed trait UsageNode {
+private[console] sealed trait UsageNode {
   def name: String
   def descrLHwidth: Int = name.length
 }
@@ -31,7 +31,8 @@ private[console] case class UsageCmdNode(name: String,
                                          params: Seq[UsageParamNode],
                                          opts: Seq[UsageOptNode],
                                          subCmds: Seq[UsageCmdNode],
-                                         top: Boolean = false) extends UsageNode
+                                         top: Boolean = false,
+                                         descrOffset: Int = 0) extends UsageNode
 
 private[console] case class UsageParamNode(name: String, description: String,
                                            isMandatory: Boolean,
@@ -67,33 +68,6 @@ private object UsageArgTree {
     val opts = a.opts.map(_.convertTo[UsageOptNode])
     val subCmds = a.subCmdEntry.children.map(recConvertCmdNode)
     UsageCmdNode(name, description, params, opts, subCmds)
-  }
-
-  def alignOpts(seq: Seq[UsageOptNode]): Seq[UsageOptNode] = {
-    if (seq.isEmpty) return Nil
-    val maxAbbr = seq.map(_.abbr.length).max
-    val maxName = seq.map(_.name.length).max
-    seq.map { n =>
-      val alAbbr = n.abbr + (" " * (maxAbbr - n.abbr.length))
-      val alName = n.name + (" " * (maxName - n.name.length + 1))
-      n.copy(abbr = alAbbr, name = alName)
-    }
-  }
-
-  /** Align nodes by start place of description. */
-  def align[N <: UsageNode](seq: Seq[N]): Seq[N] = {
-    if (seq.isEmpty) return Nil
-    val maxLHwidth = seq.map(_.descrLHwidth).max
-    seq.map { n =>
-      val offset = maxLHwidth - n.descrLHwidth + 1
-      val result = n match {
-        case n: UsageParamNode => n.copy(descrOffset = offset)
-        case n: UsageOptNode => n.copy(descrOffset = offset)
-        case n: UsagePriorNode => n.copy(descrOffset = offset)
-        case n: UsagePropNode => n.copy(descrOffset = offset)
-      }
-      result.asInstanceOf[N]
-    }
   }
 
   implicit def paramNode2usageEv[T]: Convertible[ParamNode[T], UsageParamNode] =

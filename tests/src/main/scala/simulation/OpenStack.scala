@@ -11,7 +11,7 @@ private object OpenStack {
     val cinder = cmdDef(description = "cinder command entry")
 
     val list = cmdDef(description = "print service/project list")
-    val service = cmdDef(description = "chose service to print")
+    val service1111 = cmdDef(description = "chose service to print")
     val project = cmdDef(description = "chose project to print")
 
     val verbose = optDef[Boolean](abbr = "V", description = "print verbose info.")
@@ -24,15 +24,15 @@ private object OpenStack {
       inTable,
       version, //built-in
       nova(
-        list(service ?, project), //cmds under list are optional.
+        list(service1111 ?, project), //cmds under list are optional.
         //equivalent to list(service ?, project ?)
       ),
       neutron(
-        list(service, project) ?,
+        list(service1111, project) ?,
         //cmd list is optional. but once list is entered, one of its sub-cmds is required.
       ),
       cinder(
-        list(service, project), //every level of cmds is required.
+        list(service1111, project), //every level of cmds is required.
       )
     )
   }

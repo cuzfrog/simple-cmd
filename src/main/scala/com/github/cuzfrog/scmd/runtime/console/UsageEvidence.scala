@@ -43,6 +43,8 @@ private object UsageEvidence extends BuilderUtils {
       // -------- Section3 arguments info -------
       ansi"%underline{Descr:}".add.line
       a.toTopNode.genUsage
+      ansi"%underline{Info:}".add.line
+      s"Version: $APP_VERSION".indent(2).add.line
 
       builder
     }
@@ -61,11 +63,11 @@ private object UsageEvidence extends BuilderUtils {
       implicit val in: Indent = indent
       ansi"%bold{${a.name}} ".indent(indent).add
       a.params.foreach(p=> ansi"%yellow{${p.name}} ".add)
-      a.description.add
+      a.description.indent(a.descrOffset).add
       newline
 
-      UsageArgTree.alignOpts(a.opts).foreach(_.genUsage)
-      a.subCmds.foreach { e => recGenUsage(e, indent + 2) }
+      alignOpts(a.opts).foreach(_.genUsage)
+      align(a.subCmds).foreach { e => recGenUsage(e, indent + 2) }
     }
   }
 

@@ -1,6 +1,7 @@
 package com.github.cuzfrog.scmd
 
 import ScmdUtils._
+
 /**
   * Provide direct implicit conversion against Arguments.
   * <br><br>
@@ -8,7 +9,7 @@ import ScmdUtils._
   * Implicit conversion is generally discouraged. Use it within limited scope and with caution.
   *
   */
-object ScmdValueImplicitConversion {
+object ScmdValueImplicitConversion extends AbstractScmdValueConverter {
   /*
    * S = SingleValue, V = VariableValue, M = Mandatory, D = WithDefault
    */
@@ -30,7 +31,8 @@ object ScmdValueImplicitConversion {
   implicit def optV2value[T](in: OptionArg[T] with VariableValue[T]): Seq[T] =
     if (in.v.nonEmpty) in.v else in.default
   //           optVM same as above
-
+  implicit def props2value[T](in: PropsV[T]): Seq[(String, T)] = in.v
+  implicit def prior2value(in: PriorArg): Option[Symbol] = in.met
 }
 
 sealed abstract class AbstractScmdValueConverter {
@@ -68,6 +70,10 @@ object ScmdValueConverter extends AbstractScmdValueConverter {
   implicit class ValueConverterPropsValueOps[T](propertyArg: PropsV[T]) {
     def value: Seq[(String, T)] = propertyArg.v
   }
+
+  implicit class ValueConverterPriorValueOps(priorArg: PriorArg) {
+    def value: Option[Symbol] = priorArg.met
+  }
 }
 
 /**
@@ -92,5 +98,9 @@ object ScmdSafeValueConverter extends AbstractScmdValueConverter {
 
   implicit class PropsValueOps[T](propertyArg: PropsV[T]) {
     def valueSeq: Seq[(String, T)] = propertyArg.v
+  }
+
+  implicit class ValueConverterPriorValueOps(priorArg: PriorArg) {
+    def valueOpt: Option[Symbol] = priorArg.met
   }
 }

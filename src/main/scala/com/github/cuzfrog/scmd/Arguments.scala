@@ -69,7 +69,7 @@ PriorArg private[scmd](name: String,
                        alias: Seq[String] = Nil,
                        matchName: Boolean = Defaults.priorMatchName,
                        description: Option[String] = None,
-                       private[scmd] val met: Option[scala.Symbol] = None) extends Argument[Nothing]
+                       met: Option[scala.Symbol] = None) extends Argument[Nothing]
 
 sealed trait ArgValue[+T] {
   private[scmd] def isVariable: Boolean

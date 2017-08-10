@@ -74,20 +74,12 @@ private class ScmdDefMacro extends ScmdMacro {
             this
           }"""
 
-    /**
-      * Return a new defClass after done parsing.
-      *
-      * Built-in priors are run in the new defClass.
-      * This does not conflict with client-defined control flow.
-      * Because when a prior arg is matched, args(cmds) afterward are ignored,
-      * they are not met to execute client code.
-      */
-    val public_def_parsed = {
+    /** Parse args and return an evaluated def class. */
+    val private_def_parsedWithoutRun = {
       val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
-      q"""def parsed: $name = {
+      q"""private lazy val parsedWithoutRun: $name = {
             val evaluatedDefClass = try{
               scmdRuntime.parse($argsParam)
-              scmdRuntime.runBuiltInPriors()
               new ${Ctor.Ref.Name(name.value)}(...$termParamss){
                 ..${ArgUtils.convertParsed(rawArgs)}
               }
@@ -97,8 +89,40 @@ private class ScmdDefMacro extends ScmdMacro {
             //scmdRuntime.clean()
             evaluatedDefClass
           }"""
+      //todo: clean runtime after completion of parsing.
     }
-    //todo: clean runtime after completion of parsing.
+
+    /** For running built-in priors. This route could be merged with client defined route. */
+    val private_def_builtInRoute = {
+      q"""def builtInRoute(defCls: $name)
+                          (implicit consoleType: ConsoleType, appInfo: AppInfo): ArgRoute = {
+             import ScmdRouteDSL._
+             app.runOnPrior(defCls.help) {
+               println(scmdRuntime.usageString)
+             }.runOnPrior(defCls.version) {
+               println(appInfo.version.getOrElse("No version number."))
+             }.runThrough(())
+          }"""
+    }
+
+    /** Client api. Return a new defClass after done parsing and running built-in route. */
+    val public_def_parsed = {
+      val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
+      q"""def parsed: $name = {
+            val evaluatedDefClass = this.parsedWithoutRun
+            this.builtInRoute(evaluatedDefClass).execute
+            evaluatedDefClass
+          }"""
+    }
+
+    /** Client api. Run with a client-provided route. Built-in route is prepended to client route.*/
+    val public_def_runWithRoute = {
+      q"""def runWithRoute(route: $name => ArgRoute): Boolean = {
+            val evaluatedDefClass = this.parsedWithoutRun
+            import ScmdRouteDSL._
+            (this.builtInRoute(evaluatedDefClass) ~ route(evaluatedDefClass)).execute
+          }"""
+    }
 
     val addMethods = List(
       q"""private[this] val scmdRuntime:ScmdRuntime = {
@@ -107,27 +131,21 @@ private class ScmdDefMacro extends ScmdMacro {
              runtime
           }""",
       q"implicit final def appInfo:AppInfo = scmdRuntime.getAppInfo",
+      private_def_parsedWithoutRun,
+      private_def_builtInRoute,
       public_def_addValidation,
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
-      q"def runWithRoute(route: $name => ArgRoute): Boolean = {route(this.parsed).execute}",
+      public_def_runWithRoute,
+      q"def defaultUsageString(implicit consoleType: ConsoleType): String = scmdRuntime.usageString",
       public_def_parsed
     )
 
     val testMethods = if (isTestMode) List(
-      q"def usageString:String = scmdRuntime.usageString",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
       q"def parse():Unit = scmdRuntime.parse($argsParam)"
     ) else Nil
-
-    val importTypes = List(
-      importee"_",
-      importee"ConversionOps => _",
-      importee"PrettyStringBuildOps => _",
-      importee"MergeOps => _",
-      importee"MixOps => _"
-    )
 
     //abort("dev...")
     q"""..$mods class $name ..$ctorMods (...$paramss){
@@ -135,6 +153,7 @@ private class ScmdDefMacro extends ScmdMacro {
           private val defApiImport = new ScmdDefApi{}
           import defApiImport._
           import $TERM_pkg_scmd.runtime._
+          import console.ConsoleType
           //import runtime.ScmdRuntime
           ..${ArgUtils.builtInPriorsStub}
           ..${ArgUtils.addExplicitType(rawArgs)}

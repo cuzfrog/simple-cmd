@@ -129,8 +129,6 @@ sealed trait ScmdRuntime {
   def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A
 
-  def runBuiltInPriors(): Unit
-
   def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing
 
   /** Clean cache to release references. */
@@ -425,9 +423,6 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
     argument.asInstanceOf[A]
   }
-  override def runBuiltInPriors(): Unit = {
-    //todo: implementation
-  }
   override def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing = {
     implicitly[ScmdExceptionHandler[E]].handle(e)
   }
@@ -440,7 +435,6 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     parsedNodes.clear()
     parsedContextSnapshots.clear()
   }
-
   override def argTreeString: String = useArgTree(argTree).prettyString
   override def appInfoString: String = useAppInfo(appInfo).prettyString
   override def parsedSeqString: String = parsedNodes.values.toSeq.prettyString

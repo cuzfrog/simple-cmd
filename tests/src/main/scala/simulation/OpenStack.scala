@@ -51,6 +51,6 @@ private object OpenStack {
     import scmdValueConverter._
     println("Is Verbose:" + parsed.verbose.value)
     println("---------Usage:----------")
-    println(conf.usageString)
+    println(conf.defaultUsageString)
   }
 }

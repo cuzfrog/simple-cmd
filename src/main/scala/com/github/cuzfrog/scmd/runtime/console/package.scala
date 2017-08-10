@@ -15,8 +15,6 @@ package object console {
     def genManual: String = implicitly[ManualEvidence[A]].genManual(a)
   }
 
-  private[console] val APP_VERSION: String = Option(getClass.getPackage.getImplementationVersion).getOrElse("-dev")
-
   private[console] def alignOpts(seq: Seq[UsageOptNode]): Seq[UsageOptNode] = {
     if (seq.isEmpty) return Nil
     val maxAbbr = seq.map(_.abbr.length).max

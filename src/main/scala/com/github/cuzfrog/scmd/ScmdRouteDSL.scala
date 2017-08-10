@@ -74,6 +74,7 @@ sealed class RouteCondition private[scmd](private[scmd] val condition: Boolean)
 /** Use shared trait instead of chained implicit conversion to better adapt IDE. */
 sealed trait RouteCommandOperations {
   protected def rcmd: RouteCommand
+
   def onConditions(cond1: RouteCondition,
                    condMore: RouteCondition*): RouteCommand = {
     rcmd.copy(conditions = rcmd.conditions ++ (cond1 +: condMore))
@@ -82,7 +83,10 @@ sealed trait RouteCommandOperations {
     rcmd.copy(priorActions = rcmd.priorActions :+ (a -> (() => action)))
   }
   def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
-    new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF)
+    new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = true)
+  }
+  def runThrough[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
+    new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = false)
   }
 }
 

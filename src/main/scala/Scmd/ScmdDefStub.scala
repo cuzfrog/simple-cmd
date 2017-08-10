@@ -1,5 +1,6 @@
 package Scmd
 
+import com.github.cuzfrog.scmd.runtime.console.ConsoleType
 import com.github.cuzfrog.scmd.{ArgRoute, PriorArg, ScmdDefApi}
 
 
@@ -8,6 +9,7 @@ abstract class ScmdDefStub[D] extends ScmdDefApi {
   def withValidation[T](vali: D => T): this.type
   def runWithRoute(toRoute: D => ArgRoute): Boolean
   def parsed: D
+  def defaultUsageString(implicit consoleType: ConsoleType): String
   val help: PriorArg
   val version: PriorArg
 }

@@ -8,7 +8,7 @@ import scala.collection.immutable
 sealed case class AppInfo(name: String,
                           shortDescription: Option[String] = None,
                           fullDescription: Option[String] = None,
-                          version: Option[String] = None,
+                          version: Option[String] = Option(getClass.getPackage.getImplementationVersion),
                           license: Option[String] = None,
                           author: Option[String] = None,
                           custom: immutable.Seq[(String, String)] = immutable.Seq.empty)

@@ -86,6 +86,7 @@ private object AnsiMacroImpl {
   /** @return (openCode, closeCode, color) */
   private def findCodesFor(tag: String, ctx: AnsiContext): (String, String, Int) = tag match {
     case "bold" => (BOLD, BOLD_OFF, ctx.color)
+    case "dim" => (DIM, DIM_OFF, ctx.color)
     case "italic" => (ITALIC, ITALIC_OFF, ctx.color)
     case "underline" => (UNDERLINE, UNDERLINE_OFF, ctx.color)
     case "blink" => (BLINK, BLINK_OFF, ctx.color)
@@ -185,7 +186,10 @@ private object AnsiMacroImpl {
 private object AnsiCodes {
 
   val BOLD: String = "\u001b[1m"
-  val BOLD_OFF: String = "\u001b[22m"
+  val BOLD_OFF: String = "\u001b[21m"
+
+  val DIM: String = "\u001b[2m"
+  val DIM_OFF: String = "\u001b[22m"
 
   val ITALIC: String = "\u001b[3m"
   val ITALIC_OFF: String = "\u001b[23m"

@@ -21,7 +21,8 @@ case class UsageArgTree(appInfo: AppInfo,
     appInfo.shortDescription.map(s => s": $s").getOrElse(""),
     topParams,
     topOpts,
-    subCmds
+    subCmds,
+    top = true
   )
 }
 
@@ -29,7 +30,8 @@ private[console] case class UsageCmdNode(name: String,
                                          description: String,
                                          params: Seq[UsageParamNode],
                                          opts: Seq[UsageOptNode],
-                                         subCmds: Seq[UsageCmdNode]) extends UsageNode
+                                         subCmds: Seq[UsageCmdNode],
+                                         top: Boolean = false) extends UsageNode
 
 private[console] case class UsageParamNode(name: String, description: String,
                                            isMandatory: Boolean,
@@ -67,8 +69,20 @@ private object UsageArgTree {
     UsageCmdNode(name, description, params, opts, subCmds)
   }
 
+  def alignOpts(seq: Seq[UsageOptNode]): Seq[UsageOptNode] = {
+    if (seq.isEmpty) return Nil
+    val maxAbbr = seq.map(_.abbr.length).max
+    val maxName = seq.map(_.name.length).max
+    seq.map { n =>
+      val alAbbr = n.abbr + (" " * (maxAbbr - n.abbr.length))
+      val alName = n.name + (" " * (maxName - n.name.length + 1))
+      n.copy(abbr = alAbbr, name = alName)
+    }
+  }
+
   /** Align nodes by start place of description. */
   def align[N <: UsageNode](seq: Seq[N]): Seq[N] = {
+    if (seq.isEmpty) return Nil
     val maxLHwidth = seq.map(_.descrLHwidth).max
     seq.map { n =>
       val offset = maxLHwidth - n.descrLHwidth + 1
@@ -108,7 +122,7 @@ private object UsageArgTree {
   implicit def propNode2usageEv[T]: Convertible[PropNode[T], UsagePropNode] =
     (a: PropNode[T]) => {
       val name = a.entity.originalName
-      val flag = a.entity.flag
+      val flag = "-" + a.entity.flag
       val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
       UsagePropNode(name, flag, description)
     }

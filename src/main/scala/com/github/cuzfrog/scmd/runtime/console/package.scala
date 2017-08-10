@@ -14,4 +14,6 @@ package object console {
     private implicit val consoleType: ConsoleType = ConsoleType.detect
     def genManual: String = implicitly[ManualEvidence[A]].genManual(a)
   }
+
+  val APP_VERSION: String = Option(getClass.getPackage.getImplementationVersion).getOrElse("-dev")
 }

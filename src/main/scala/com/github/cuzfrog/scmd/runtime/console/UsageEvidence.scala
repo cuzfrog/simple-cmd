@@ -15,6 +15,7 @@ private object UsageEvidence extends BuilderUtils {
     override def genUsage(a: UsageArgTree)
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
+      // -------- Section1 One line usage -------
       ansi"%underline{Usage:}".add.line
       ansi"  %bold{${a.appInfo.name}} ".add
       ansi"%yellow{parameters}"
@@ -36,9 +37,13 @@ private object UsageEvidence extends BuilderUtils {
       val subCmds = a.subCmds.flatMap(_.subCmds)
       ansi"<sub-command> ...".condition(subCmds.nonEmpty).add
       newline
+      // -------- Section2 properties -------
+      ansi"%underline{Properties:}".condition(a.props.nonEmpty).add.line
+      a.props.foreach(_.genUsage)
+      // -------- Section3 arguments info -------
       ansi"%underline{Descr:}".add.line
       a.toTopNode.genUsage
-      //a.priors
+
       builder
     }
   }
@@ -54,17 +59,17 @@ private object UsageEvidence extends BuilderUtils {
     private def recGenUsage(a: UsageCmdNode, indent: Indent)
                            (implicit builder: StringBuilder): Unit = {
       implicit val in: Indent = indent
-      ansi"%bold{${a.name}}".indent(indent).add
+      ansi"%bold{${a.name}} ".indent(indent).add
+      a.params.foreach(p=> ansi"%yellow{${p.name}} ".add)
       a.description.add
       newline
 
-      a.params.foreach(_.genUsage)
-      UsageArgTree.align(a.opts).foreach(_.genUsage)
+      UsageArgTree.alignOpts(a.opts).foreach(_.genUsage)
       a.subCmds.foreach { e => recGenUsage(e, indent + 2) }
     }
   }
 
-  implicit def defaultParamUsage[T]: UsageEvidence[UsageParamNode] = new UsageEvidence[UsageParamNode] {
+  implicit val defaultParamUsage: UsageEvidence[UsageParamNode] = new UsageEvidence[UsageParamNode] {
     override def genUsage(a: UsageParamNode)
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
@@ -75,12 +80,23 @@ private object UsageEvidence extends BuilderUtils {
     }
   }
 
-  implicit def defaultOptUsage[T]: UsageEvidence[UsageOptNode] = new UsageEvidence[UsageOptNode] {
+  implicit val defaultOptUsage: UsageEvidence[UsageOptNode] = new UsageEvidence[UsageOptNode] {
     override def genUsage(a: UsageOptNode)
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
       val abbr = ansi"%yellow{${a.abbr}}"
       ansi"$abbr%yellow{${a.name}}".indent(indent + 1).add
+      a.description.indent(a.descrOffset).add
+      newline
+      builder
+    }
+  }
+
+  implicit val defaultPropUsage: UsageEvidence[UsagePropNode] = new UsageEvidence[UsagePropNode] {
+    override def genUsage(a: UsagePropNode)
+                         (implicit consoleType: ConsoleType,
+                          builder: StringBuilder, indent: Indent): StringBuilder = {
+      ansi"${a.flag}%dim{key=value}".indent(indent).add
       a.description.indent(a.descrOffset).add
       newline
       builder

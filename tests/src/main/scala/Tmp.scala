@@ -57,9 +57,8 @@ object Tmp {
     import argDef._
     import scmdValueConverter._
 
-    app.runOnPrior(help1) {
-      println("println help1 info.")
-      println(help1)
+    app.runOnPrior(version) {
+      println(s"this is version, overridden.$version")
     }.run {
       cat1.runOnPrior(help1) {
         println("PriorArg help1 triggered.")

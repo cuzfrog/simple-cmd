@@ -101,7 +101,7 @@ private class ScmdDefMacro extends ScmdMacro {
                println(scmdRuntime.usageString)
              }.runOnPrior(defCls.version) {
                println(appInfo.version.getOrElse("No version number."))
-             }.runThrough(())
+             }.runThrough(println("built-in route run through"))
           }"""
     }
 
@@ -120,9 +120,9 @@ private class ScmdDefMacro extends ScmdMacro {
     val public_def_runWithRoute = {
       q"""def runWithRoute(route: $name => ArgRoute): Boolean = {
             val evaluatedDefClass = this.parsedWithoutRun
-            import ScmdRouteDSL._
             import ArgRoute._
-            (this.builtInRoute(evaluatedDefClass) ~ route(evaluatedDefClass)).execute
+            //see ArgRoute for the doc of methods below.
+            mergePriors(this.builtInRoute(evaluatedDefClass), route(evaluatedDefClass)).execute
           }"""
     }
 

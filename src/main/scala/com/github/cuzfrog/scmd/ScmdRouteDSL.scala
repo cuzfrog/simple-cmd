@@ -65,23 +65,6 @@ object ScmdRouteDSL {
       case linkRoute: LinkRoute => linkRoute.copy(linkRoute.seq :+ that)
       case otherRoute => LinkRoute(Seq(otherRoute, that))
     }
-
-    /**
-      * Merge two routes. Merged routes is executed as one route.
-      * <br><br>
-      * Merge rules:<br>
-      * 1. runOnPriors statements are merged.<br>
-      * 2. onConditions statements are merged with logic and.<br>
-      * 3. run statements are merged with the execution order same to the merged order.<br>
-      * 4. all above will be merged to the same route level.<br>
-      * 5. if one of the routes is a linked route containing multiple routes,
-      * each of the linked routes will be merged against.
-      */
-    def &(that: ArgRoute): ArgRoute = in match {
-      case linkRoute: LinkRoute => linkRoute.merge(that)
-      case cmdRoute: CmdRoute => cmdRoute.merge(that)
-      case runRoute: RunRoute => runRoute.merge(that)
-    }
   }
 }
 
@@ -106,10 +89,11 @@ sealed trait RouteCommandOperations {
     rcmd.copy(priorActions = rcmd.priorActions :+ (a -> (() => action)))
   }
   def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
-    new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = true)
+    CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = true)
   }
+  /** Same as run, except it will not end the whole route after running. */
   def runThrough[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
-    new CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = false)
+    CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = false)
   }
 }
 

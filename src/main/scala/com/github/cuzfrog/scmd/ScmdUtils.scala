@@ -19,7 +19,7 @@ private object ScmdUtils {
     def merge(a: A, stuff: S): A
   }
   def merge[A, B](a: A, stuff: B)
-                               (implicit ev: CanMerge[A, B]): A = ev.merge(a, stuff)
+                 (implicit ev: CanMerge[A, B]): A = ev.merge(a, stuff)
   implicit class MergeOps[A, S](in: A)(implicit ev: CanMerge[A, S]) {
     def mergeWith(stuff: S): A = ev.merge(in, stuff)
   } //nested type cannot be inferred.
@@ -28,7 +28,7 @@ private object ScmdUtils {
     def mix(a: A, _trait: B): A with B
   }
   def mix[A, B](a: A, _trait: B)
-                             (implicit ev: CanMix[A, B]): A with B = ev.mix(a, _trait)
+               (implicit ev: CanMix[A, B]): A with B = ev.mix(a, _trait)
   implicit class MixOps[A, B](in: A)(implicit ev: CanMix[A, B]) {
     def mixWith(_trait: B): A = ev.mix(in, _trait)
   }

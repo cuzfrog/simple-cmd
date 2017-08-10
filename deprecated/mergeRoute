@@ -1,0 +1,42 @@
+/**
+      * Merge two routes. Merged routes is executed as one route.
+      * <br><br>
+      * Merge rules:<br>
+      * 0. Two routes must be against the same command at each level respectively.
+      * 1. runOnPriors statements are merged.<br>
+      * 2. onConditions statements are merged with logic and.<br>
+      * 3. run statements are merged with the execution order same to the merged order.<br>
+      * 4. all above will be merged to the same route level.<br>
+      * 5. if one of the routes is a linked route containing multiple routes,
+      * each of the linked routes will be merged against.
+      */
+    @throws[IllegalArgumentException]("when two routes cannot be merged.")
+    def &(that: ArgRoute): ArgRoute = {
+      import ScmdUtils._
+
+      implicit def mergeWithCmdRoute[S <: ArgRoute]: CanMerge[S, ArgRoute] =
+        (a: S, stuff: ArgRoute) => stuff match {
+          case linkRoute: LinkRoute => merge(a, linkRoute)
+          case cmdRoute: CmdRoute => merge(a, cmdRoute)
+          case runRoute: RunRoute => merge(a, runRoute)
+        }
+
+      in match {
+        case linkRoute: LinkRoute => linkRoute.mergeWith(that)
+        case cmdRoute: CmdRoute => cmdRoute.mergeWith(that)
+        case runRoute: RunRoute => runRoute.mergeWith(that)
+      }
+    }
+
+    import com.github.cuzfrog.scmd.ScmdUtils._
+
+    private object CmdRoute {
+      implicit def mergeWithCmdRoute: CanMerge[CmdRoute, CmdRoute] =
+        (a: CmdRoute, stuff: CmdRoute) => {
+          require(a.cmd == stuff.cmd,
+            s"Route of cmd(${a.cmd.name}) cannot be merged with route of cmd(${stuff.cmd.name})")
+
+        }
+
+
+    }

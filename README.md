@@ -2,25 +2,25 @@
 
 This project is under development now.
 
-### Nomenclature
-* Argument arg - general phrase of all below.
-* Command cmd - a predefine phrase that must be fully matched on the command-line
+## Nomenclature
+* Argument _arg_ - general phrase of all below.
+* Command _cmd_ - a predefined phrase that must be fully matched on the command-line
  to tell the app what to do.
-* Parameter param - argument without a name on the command-line, which directly matches the value.
+* Parameter _param_ - argument without a name on the command-line, which directly matches the value.
  This is equivalent to "argument" in many other libraries.
-* Option opt - (optional) argument that has a name with hyphens precede: `-f`, `--source-file`
-* Properties prop(s) - an argument with a flag as its name,
+* Option _opt_ - (optional) argument that has a name with hyphens precede: `-f`, `--source-file`
+* Properties _prop(s)_ - an argument with a flag as its name,
  and values of key/value pairs: `-Dkey=value`
-* PriorArg prior - an argument with alias that has priority to be matched. `-help`, `--help`
+* PriorArg _prior_ - an argument with alias that has priority to be matched. `-help`, `--help`
 
-### Motivation:
+## Motivation:
 If you ask google "scala command line arguments parser github", google gives you a whole page of
 answers. Some libraries said: "Life is too short to parse command-line arguments". I think it might 
 be "Life is too short to swing from one command-line argument parser to another". I tried many of 
 these parsers, some are complicated with hard-to-read README,
  some kind of lack features that fit into some cases, some do not generate usage info.
 It turns out that parsing command-line arguments is not an easy work.
- There are so many tricky things, residing in the common features below:
+ Here's some common features:
  
 | Fetures                                                              | example | 
 |----------------------------------------------------------------------|---------|
@@ -28,9 +28,9 @@ It turns out that parsing command-line arguments is not an easy work.
 | Boolean option folding                                                |  `-xyz`       |
 | Option Value folding                                                 |`-fValue`       |
 | Option Value evaluation                                            |`-f=Value`       |
-| Tail option                                |`cp -r SRC DST` equivalent to `cp SRC DST -r` |
-| Mutually exclusion                                        | `--start ❘ --stop`       |
-| Mutually dependency                                   | `[-a -b]` or `[-a [-b]]`       |
+| Trailing option                                |`cp -r SRC DST` equivalent to `cp SRC DST -r` |
+| Mutual exclusion                                        | `--start ❘ --stop`       |
+| Mutual dependency                                   | `[-a -b]` or `[-a [-b]]`       |
 | Validation                                     | `cp SRC DST` SRC must exist  |
 | Type safety                                     | `cp SRC DST` SRC must be file  |
 | Argument optionality                                     | `SRC [DST]`       |
@@ -38,6 +38,8 @@ It turns out that parsing command-line arguments is not an easy work.
 | Properties/value with flag                                   | `-Dkey=value`       | 
 | Contextual help                                            | preciser help info       | 
 | Command route             | no manually writing `if` ..  `else` or `match case` to route command      | 
+
+ There are so many tricky things to full-fill these features.
 
 ### Goals I'm trying to achieve:
 
@@ -47,13 +49,13 @@ It turns out that parsing command-line arguments is not an easy work.
  It should able to generate formatted usage console info.
 * **Strictness** - As a library, it should be well structured, documented and self-encapsulated.
 
-### Minimal example:
+## Minimal example:
 First, define the arguments in def-class:
 ```scala
 import java.io.File
 import Scmd._
 @ScmdDef
-private class CpDef(args: Seq[String]) extends ScmdDefStub{
+private class CpDef(args: Seq[String]) extends ScmdDefStub{ //app name 'cp' is inferred from CpDef
     val SRC = paramDefVariable[File]().mandatory
     val DEST = paramDef[File]().mandatory
     val recursive = optDef[Boolean](abbr = "R")
@@ -77,35 +79,39 @@ object CpApp extends App{
     conf.recursive.value // Boolean
 }
 ```
-### Document:
+## Document:
 
+* Project setup
 * Define arguments
 * Build up argument structure
+* Validation
 * Use parsed values
 * Routing
 
-#### Define arguments:
+### Project setup:
 
-1. name is val's name.
+### Define arguments:
+
+1. name is from val's name.
 ```scala
 val nova = cmdDef(description = "nova command entry") //the command's name is nova
-val Nova = cmdDef() //another cmd  (name is case-sensitive)
+val Nova = cmdDef() //another cmd  (cmd name is case-sensitive)
 val remotePort = optDef[Int]() //matches `--remote-port` and `--remotePort`
+//val RemotePort = optDef[Int]()  //won't compile, name conflicts are checked at compile time.
 ```
-the `description` cannot be omitted.
+The `description` cannot be omitted.
 
 2. param/opt/props are typed:
 ```scala
 val port = optDef[Int](abbr = "p", description = "manually specify tcp port to use") //type is Int
 ```
-[Supported types](src/main/scala/com/github/cuzfrog/scmd/runtime/ArgTypeEvidence.scala)
+See [Supported types](src/main/scala/com/github/cuzfrog/scmd/runtime/ArgTypeEvidence.scala).
 Put custom evidence into def-class to support more types.
 
 3. mandatory argument:
 ```scala
 val srcFile = paramDef[Path](description = "file to send.").mandatory
 ```
-`mandatory` gives `srcFile` a `Mandatory` mixin, this makes later usage more pleasant.
 
 4. argument with default value:
 ```scala
@@ -135,11 +141,10 @@ val help = priorDef(alias = Seq("-help", "--help")) //fully matches `-help` and 
 ```
 Prior args are scoped to cmd: 
 `git --help` prints the help info for `git`, `git tag --help` prints for `tag`
-
 Prior args are picked immediately.
 `cp --help SRC DST` prints the help info, `SRC` and `DST` are ignored.
 
-#### Built up arguments structure.
+### Built up arguments structure.
 
 Argument definition is of the shape of a tree, params/opts are scoped to their cmds.
 
@@ -205,7 +210,9 @@ openstack
 ```
 Notice, `service`, `project` and `list` are reused in the DSL. They have only one definition each.
 
-#### Use parsed values.
+### Validation.
+
+### Use parsed values.
 
 Scmd provides 3 styles of getting evaluated arguments: 
 
@@ -234,7 +241,7 @@ val dst:File = conf.DST.value
 val port:Option[Int] = conf.remotePort.valueOpt
 ```
 
-#### Routing.
+### Routing.
 
 Manual routing: `if(conf.cmd.met){...} else {...}`
 
@@ -257,13 +264,15 @@ def buildRoute(argDef: ArgDef): ArgRoute = {
         //fall back behavior.
     }
 }
+(new ArgDef(args)).runWithRoute(buildRoute)
 ```
 `~` links routes together that if the first route's conditions are not met,
  then the second route is tried, until the statements inside `run` are called,
- the route continues to try through. If one does not want the whole route to end
- after one of the `run` id done, use `runThrough` instead.
+ the route continues to try through. Once a `run` is done, the whole route ends.
+  If one does not want the whole route to end
+ after one of the `run` finishes, use `runThrough` instead.
  
-#### Misc.
+### Misc.
 
 1. built-in priors:
 `help` and `version` are built-in prior arguments. When they are matched against top cmd(app itself),
@@ -278,10 +287,14 @@ app.runOnPrior(help){
 }.run{...}
 ```
 
-### About
+## About
 
-#### Contribution:
+### Thanks:
+This project is inspired by [mow.cli](https://github.com/jawher/mow.cli). 
+Ansi formatting is modified from [backuity/clist](https://github.com/backuity/clist).
+
+### Contribution:
 Contribution is generally welcomed.
 
-#### Author:
+### Author:
 Cause Chung (cuzfrog@139.com)/(cuzfrog@gmail.com)

@@ -3,7 +3,7 @@ package com.github.cuzfrog.scmd.runtime
 
 package object console {
   private[runtime] implicit class UsageGenerationOps[A: UsageEvidence](a: A) {
-    def genUsage(implicit consoleType: ConsoleType = ConsoleType.detect,
+    def genUsage(implicit consoleType: ConsoleType,
                  builder: StringBuilder = StringBuilder.newBuilder,
                  indent: Indent = Indent(2)): StringBuilder = {
       implicitly[UsageEvidence[A]].genUsage(a)

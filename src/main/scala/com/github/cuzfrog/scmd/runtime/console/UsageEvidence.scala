@@ -1,6 +1,5 @@
 package com.github.cuzfrog.scmd.runtime.console
 
-import com.github.cuzfrog.scmd.runtime.{ArgTree, CmdNode, OptNode, ParamNode, PriorNode}
 import com.github.cuzfrog.scmd.internal.AnsiFormatter.FormattedHelper
 
 private[runtime] trait UsageEvidence[A] {
@@ -35,7 +34,7 @@ private object UsageEvidence extends BuilderUtils {
       ansi"%yellow{options}"
         .condition(subOpts.nonEmpty).add(!subOpts.exists(_.isMandatory)).space
       val subCmds = a.subCmds.flatMap(_.subCmds)
-      ansi"<sub-command> ...".condition(subCmds.nonEmpty).add
+      ansi"<sub-command> %dim{...}".condition(subCmds.nonEmpty).add
       newline
       // -------- Section2 properties -------
       ansi"%underline{Properties:}".condition(a.props.nonEmpty).add.line
@@ -43,8 +42,7 @@ private object UsageEvidence extends BuilderUtils {
       // -------- Section3 arguments info -------
       ansi"%underline{Descr:}".add.line
       a.toTopNode.genUsage
-      ansi"%underline{Info:}".add.line
-      s"Version: $APP_VERSION".indent(2).add.line
+      ansi"%underline{Version}: $APP_VERSION".add.line
 
       builder
     }
@@ -62,8 +60,8 @@ private object UsageEvidence extends BuilderUtils {
                            (implicit builder: StringBuilder): Unit = {
       implicit val in: Indent = indent
       ansi"%bold{${a.name}} ".indent(indent).add
-      a.params.foreach(p=> ansi"%yellow{${p.name}} ".add)
-      a.description.indent(a.descrOffset).add
+      a.params.foreach(p => ansi"%yellow{${p.name}} ".add)
+      a.description.indent(a.descrOffset -1).add
       newline
 
       alignOpts(a.opts).foreach(_.genUsage)
@@ -98,7 +96,7 @@ private object UsageEvidence extends BuilderUtils {
     override def genUsage(a: UsagePropNode)
                          (implicit consoleType: ConsoleType,
                           builder: StringBuilder, indent: Indent): StringBuilder = {
-      ansi"${a.flag}%dim{key=value}".indent(indent).add
+      ansi"${a.flag}%dim{key=value} ".indent(indent).add
       a.description.indent(a.descrOffset).add
       newline
       builder

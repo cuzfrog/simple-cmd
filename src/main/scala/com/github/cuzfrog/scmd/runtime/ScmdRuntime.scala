@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.github.cuzfrog.scmd.runtime.logging.ScmdRuntimeLogging
 import com.github.cuzfrog.scmd._
 import ScmdUtils._
+import com.github.cuzfrog.scmd.runtime.console.ConsoleType
+
 import scala.collection.mutable
 import scala.language.reflectiveCalls
 import scala.reflect.ClassTag
@@ -138,8 +140,8 @@ sealed trait ScmdRuntime {
   def appInfoString: String
   def parsedSeqString: String
 
-  def usageString: String
-  def manualString: String
+  def usageString(implicit consoleType: ConsoleType): String
+  def manualString(implicit consoleType: ConsoleType): String
 }
 object ScmdRuntime {
   def create: ScmdRuntime = new ScmdRuntimeImpl with ScmdRuntimeLogging
@@ -445,8 +447,9 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
 
   import console._
 
-  override def usageString: String = useArgTree(argTree).convertTo[UsageArgTree].genUsage.mkString
-  override def manualString: String = (useAppInfo(appInfo), useArgTree(argTree)).genManual
+  override def usageString(implicit consoleType: ConsoleType): String =
+    useArgTree(argTree).convertTo[UsageArgTree].genUsage.mkString
+  override def manualString(implicit consoleType: ConsoleType): String = ???
 
   private implicit def useArgTree(argTreeOpt: Option[ArgTree]): ArgTree =
     argTreeOpt.getOrElse(throw new IllegalStateException("argTree not initialized."))

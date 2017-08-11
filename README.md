@@ -39,7 +39,7 @@ It turns out that parsing command-line arguments is not an easy work.
 | Contextual help                                            | preciser help info       | 
 | Command route             | no manually writing `if` ..  `else` or `match case` to route command      | 
 
- There are so many tricky things to full-fill these features.
+ There are so many tricky things to be done to bring these features into reality.
 
 ### Goals I'm trying to achieve:
 
@@ -83,14 +83,35 @@ object CpApp extends App{
 ```
 ## Document:
 
-* Project setup
-* Define arguments
-* Build up argument structure
-* Validation
-* Use parsed values
-* Routing
+* [Project setup](#project-setup)
+* [Define arguments](#define-arguments)
+* [Build up argument structure](#built-up-arguments-structure)
+* [Validation](#validation)
+* [Use parsed values](#use-parsed-values)
+* [Routing](#routing)
+* [Misc](#misc)
 
 ### Project setup:
+
+Scmd depends on [scalameta](http://scalameta.org/) at compile time.
+```scala
+val macroAnnotationSettings = Seq(
+  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full),
+  scalacOptions += "-Xplugin-require:macroparadise",
+  scalacOptions in(Compile, console) ~= (_ filterNot (_ contains "paradise")),
+  libraryDependencies += "org.scalameta" %% "scalameta" % "1.8.0" % Provided
+)
+val yourProject = project
+  .settings(macroAnnotationSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.github.cuzfrog" %% "scmd" % "version"
+    )
+  )
+```
+For simplicity, Scmd is not divided into multiple projects. 
+If one seriously demands smaller runtime jar size, please fire an issue or manually exclude
+package `com.github.cuzfrog.scmd.macros`.
 
 ### Define arguments:
 
@@ -318,7 +339,7 @@ Ansi formatting is modified from [backuity/clist](https://github.com/backuity/cl
 ### Developer:
 See: [Internal explanation](INTERNAL_EXPLANATION.md).
 
-Contribution is generally welcomed.
+Contribution is welcomed.
 
 ### Author:
 Cause Chung (cuzfrog@139.com)/(cuzfrog@gmail.com)

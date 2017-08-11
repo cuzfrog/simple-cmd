@@ -7,9 +7,10 @@ import Scmd._
 private object Cp {
   @ScmdDef
   private class CpDef(args: Seq[String]) extends ScmdDefStub{
+    appDef(name = "cp",shortDescription = "copy file or dir.")
     val SRC = paramDefVariable[File]().mandatory
     val DEST = paramDef[File]().mandatory
-    val recursive = optDef[Boolean](abbr = "R")
+    val recursive = optDef[Boolean](abbr = "R", description = "recursively copy the whole dir.")
   }
 
   @ScmdValid

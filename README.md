@@ -49,6 +49,8 @@ It turns out that parsing command-line arguments is not an easy work.
  It should able to generate formatted usage console info.
 * **Strictness** - As a library, it should be well structured, documented and self-encapsulated.
 
+![openstack-help](/usage-pic/openstack-help.png) ![cp-help](/usage-pic/cp-help.png) 
+
 ## Minimal example:
 First, define the arguments in def-class:
 ```scala
@@ -211,6 +213,20 @@ openstack
 Notice, `service`, `project` and `list` are reused in the DSL. They have only one definition each.
 
 ### Validation.
+This refers to argument basic(low-level) validation
+
+```scala
+@ScmdValid
+class CatValidation(argDef: CatDef) {
+  validation(argDef.files) { files =>
+    files.foreach { f =>
+      if (!f.toFile.exists()) throw new IllegalArgumentException(s"$f not exists.")
+    }
+  }
+}
+val conf = (new CatDef(args)).withValidation(new CatValidation(_)).parsed
+```
+Arguments will be checked by validation statements when they are evaluated(parsed from cmd-line args).
 
 ### Use parsed values.
 
@@ -287,13 +303,21 @@ app.runOnPrior(help){
 }.run{...}
 ```
 
+2. limitations:
+
+* Reusing arg-def in tree-building-DSL: arg cannot duplicate through lineage.
+Duplication through lineage makes it possibly ambiguous for an argument's scope.
+This makes features, like _trailing option_, very hard to implement.
+
 ## About
 
 ### Thanks:
 This project is inspired by [mow.cli](https://github.com/jawher/mow.cli). 
 Ansi formatting is modified from [backuity/clist](https://github.com/backuity/clist).
 
-### Contribution:
+### Developer:
+See: [Internal explanation](INTERNAL_EXPLANATION.md).
+
 Contribution is generally welcomed.
 
 ### Author:

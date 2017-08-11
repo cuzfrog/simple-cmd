@@ -33,7 +33,7 @@ class CmdRoute private[scmd](cmd: Command,
   }
 
   /** Trigger the run func. */
-  override def execute: Boolean = {
+  override def execute: Boolean = this.cmd.met && {
     debug(s"cmdRoute executed: $this | next: $next")
     val actions = priorActions collect {
       case (prior, action) if prior.met.contains(cmd.symbol) => action()

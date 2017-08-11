@@ -90,7 +90,6 @@ sealed trait Mandatory
 sealed trait WithDefault
 private trait BuiltInArg
 
-
 //todo: check if adding lazy val will aid performance.
 private[scmd] object DummyArgument {
   def DummyCommand: Command = Command("")
@@ -256,15 +255,24 @@ private object ArgValue {
 }
 
 private object Argument {
-  object BuiltInArgs {
+  private[scmd] object BuiltInArgs {
     val help: PriorArg = new PriorArg("help", Seq("-help", "--help"),
       description = Some("show help info.")) with BuiltInArg
     val version: PriorArg = new PriorArg("version", Seq("-version", "--version"),
       description = Some("print version info.")) with BuiltInArg
   }
 
-  val builtInArgs: Map[scala.Symbol, PriorArg] = Map(
+  private[scmd] val builtInArgs: Map[scala.Symbol, PriorArg] = Map(
     'help -> BuiltInArgs.help,
     'version -> BuiltInArgs.version
   )
+
+  /** Check if an argument is evaluated from command-line args. */
+  def hasBeenEvaluated[T](argument: Argument[T]): Boolean = argument match {
+    case a: Command => a.met
+    case a: PriorArg => a.met.nonEmpty
+    case a: VariableValue[_] => a.v.nonEmpty
+    case a: SingleValue[_] => a.v.nonEmpty
+    case empty => throw new IllegalArgumentException(s"Bad argument in parsed def-class:$empty")
+  }
 }

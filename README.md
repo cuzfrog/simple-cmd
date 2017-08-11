@@ -206,6 +206,7 @@ argTreeDef( //app entry
     //equivalent to list(service ?, project ?)
   ),
   neutron(
+    alive | dead, // --alive | --dead, mutual exclusion
     list(service, project) ?, //trailing comma is supported through macros.
     //cmd list is optional. but once list is entered, one of its sub-cmds is required.
   ),
@@ -223,6 +224,8 @@ openstack
               +-service
               +-project
     +-neutron
+          +-alive
+          +-dead
           +-list
               +-service
               +-project
@@ -234,7 +237,8 @@ openstack
 Notice, `service`, `project` and `list` are reused in the DSL. They have only one definition each.
 
 ### Validation.
-This refers to argument basic(low-level) validation
+This refers to argument basic(low-level) validation. 
+Mutual limitation is defined above, and its validation is implicit.
 
 ```scala
 @ScmdValid

@@ -86,28 +86,26 @@ private class ScmdDefMacro extends ScmdMacro {
             }catch{
               case e: ScmdException=> scmdRuntime.handleException(e)
             }
-            //scmdRuntime.clean()
+            ..${if(isTestMode) Nil else List(q"scmdRuntime.clean()")}
             evaluatedDefClass
           }"""
-      //todo: clean runtime after completion of parsing.
     }
 
     /** For running built-in priors. This route could be merged with client defined route. */
     val private_def_builtInRoute = {
       q"""def builtInRoute(defCls: $name)
-                          (implicit consoleType: ConsoleType, appInfo: AppInfo): ArgRoute = {
+                          (implicit consoleType: ConsoleType): ArgRoute = {
              import ScmdRouteDSL._
              app.runOnPrior(defCls.help) {
                println(scmdRuntime.usageString)
              }.runOnPrior(defCls.version) {
-               println(appInfo.version.getOrElse("No version number."))
+               println(defCls.appInfo.version.getOrElse("No version number."))
              }.runThrough(println("built-in route run through"))
           }"""
     }
 
     /** Client api. Return a new defClass after done parsing and running built-in route. */
     val public_def_parsed = {
-      val termParamss = paramss.map(_.map(param => Term.Name(param.name.value)))
       q"""def parsed: $name = {
             val evaluatedDefClass = this.parsedWithoutRun
             import ArgRoute._
@@ -132,7 +130,7 @@ private class ScmdDefMacro extends ScmdMacro {
              $argTreeBuild //execute scmdRuntime to build an argTree/appInfo
              runtime
           }""",
-      q"implicit final def appInfo:AppInfo = scmdRuntime.getAppInfo",
+      q"implicit val appInfo:AppInfo = scmdRuntime.getAppInfo",
       private_def_parsedWithoutRun,
       private_def_builtInRoute,
       public_def_addValidation,

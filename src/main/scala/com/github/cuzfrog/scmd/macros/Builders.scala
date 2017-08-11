@@ -210,7 +210,6 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
                                        argDefs: immutable.Seq[TermArg],
                                        dslStats: immutable.Seq[Term.Arg],
                                        globalLimitationsStats: immutable.Seq[Term.Arg]) {
-  //todo: forbid duplicates along lineage.
   def resolve: TermArgTree = {
     val topNode = recResolve(None, dslStats)
     val props = argDefs.collect { case prop: TermProp => prop }

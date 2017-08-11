@@ -10,10 +10,10 @@ sealed trait MutuallyExclusive extends MutualLimitation
 sealed trait MutuallyDependent extends MutualLimitation
 
 private object Limitation {
-  def fromOperator(operator: String): MutualLimitation = operator match {
-    case "|" => MExclusive
-    case "&" => MDependent
-    case bad => throw new IllegalArgumentException(s"Illegal limitation operator:$bad")
+  def fromOperator(operator: String): Option[MutualLimitation] = operator match {
+    case "|" => Some(MExclusive)
+    case "&" => Some(MDependent)
+    case _ => None
   }
 
   //defnTerm depends on toString:

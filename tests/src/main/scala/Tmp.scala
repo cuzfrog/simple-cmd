@@ -69,7 +69,7 @@ object Tmp {
       ).run {
         println(s"Numbers are: ${num.value.mkString(",")} (with new line (and key1's value >6) )")
       } ~
-        cat1.run {
+        app.run {
           println(s"Numbers are: ${num.value.mkString(",")}")
           println(s"Files are: ${files.value.mkString(",")}")
           //val mOpt:Option[String] = m1.valueOpt

@@ -151,18 +151,23 @@ private object NodeBuilder {
         case Term.Name(argName) => argName +: acc
         case Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(argName)))
           if operator == "&" || operator == "|" => recInfix2seq(subs, argName +: acc)
-        case bad => throw new IllegalArgumentException(s"Tree DSL cannot be parsed: $bad")
+        case bad =>
+          throw new IllegalArgumentException(s"Tree DSL cannot be parsed: $bad")
       }
 
     def queryArg(name: String): Option[TermArg] = argDefs.find(_.name == name)
 
     stats.zipWithIndex.collect {
-      case (Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))), idx) =>
+      case (stat@Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))), idx) =>
+        val limitation = Limitation.fromOperator(operator).getOrElse(
+          throw new IllegalArgumentException(
+            s"Illegal limitation operator:'$operator' before '$lastArgName' in '$stat'. " +
+            s"This is probably caused by syntax error in tree DSL.")
+        )
         val relationSeq = (recInfix2seq(subs) :+ lastArgName)
           .map(argName => queryArg(argName)
             .getOrElse(
               throw new IllegalArgumentException(s"Arg in Tree DSL not defined yet:$argName")))
-        val limitation = Limitation.fromOperator(operator)
         (limitation, relationSeq, idx)
     }
   }
@@ -211,7 +216,6 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
     val props = argDefs.collect { case prop: TermProp => prop }
     val priors = argDefs.collect { case prior: TermPrior => prior }
     val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
-    //val topBuiltInPriors = argDefs.collect { case builtIn: TermPrior with BuiltInArg => builtIn }
 
     val tree = TermArgTree(
       appInfo = appInfo,
@@ -229,6 +233,12 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
     if (argDifference.nonEmpty)
       abort(s"Arg not defined in tree dsl: ${argDifference.mkString(",")}." +
         s" Comment these argDefs out or put them in the tree.")
+
+    val descentDuplicates = getDescentDuplicates(tree)
+    if (descentDuplicates.nonEmpty)
+      abort(descentDuplicates.head.pos,
+        s"Arg cannot duplicate along lineage: ${descentDuplicates.map(_.name).mkString(",")}")
+
     tree
   }
 
@@ -262,7 +272,17 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
       .collect { case (termArg, seq) if seq.size > 1 => termArg }
     if (duplicates.nonEmpty)
       abort(dslStats.head.pos,
-        s"Duplicates of arguments:${duplicates.mkString(",")} in tree definition.")
+        s"Duplicates of arguments:${duplicates.map(_.name).mkString(",")}" +
+          s" at the same place in tree definition.")
+
+    val illegalArgs = termArgs.collect {
+      case illegal@(_: TermPrior | _: TermProp) => illegal
+    }
+    if (illegalArgs.nonEmpty)
+      abort(illegalArgs.head.pos,
+        s"Prior arg and properties are global, and cannot be define in tree:" +
+          s" ${illegalArgs.map(_.name).mkString(",")}" +
+          s" They are automatically picked up once defined.")
 
     val subCmdEntry = {
       val childCompoundCmds: immutable.Seq[(TermCmdNode, Int)] =
@@ -296,6 +316,28 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
       subCmdEntry = subCmdEntry,
       limitations = groupArgs.map(LimitationGroup.fromTuple)
     )
+  }
+
+  /** Return termArgs that duplicate along lineage. */
+  private def getDescentDuplicates(tree: TermArgTree): immutable.Seq[TermArg] = {
+    val topAncestors = //priors and properties are forbidden during building.
+      tree.topParams ++ tree.topOpts
+
+    def recGetDescentDuplicates(ancesters: immutable.Seq[TermArg],
+                                cmdNode: TermCmdNode,
+                                acc: immutable.Seq[TermArg]): immutable.Seq[TermArg] = {
+      val descendants = cmdNode.params ++ cmdNode.opts :+ cmdNode.cmd
+      def duplicates = ancesters.intersect(descendants)
+      cmdNode.subCmdEntry.children match {
+        case Nil => acc ++ duplicates
+        case subCmds => subCmds.flatMap { n =>
+          recGetDescentDuplicates(ancesters ++ descendants, n, acc ++ duplicates)
+        }
+      }
+    }
+    tree.cmdEntry.children.flatMap { n =>
+      recGetDescentDuplicates(topAncestors, n, Nil)
+    }
   }
 
   private def collectLimitations

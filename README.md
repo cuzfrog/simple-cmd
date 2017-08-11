@@ -200,7 +200,6 @@ openstack
 import scmdTreeDefDSL._
 argTreeDef( //app entry
   verbose, //opt
-  version, //built-in prior, gets ignored
   nova(
     list(service ?, project), //cmds under list are optional.
     //equivalent to list(service ?, project ?)

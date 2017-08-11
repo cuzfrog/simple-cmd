@@ -74,7 +74,7 @@ PriorArg private[scmd](name: String,
 sealed trait ArgValue[+T] {
   private[scmd] def isVariable: Boolean
 }
-//todo: change value to v to aviod name conflict
+
 sealed trait SingleValue[+T] extends ArgValue[T] {
   private[scmd] def v: Option[T] = None
   private[scmd] def default: Option[T] = None

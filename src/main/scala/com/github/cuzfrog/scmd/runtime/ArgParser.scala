@@ -103,7 +103,10 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
         currentPath.complete //seal this path.
         currentPath.anchor.node match {
           case _: PriorNode =>
-            currentPath.trimUpstream //todo: check if it needs to be filtered.
+            currentPath.trimUpstream
+          /*todo: check if the path needs to be filtered to only contain command(and opts?).
+           *For now filtering is not a must, prior triggers action before hand.
+           */
           case _ =>
             currentPath.toTop.findUnsealedFork match { //if there's another unsealed fork:
               case None => currentPath //all paths are sealed, return

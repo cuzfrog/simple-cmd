@@ -32,14 +32,14 @@ It turns out that parsing command-line arguments is not an easy work.
 | Mutual exclusion                                        | `--start ❘ --stop`       |
 | Mutual dependency                                   | `[-a -b]` or `[-a [-b]]`       |
 | Validation                                     | `cp SRC DST` SRC must exist  |
-| Type safety                                     | `cp SRC DST` SRC must be file  |
+| Typed argument                                     | `cp SRC DST` SRC must be file  |
 | Argument optionality                                     | `SRC [DST]`       |
-| Variable Argument                                        | `SRC... DST`       |
-| Properties/value with flag                                   | `-Dkey=value`       | 
+| Variable argument                                        | `SRC... DST`       |
+| Properties                                                 | `-Dkey=value`       | 
 | Contextual help                                            | preciser help info       | 
-| Command route             | no manually writing `if` ..  `else` or `match case` to route command      | 
+| Routing             | no manually writing `if` ..  `else` or `match case` to route command      | 
 
- There are so many tricky things to be done to bring these features into reality.
+ There are so many tricky things to be done to bring these features into reality. And Scmd did so.
 
 ### Goals I'm trying to achieve:
 

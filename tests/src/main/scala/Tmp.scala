@@ -20,7 +20,7 @@ object Tmp {
     val newLine = optDef[Boolean](description = "Add new line end to every file", abbr = "f")
     val num = optDefVariable[Long](abbr = "N", description = "test num N")
 
-    val properties = propDef[Int](flag = "D",description = "this is a property arg.")
+    val properties = propDef[Int](flag = "D", description = "this is a property arg.")
     val help1 = priorDef(alias = Seq("-help1", "--help1"))
     //    import scmdTreeDefDSL._
     //
@@ -97,8 +97,8 @@ object Tmp {
     //    println("---------Parsed values:----------")
     //    println("Help prior: " + parsed.help)
     //    println("props key2: " + parsed.properties("key2"))
-//    println("--------- Usage: ----------")
-//    println(conf.defaultUsageString)
+    //    println("--------- Usage: ----------")
+    //    println(conf.defaultUsageString)
   }
 }
 

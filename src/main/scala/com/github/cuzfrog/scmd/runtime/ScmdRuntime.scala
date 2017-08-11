@@ -88,7 +88,7 @@ sealed trait ScmdRuntime {
                    topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                    globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): this.type
 
-  def addValidation[T](name: String, func: T => Unit): Unit
+  def addValidation[T](name: scala.Symbol, func: T => Unit): Unit
 
   /**
     * Trigger final parsing.
@@ -330,8 +330,8 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.clear()
     this
   }
-  override def addValidation[T](name: String, func: T => Unit): Unit = { //todo:move scala.Symbol to compile time
-    nodeRefs.get(scala.Symbol(name)) match {
+  override def addValidation[T](name: scala.Symbol, func: T => Unit): Unit = {
+    nodeRefs.get(name) match {
       case Some(node: ValueNode[T@unchecked]) => valiRefs.put(node, func)
       case Some(node: PropNode[T@unchecked]) => valiRefs.put(node, func)
       case Some(node) =>

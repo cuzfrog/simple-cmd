@@ -24,7 +24,7 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
   }
 
   @IgnoreLogging
-  abstract override def addValidation[T](name: String, func: (T) => Unit): Unit = {
+  abstract override def addValidation[T](name: scala.Symbol, func: (T) => Unit): Unit = {
     debug(s"Add validation for arg:$name")
     super.addValidation(name, func)
   }

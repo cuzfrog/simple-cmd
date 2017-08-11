@@ -3,7 +3,7 @@ package com.github.cuzfrog.scmd.macros
 import scala.meta._
 import scala.collection.immutable
 
-private case class TermValidation(term: Term , argName: String, pos: Position)
+private case class TermValidation(term: Term , argName: Lit.Symbol, pos: Position)
 
 private object TermValidation {
   def collectValidation(stats: immutable.Seq[Stat]): immutable.Seq[TermValidation] = {
@@ -13,7 +13,8 @@ private object TermValidation {
           case q"$_.$n" => n
           case n => n
         }
-        TermValidation(q"validation($param)($funcStats)", argName.syntax, pos)
+        TermValidation(q"validation($param)($funcStats)",
+          Lit.Symbol(scala.Symbol(argName.syntax)), pos)
     }
     validations
   }

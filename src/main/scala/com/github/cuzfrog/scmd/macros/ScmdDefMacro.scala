@@ -69,7 +69,7 @@ private class ScmdDefMacro extends ScmdMacro {
 
     /** Method expose to validation class for runtime manipulation. */
     val public_def_addValidation =
-      q"""def addValidation[T](argName:String,func: T => Unit): this.type = {
+      q"""def addValidation[T](argName: scala.Symbol,func: T => Unit): this.type = {
             scmdRuntime.addValidation(argName,func)
             this
           }"""
@@ -116,7 +116,7 @@ private class ScmdDefMacro extends ScmdMacro {
           }"""
     }
 
-    /** Client api. Run with a client-provided route. Built-in route is prepended to client route.*/
+    /** Client api. Run with a client-provided route. Built-in route is prepended to client route. */
     val public_def_runWithRoute = {
       q"""def runWithRoute(route: $name => ArgRoute): Boolean = {
             val evaluatedDefClass = this.parsedWithoutRun

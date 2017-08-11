@@ -1,6 +1,8 @@
 package com.github.cuzfrog.scmd
 
 import scala.meta._
+import scala.reflect.ClassTag
+import scala.collection.immutable
 
 package object macros {
 
@@ -33,6 +35,16 @@ package object macros {
     case None => q"None"
     case Some(s) => throw new IllegalArgumentException(s"Unsupported Option type.")
   }
+
+  private[macros] implicit def definableSeq[T: ClassTag]: Definable[immutable.Seq[T]] =
+    (a: immutable.Seq[T]) => {
+      implicitly[ClassTag[T]].runtimeClass match {
+        case rc if rc == classOf[String] =>
+          val args = a.asInstanceOf[immutable.Seq[String]].map(s => s.defnTerm)
+          q"_root_.scala.collection.immutable.Seq(..$args)"
+        case rc => throw new IllegalArgumentException(s"Unsupported Seq type.")
+      }
+    }
 
   private[macros] implicit val definableBoolean: Definable[Boolean] = (a: Boolean) => Lit.Boolean(a)
   private[macros] implicit val definableString: Definable[String] = (a: String) => Lit.String(a)

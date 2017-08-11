@@ -1,9 +1,9 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.{AppInfo, Argument, BuiltInArg, Command, Defaults}
-import com.github.cuzfrog.scmd.internal.{RawArgMacro, SimpleLogging}
+import com.github.cuzfrog.scmd.internal.SimpleLogging
 import com.github.cuzfrog.scmd.macros.Constants._
-import com.github.cuzfrog.scmd.macros.argutils.{ArgUtils, RawArg}
+import com.github.cuzfrog.scmd.macros.argutils.RawArg
+import com.github.cuzfrog.scmd.{AppInfo, Argument, BuiltInArg, Command}
 
 import scala.collection.immutable
 import scala.meta._
@@ -38,7 +38,7 @@ private object TermArg extends SimpleLogging {
       case r: RawPrior =>
         val term =
           q"""runtime.buildPriorArg($TERM_NAME = ${r.name.defnTerm},
-                                    alias = ${r.alias.getOrElse(q"Nil")},
+                                    alias = ${r.alias.defnTerm},
                                     $TERM_DESCRIPTION = ${r.description.defnTerm},
                                     matchName = ${r.matchName.defnTerm})"""
         TermPrior(r.name, term, r.pos, topCmdSymbol)
@@ -70,9 +70,7 @@ private object TermArg extends SimpleLogging {
                                           variableValue = ${r.variableValue})"""
         TermProp(r.name, r.flag, term, r.pos, r.tpe)
     }
-    //builtInArgs(topCmdSymbol) ++ collected //builtIn must precede, order affects tree building.
   }
-  //todo: add name conflict check.
 
   //todo: (low priority) make builtInArgs more generic.
   /** Used in ScmdDefMacro to generate built-in args. */

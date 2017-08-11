@@ -184,7 +184,7 @@ private object OptionArg {
                            isMandatory: Boolean, _value: Seq[T], _default: Seq[T]) = Empty
 
   @inline
-  private def camelCase2hyphen(camelCase: String): String = {
+  private[scmd] def camelCase2hyphen(camelCase: String): String = {
     var lastUpper: Boolean = true //ignore first char
     camelCase.flatMap { char =>
       if (char.isUpper && !lastUpper) {

@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.macros.argutils
 
-import com.github.cuzfrog.scmd.Defaults
+import com.github.cuzfrog.scmd.{Defaults, OptionArg}
 import com.github.cuzfrog.scmd.internal.RawArgMacro.extract
 import com.github.cuzfrog.scmd.internal.SimpleLogging
 
@@ -11,6 +11,7 @@ import scala.meta._
 /** Collected from statements, not fully type safe. */
 private[macros] sealed trait RawArg {
   def name: String
+  def pos: Position
 }
 private[macros] sealed trait RawTypedArg extends RawArg {
   def tpe: Type
@@ -19,7 +20,7 @@ private[macros] sealed trait RawTypedArg extends RawArg {
 private[macros] object RawArg {
   case class RawCommand(name: String, description: Option[String], pos: Position) extends RawArg
   case class RawPrior(name: String, description: Option[String], matchName: Boolean,
-                      alias: Option[Term], pos: Position) extends RawArg
+                      alias: immutable.Seq[String], pos: Position) extends RawArg
   case class RawParam(name: String, description: Option[String], tpe: Type, isMandatory: Boolean,
                       hasDefault: Boolean, isVariable: Boolean,
                       argValue: Term, pos: Position, composedTpe: Type) extends RawTypedArg
@@ -40,7 +41,7 @@ private object ArgCollectImpl extends SimpleLogging {
 
   def collectRawArg(stats: immutable.Seq[Stat]): immutable.Seq[RawArg] = {
 
-    stats.map(extractSelection) collect {
+    val collected: immutable.Seq[RawArg] = stats.map(extractSelection) collect {
       case (q"val $argName: $_ = $defName(..$params)", _) if defName.isInstanceOf[Term.Name] =>
         debug(s"Collected $defName: $argName.")
         implicit val pos: Position = argName.pos
@@ -50,7 +51,17 @@ private object ArgCollectImpl extends SimpleLogging {
           case q"cmdDef" =>
             RawCommand(name, description, pos)
           case q"priorDef" =>
-            val alias = extract[Term](params)
+            val alias = extract[Term](params).to[immutable.Seq].flatMap {
+              case q"$seqName(..$names)" =>
+                if (!seqName.syntax.endsWith("Seq") && !seqName.syntax.endsWith("List"))
+                  abort(pos, s"please pass 'Seq' or 'List' of alias instead of ${seqName.syntax}")
+                names.map {
+                  case Lit.String(aliasName) => aliasName
+                  case bad => abort(pos, s"please pass in literal String of alias for: ${bad.syntax}")
+                }
+              case bad =>
+                abort(pos, s"""please pass Seq("alias1","alias2") instead of ${bad.syntax}""")
+            }
             val matchName = extract[Boolean](params).getOrElse(Defaults.priorMatchName)
             if (alias.isEmpty && !matchName)
               abort(pos, s"PriorArg $name can never be matched," +
@@ -123,6 +134,10 @@ private object ArgCollectImpl extends SimpleLogging {
       case (stat@q"val $argName: $_ = $defName(..$params)", _) if defName.syntax.contains("Def") =>
         abort(s"No type found for argument def: $stat")
     }
+    val conflicts = getNameConflict(collected)
+    if (conflicts.nonEmpty)
+      abort(conflicts.head.pos, s"Name conflict found for args: ${conflicts.map(_.name).mkString(",")}")
+    collected
   }
 
   private def singleValue(tpe: Type, default: Term): Term =
@@ -153,6 +168,22 @@ private object ArgCollectImpl extends SimpleLogging {
       case other =>
         other -> Nil
     }
+  }
+  /** Return rawArgs that have conflicting names. */
+  private def getNameConflict(rawArgs: immutable.Seq[RawArg]): immutable.Seq[RawArg] = {
+    val rawPairs = rawArgs.map {
+      case raw: RawCommand => raw -> List(raw.name)
+      case raw: RawPrior => raw -> ((if (raw.matchName) List(raw.name) else Nil) ++ raw.alias)
+      case raw: RawParam => raw -> List(raw.name)
+      case raw: RawOpt => raw ->
+        (List("--" + raw.name, "--" + OptionArg.camelCase2hyphen(raw.name)).distinct
+          ++ raw.abbr.map("-" + _))
+      case raw: RawProp => raw -> List("-" + raw.flag)
+    }
+    val allNames = rawPairs.flatMap(_._2)
+    val duplicates =
+      allNames.groupBy(identity).collect { case (k, v) if v.lengthCompare(1) > 0 => k }.toList
+    rawPairs.collect { case (r, names) if duplicates.intersect(names).nonEmpty => r }
   }
 
   sealed trait Selection

@@ -59,7 +59,7 @@ private[runtime] sealed trait ValueNode[T] extends Node {
  * When parsing args, node and path are the basic idea.
  * see TryPath and Context.
  *
- * Check equality overriding: Done 2017-08-11.
+ * Check equality overriding: Done 2017-08-11. see: EqualityOverridingMacroTest
  */
 @EqualityOverridingMacro
 private case class ParamNode[T](entity: Parameter[T] with ArgValue[T],

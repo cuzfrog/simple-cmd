@@ -1,7 +1,7 @@
 import CommonSettings._
 
 shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
-onLoad in Global := (onLoad in Global).value andThen (Command.process(s"", _))
+//onLoad in Global := (onLoad in Global).value andThen (Command.process(s"", _))
 scalaVersion in ThisBuild := "2.12.3"
 val CompileOnly = config("compileonly").hide
 
@@ -36,7 +36,8 @@ val tests = project
   .settings(
     name := "simple-cmd-tests",
     libraryDependencies ++= Seq(
-
+      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
+      "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.6" % Test
     )
   ).dependsOn(scmd % "compile->test;test->test")
 

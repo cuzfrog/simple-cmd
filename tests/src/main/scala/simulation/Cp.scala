@@ -4,7 +4,7 @@ import java.io.File
 
 import Scmd._
 
-private[scmd] object Cp {
+object Cp {
   @ScmdDef
   class CpDef(args: Seq[String]) extends ScmdDefStub{
     appDef(name = "cp",shortDescription = "copy file or dir.")
@@ -28,7 +28,7 @@ private[scmd] object Cp {
     println("-----------Arg tree------------")
     println(conf.argTreeString)
     println("---------Parsed node sequence:----------")
-    val parsed: CpDef = conf.parsed
+    val parsed: CpDef = conf.parse
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
   }

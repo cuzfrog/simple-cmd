@@ -3,7 +3,7 @@ package simulation
 import Scmd._
 import com.github.cuzfrog.scmd.{OptionArg, SingleValue}
 
-private[scmd] object OpenStack {
+object OpenStack {
   @ScmdDef
   private class OpenStackDef(args: Seq[String]) extends ScmdDefStub {
     val nova = cmdDef(description = "nova command entry")
@@ -47,7 +47,7 @@ private[scmd] object OpenStack {
     println("-----------Arg tree------------")
     println(conf.argTreeString)
 
-    val parsed: OpenStackDef = conf.parsed
+    val parsed: OpenStackDef = conf.parse
     println("---------Parsed node sequence:----------")
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")

@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import Scmd._
 
-private[scmd] object Eft {
+object Eft {
   @ScmdDef
   private class EftDef(args: Seq[String]) extends ScmdDefStub{
     //arg tree is inferred by order below:
@@ -37,7 +37,7 @@ private[scmd] object Eft {
     println("-----------Arg tree------------")
     println(conf.argTreeString)
     println("---------Parsed node sequence:----------")
-    val parsed: EftDef = conf.parsed
+    val parsed: EftDef = conf.parse
     println(conf.parsedSeqString)
     println("---------Parsed values:----------")
   }

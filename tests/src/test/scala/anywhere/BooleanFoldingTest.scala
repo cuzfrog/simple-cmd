@@ -2,6 +2,7 @@ package anywhere
 
 import Scmd._
 import com.github.cuzfrog.scmd.ScmdDefTest
+import com.github.cuzfrog.scmd.runtime.ArgParseException
 import org.junit._
 
 class BooleanFoldingTest {
@@ -12,7 +13,6 @@ class BooleanFoldingTest {
   @Test
   def test1(): Unit = {
     val parsed = List("-baEDc").parse
-
     assert(parsed.opta)
     assert(parsed.optb)
     assert(parsed.optc)
@@ -21,6 +21,10 @@ class BooleanFoldingTest {
     assert(!parsed.optF)
   }
 
+  @Test(expected = classOf[ArgParseException])
+  def test2(): Unit = {
+    val parsed = List("-baEDcFG").parse
+  }
 
   private implicit class ParseOps(in: List[String]) {
     def parse: BooleanFoldingDefs = new BooleanFoldingDefs(in).parse

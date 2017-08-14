@@ -7,11 +7,7 @@ import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
 
 import scala.meta._
 
-private class ScmdDefMacro extends ScmdMacro {
-
-
-  /** Override this for testing. */
-  protected val isTestMode: Boolean = true
+private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
 
   def expand(cls: Defn.Class): Stat = {
     val mods = cls.mods
@@ -21,7 +17,7 @@ private class ScmdDefMacro extends ScmdMacro {
     val stats = cls.templ.stats.getOrElse(Nil)
 
     /** For testing. */
-    val privateMod = if (isTestMode) mod"private[scmd]" else mod"private[this]"
+    val privateMod = if (isTestMode) Nil else List(mod"private[this]")
 
     /** args passed in from constructor. */
     val argsParam = paramss.flatten.headOption match {
@@ -125,7 +121,7 @@ private class ScmdDefMacro extends ScmdMacro {
     }
 
     val addMethods = List(
-      q"""private[this] val scmdRuntime:ScmdRuntime = {
+      q"""..$privateMod val scmdRuntime:ScmdRuntime = {
              val runtime = ScmdRuntime.create
              $argTreeBuild //execute scmdRuntime to build an argTree/appInfo
              runtime

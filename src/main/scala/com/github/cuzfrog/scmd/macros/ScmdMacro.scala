@@ -15,7 +15,8 @@ object MacroUtil {
   def apply(implName: scala.Symbol, defn: Tree): Stat = {
 
     val macroImpl: ScmdMacro = implName match {
-      case 'Def => new ScmdDefMacro with ScmdMacroValidation
+      case 'Def => new ScmdDefMacro() with ScmdMacroValidation
+      case 'DefTest => new ScmdDefMacro(isTestMode = true) with ScmdMacroValidation
       case 'Valid => new ScmdValidMacro with ScmdMacroValidation
       case bad => throw new AssertionError(s"No such ScmdMacro implementation:$bad")
     }

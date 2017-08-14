@@ -1,4 +1,4 @@
-package Anywhere
+package anywhere
 
 import com.github.cuzfrog.scmd.{Mandatory, Parameter, SingleValue}
 

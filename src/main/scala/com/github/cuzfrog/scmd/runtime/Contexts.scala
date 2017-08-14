@@ -53,7 +53,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def getCurrentCmdNode: CmdNode = this.currentCmdNode //return immutable object.
   def getParamCursor: Int = paramCursor
   def getCurrentArg: TypedArg[CateArg] = currentCateArg
-  def getPriors:Seq[PriorNode] = argTree.priors
+  def getPriors: Seq[PriorNode] = argTree.priors
 
   /** Return not yet consumed opts accumulated upstream. */
   def getUpstreamLeftOpts: Seq[OptNode[_]] = this.synchronized {
@@ -185,6 +185,15 @@ private case class ContextSnapshot(cmdNode: CmdNode,
                                    paramCursor: Int)
 private object ContextSnapshot {
   implicit def takeSnapshot(context: Context): ContextSnapshot = context.takeSnapshot
+
+  /** This represents the state that context has not been constructed yet. */
+  def preContextSnapshot(argTree: ArgTree): ContextSnapshot = ContextSnapshot(
+    cmdNode = argTree.toTopNode,
+    optsUpstreamLeft = Nil,
+    argCursor = 0,
+    rudeArg = "",
+    paramCursor = 0
+  )
 }
 
 private case class TypedArg[+A <: CateArg](typedArg: A, rude: String)

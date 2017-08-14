@@ -25,6 +25,8 @@ private object ArgParser {
   * Not thread-safe. It should only be accessed inside ArgParser.
   */
 private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) extends SimpleLogging {
+  if (args.isEmpty)
+    throw ArgParseException("No args specified.", ContextSnapshot.preContextSnapshot(argTree))
 
   import BacktrackingParser._
 

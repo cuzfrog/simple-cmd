@@ -33,6 +33,11 @@ object ScmdValueImplicitConversion extends AbstractScmdValueConverter {
   //           optVM same as above
   implicit def props2value[T](in: PropsV[T]): Seq[(String, T)] = in.v
   implicit def prior2value(in: PriorArg): Option[Symbol] = in.met
+
+  implicit def boolValueArgument2value
+  (in: ValueArgument[Boolean] with SingleValue[Boolean]): Boolean = {
+    in.v.getOrElse(in.default.getOrElse(throwIfEmptyDefault(in)))
+  }
 }
 
 sealed abstract class AbstractScmdValueConverter {
@@ -59,6 +64,11 @@ object ScmdValueConverter extends AbstractScmdValueConverter {
     def value: T = a.v.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
   }
 
+  implicit class ValueConverterBooleanSingleValueOps
+  (a: ValueArgument[Boolean] with SingleValue[Boolean]) {
+    def value: Boolean = a.v.getOrElse(a.default.getOrElse(throwIfEmptyMandatory(a)))
+  }
+
   implicit class ValueConverterSingleValueOps[T](a: ValueArgument[T] with SingleValue[T]) {
     def value: Option[T] = a.v
   }
@@ -79,7 +89,8 @@ object ScmdValueConverter extends AbstractScmdValueConverter {
 /**
   * Provide explicit method to get value of Argument.
   */
-object ScmdSafeValueConverter extends AbstractScmdValueConverter {
+@deprecated("Not necessary", "dev")
+private object ScmdSafeValueConverter extends AbstractScmdValueConverter {
   implicit class SingleValueMOps[T](a: ValueArgument[T] with SingleValue[T] with Mandatory) {
     def value: T = a.v.getOrElse(throwIfEmptyMandatory(a))
   }

@@ -87,6 +87,7 @@ sealed trait ScmdRuntime {
                    cmdEntry: Int,
                    topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
                    globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): this.type
+  private[runtime] def getArgTree: ArgTree
 
   def addValidation[T](name: scala.Symbol, func: T => Unit): Unit
 
@@ -330,6 +331,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     repository.clear()
     this
   }
+  override private[runtime] def getArgTree: ArgTree = argTree
   override def addValidation[T](name: scala.Symbol, func: T => Unit): Unit = {
     nodeRefs.get(name) match {
       case Some(node: ValueNode[T@unchecked]) => valiRefs.put(node, func)
@@ -340,7 +342,7 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     }
   }
   override def parse(args: Seq[String]): Seq[String] = {
-    if (parsedNodes.nonEmpty) throw new IllegalStateException("ScmdRuntime cannot parse args twice.")
+    if (parsedNodes.nonEmpty) throw new IllegalStateException("Scmd cannot parse args twice.")
     val parsedResults = ArgParser.parse(argTree, args)
     val validated = Validator.mutualLimitationValidate(argTree, parsedResults)
     validated.map {

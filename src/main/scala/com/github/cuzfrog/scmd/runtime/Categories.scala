@@ -33,12 +33,12 @@ private case class SingleOpts(arg: String, original: String) extends CateArg
 /** Opt with full name. One "-" of the "--" has been stripped off. */
 private case class LongOpt(arg: String, original: String) extends CateArg
 /** Param or Cmd with no prefix "-". */
-private case class ParamOrCmd(arg: String) extends CateArg{
+private case class ParamOrCmd(arg: String) extends CateArg {
   val original: String = arg
 }
 /** Properties arg, with flag dropped. */
 private case class PropsCate(arg: String, key: String, value: String,
-                             prop: PropNode[_]) extends CateArg{
+                             prop: PropNode[_]) extends CateArg {
   val original: String = arg
 }
 /**
@@ -78,23 +78,28 @@ private object SingleOpts extends CateUtils {
                   c.anchors(optNode1.addValue(extractBooleanValue(optNode1)))
                 //folded letters
                 case bools if bools.matches("""\w+""") =>
-                  val boolSet = bools.split("").toSet
+                  val boolSet = bools.split("").distinct
                   /** Nodes with optDefs matched with args with type Boolean. */
-                  val boolNodes = c.getUpstreamLeftOpts.collectWithType[OptNode[Boolean]]
-                    .filter(n => n.entity.abbr.exists(boolSet.contains))
-                  if (boolNodes.size < boolSet.size) {
+                  val boolNodes = c.getUpstreamLeftOpts.collect {
+                    case node
+                      if node.tpe == ClassTag.Boolean &&
+                        node.entity.abbr.exists(boolSet.contains) => node
+                  }
+                  if (boolNodes.size < boolSet.length) {
                     val badArgs =
                       boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
                     ArgParseException(s"Boolean options: -$badArgs not defined", c)
                   }
-                  else if (boolSet.size < bools.length) {
+                  else if (boolSet.length < bools.length) {
                     ArgParseException(s"Duplicates in boolean options: -$bools", c)
                   }
                   else {
-                    val optNodesWithValue = boolNodes.flatMap { n =>
-                      c.anchors(n.addValue(extractBooleanValue(n)))
-                    }
-                    optNodesWithValue
+                    val optNodesWithValue = c.anchorMultiple(
+                      boolNodes.map { n =>
+                        n.addValue(extractBooleanValue(n))
+                      }
+                    )
+                    Seq(optNodesWithValue)
                   }
 
                 case bad =>

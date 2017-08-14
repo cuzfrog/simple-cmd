@@ -16,15 +16,6 @@ package object runtime extends ArgTreeUtils {
     def parsed: R = parser.parse(a)
   }
 
-  private[runtime] implicit class HSeqOps[N <: ValueNode[_]](a: Seq[N]) {
-    def collectWithType[T <: NodeTag[T] : ClassTag]: Seq[T] = {
-      val classTag = implicitly[ClassTag[T]]
-      a.collect {
-        case node if node.tpe == classTag => node.asInstanceOf[T]
-      }
-    }
-  }
-
   private[runtime] trait Countable[A] {
     def count(a: A): Int
   }

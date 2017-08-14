@@ -48,12 +48,7 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
       case None => ()
       case Some(p) =>
         val forks = p.getBranches
-        val arg = try {
-          args(forks.head.anchor.contextSnapshot.argCursor)
-        } catch {
-          case _: ArrayIndexOutOfBoundsException =>
-            throw new AssertionError("Arg cursor resides out the bounds of array.")
-        }
+        val arg = forks.head.anchor.contextSnapshot.rudeArg
 
         val msg = forks.map(_.anchor.node).map {
           case cmdNode: CmdNode => cmdNode.entity.name

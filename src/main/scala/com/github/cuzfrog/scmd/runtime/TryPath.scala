@@ -9,7 +9,23 @@ import scala.collection.mutable
 /**
   * Anchors represent every successful/possible parsing result. They form paths of parsing.
   */
-private[runtime] case class Anchor(node: Node, contextSnapshot: ContextSnapshot)
+private[runtime] sealed trait Anchor {
+  /** Return the (first) node. */
+  def node: Node
+  /** Return the (first) context snapshot. */
+  def contextSnapshot: ContextSnapshot
+
+  def anchors: Seq[Anchor]
+}
+private[runtime] case class SingleAnchor(node: Node,
+                                         contextSnapshot: ContextSnapshot) extends Anchor {
+  override def anchors: Seq[SingleAnchor] = Seq(this)
+}
+private[runtime] case class MultiAnchor(anchors: Seq[Anchor]) extends Anchor {
+  require(anchors.nonEmpty, "Multi-Anchor must have at least one element.")
+  def node: Node = anchors.head.node
+  def contextSnapshot: ContextSnapshot = anchors.head.contextSnapshot
+}
 
 /**
   * Paths represent a tree of any possible parsing trail. With context snapshot preserved.
@@ -172,39 +188,39 @@ private object TryPath {
   implicit val convert2nodeSeq: Convertible[TryPath, Seq[(Node, ContextSnapshot)]] =
     (a: TryPath) => {
       val top = a.toTop
-
-      @tailrec
-      def recConvert(p: TryPath, acc: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
-        val elem = (p.anchor.node, p.anchor.contextSnapshot)
-        p.branches.headOption match {
-          case Some(path) if path != CompletePath =>
-            recConvert(path, acc :+ elem)
-          case _ => acc :+ elem
-        }
-      }
-
       recConvert(top, Seq())
     }
+  @tailrec private
+  def recConvert(p: TryPath, acc: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
+    val elems = p.anchor.anchors.map { n => n.node -> n.contextSnapshot }
+    p.branches.headOption match {
+      case Some(path) if path != CompletePath =>
+        recConvert(path, acc ++ elems)
+      case _ => acc ++ elems
+    }
+  }
 
 
   implicit val canFormPrettyString: CanFormPrettyString[TryPath] = (a: TryPath) => {
     val top = a.toTop
 
     def recMkPrettyString(p: TryPath, indent: String = ""): Seq[String] = {
-      val thisP = p.anchor.node match {
-        case n: CmdNode => s"${indent}cmd - ${n.entity.name}"
-        case n: PriorNode => s"${indent}prior - ${n.entity.name}"
-        case n: ParamNode[_] =>
-          s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
-        case n: OptNode[_] =>
-          s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
-        case n: PropNode[_] =>
-          s"${indent}prop : ${n.entity.name}[${n.tpe}] - ${n.value.mkString("|")}"
+      val thisP = p.anchor.anchors.map { anchr =>
+        anchr.node match {
+          case n: CmdNode => s"${indent}cmd - ${n.entity.name}"
+          case n: PriorNode => s"${indent}prior - ${n.entity.name}"
+          case n: ParamNode[_] =>
+            s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
+          case n: OptNode[_] =>
+            s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
+          case n: PropNode[_] =>
+            s"${indent}prop : ${n.entity.name}[${n.tpe}] - ${n.value.mkString("|")}"
+        }
       }
       val subs = if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
         p.branches.flatMap(p => recMkPrettyString(p, indent + " "))
       } else Nil
-      thisP +: subs
+      thisP ++ subs
     }
 
     recMkPrettyString(top).mkString(System.lineSeparator)

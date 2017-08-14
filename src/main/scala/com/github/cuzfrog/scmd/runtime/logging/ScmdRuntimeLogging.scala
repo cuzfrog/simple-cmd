@@ -1,6 +1,6 @@
 package com.github.cuzfrog.scmd.runtime.logging
 
-import com.github.cuzfrog.scmd.{ArgValue, Argument}
+import com.github.cuzfrog.scmd.{ArgValue, Argument, SingleValue, VariableValue}
 import com.github.cuzfrog.scmd.internal.{IgnoreLogging, SimpleLogging}
 import com.github.cuzfrog.scmd.runtime.{ArgTypeEvidence, Node, ScmdRuntime, ScmdRuntimeImpl, ValueNode}
 
@@ -32,14 +32,20 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
   abstract override def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A = {
     val result = super.getEvaluatedArgumentByName[T, A](name)
-    debug(s"Get evaluated Argument(${result.name}) of type[${implicitly[ClassTag[T]]}]] by name:$name")
+    val value = result match{
+      case v:SingleValue[_] => v.v.toSeq
+      case v:VariableValue[_] => v.v
+      case v => Nil
+    }
+    debug(s"Get evaluated Argument(${result.name})" +
+      s" of type[${implicitly[ClassTag[T]]}]] by name:$name | value: $value")
     result
   }
 
-  @IgnoreLogging
+
   abstract override def parse(args: Seq[String]): Seq[String] = {
     val result = super.parse(args)
-    debug(s"Try to parse arguments:${args.mkString(" ")}, result:${result.mkString(",")}")
+    debug(s"Try to parse arguments:${args.mkString(" ")}, result: ${result.mkString(",")}")
     result
   }
 }

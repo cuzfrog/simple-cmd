@@ -60,12 +60,13 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     Seq(optsUpstreamLeft: _*) //OptNode is immutable.
   }
 
-  /** Consume a Node and produce an Anchor. */
-  @inline
-  def anchors(ns: Node*): Seq[Anchor] = this.synchronized {ns.map(anchor)}
 
+  def anchors(ns: Node*): Seq[Anchor] = this.synchronized {ns.map(anchor)}
+  /** Create a multiAnchor. */
+  def anchorMultiple(ns: Seq[Node]): Anchor = this.synchronized {
+    MultiAnchor(ns.map(anchor))
+  }
   /** Create an anchor, if the node is an opt, register it as consumed. */
-  @inline
   def anchor(n: Node): Anchor = this.synchronized {
     val updatedNode: Node = n match {
       case optNode: OptNode[_] =>
@@ -85,7 +86,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
         updated
       case otherNode => otherNode //nothing needed to do.
     }
-    Anchor(updatedNode, this)
+    SingleAnchor(updatedNode, this)
   }
 
   /** Return current pointed ParamNode of current CmdNode. */

@@ -9,7 +9,10 @@ private[runtime] trait TryPathLogging extends TryPath with SimpleLogging {
 
   override def complete: TryPathLogging.this.type = {
     val thisPath = super.complete
-    debug(s"Path complete: ${thisPath.anchor.node.prettyString}")
+    val cs = thisPath.anchor.contextSnapshot
+    debug(s"Path complete: ${thisPath.anchor.node.prettyString} and" +
+      s" ${thisPath.anchor.anchors.size} more|" +
+      s"${cs.argCursor} -> '${cs.rudeArg}'")
     //trace(s"After complete path:\n${super.toTop.prettyString}")
     thisPath
   }

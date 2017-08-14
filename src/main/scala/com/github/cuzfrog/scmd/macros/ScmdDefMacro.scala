@@ -101,8 +101,8 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
     }
 
     /** Client api. Return a new defClass after done parsing and running built-in route. */
-    val public_def_parsed = {
-      q"""def parsed: $name = {
+    val public_def_parse = {
+      q"""def parse: $name = {
             val evaluatedDefClass = this.parsedWithoutRun
             import ArgRoute._
             this.builtInRoute(evaluatedDefClass).execute
@@ -133,14 +133,14 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
       q"def withValidation[T](vali: $name => T): this.type = {vali(this); this}",
       public_def_runWithRoute,
       q"def defaultUsageString(implicit consoleType: ConsoleType): String = scmdRuntime.usageString",
-      public_def_parsed
+      public_def_parse
     )
 
     val testMethods = if (isTestMode) List(
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",
-      q"def parse():Unit = scmdRuntime.parse($argsParam)"
+      q"def parseOnly():Unit = scmdRuntime.parse($argsParam)"
     ) else Nil
 
     //abort("dev...")

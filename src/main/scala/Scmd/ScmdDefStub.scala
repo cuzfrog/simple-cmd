@@ -8,7 +8,7 @@ abstract class ScmdDefStub[D] extends ScmdDefApi {
   // ------------- stub methods -----------------
   def withValidation[T](vali: D => T): this.type
   def runWithRoute(toRoute: D => ArgRoute): Boolean
-  def parsed: D
+  def parse: D
   def defaultUsageString(implicit consoleType: ConsoleType): String
   val help: PriorArg
   val version: PriorArg

@@ -8,7 +8,7 @@ import org.junit.Test
 class TreeDslTest {
 
   private val defClass = new TreeDslDef(Nil)
-  private val tree: ArgTree = defClass.scmdRuntime.getArgTree
+  private val tree: ArgTree = defClass.getRuntime.getArgTree
   @Test
   def test1(): Unit = {
     assert(tree.topParams.map(_.entity.name) == Seq("param0"))

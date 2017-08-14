@@ -121,7 +121,8 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
     }
 
     val addMethods = List(
-      q"""..$privateMod val scmdRuntime:ScmdRuntime = {
+      //must be private, sub-classes use the same instance.
+      q"""private[this] val scmdRuntime:ScmdRuntime = {
              val runtime = ScmdRuntime.create
              $argTreeBuild //execute scmdRuntime to build an argTree/appInfo
              runtime
@@ -137,6 +138,7 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
     )
 
     val testMethods = if (isTestMode) List(
+      q"def getRuntime:ScmdRuntime = scmdRuntime",
       q"def appInfoString:String = scmdRuntime.appInfoString",
       q"def argTreeString:String = scmdRuntime.argTreeString",
       q"def parsedSeqString:String = scmdRuntime.parsedSeqString",

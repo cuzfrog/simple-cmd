@@ -7,7 +7,7 @@ import org.junit.Assert._
 
 class StructureInferTest {
   private val defClass = new StructureInferDef(Nil)
-  private val tree: ArgTree = defClass.scmdRuntime.getArgTree
+  private val tree: ArgTree = defClass.getRuntime.getArgTree
   @Test
   def test1(): Unit = {
     assertTrue("name infer", tree.appInfo.name == "StructureInfer".toLowerCase)

@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import Scmd._
 
-private object Eft {
+private[scmd] object Eft {
   @ScmdDef
   private class EftDef(args: Seq[String]) extends ScmdDefStub{
     //arg tree is inferred by order below:

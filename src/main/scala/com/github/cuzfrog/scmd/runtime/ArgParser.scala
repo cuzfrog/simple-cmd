@@ -131,7 +131,7 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
 }
 
 private object BacktrackingParser {
-  private def categorize(arg: String)(implicit argTree: ArgTree): TypedArg[CateArg] = {
+  def categorize(arg: String)(implicit argTree: ArgTree): TypedArg[CateArg] = {
     val cateArg: CateArg = arg match {
       case PropertiesExtractor(prop) => prop
       case SingleOptExtractor(sOpt) => SingleOpts(sOpt, arg)

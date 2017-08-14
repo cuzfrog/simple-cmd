@@ -4,9 +4,9 @@ import java.io.File
 
 import Scmd._
 
-private object Cp {
+private[scmd] object Cp {
   @ScmdDef
-  private class CpDef(args: Seq[String]) extends ScmdDefStub{
+  class CpDef(args: Seq[String]) extends ScmdDefStub{
     appDef(name = "cp",shortDescription = "copy file or dir.")
     val SRC = paramDefVariable[File]().mandatory
     val DEST = paramDef[File]().mandatory

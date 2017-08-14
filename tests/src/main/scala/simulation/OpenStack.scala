@@ -3,7 +3,7 @@ package simulation
 import Scmd._
 import com.github.cuzfrog.scmd.{OptionArg, SingleValue}
 
-private object OpenStack {
+private[scmd] object OpenStack {
   @ScmdDef
   private class OpenStackDef(args: Seq[String]) extends ScmdDefStub {
     val nova = cmdDef(description = "nova command entry")

@@ -55,22 +55,15 @@ sealed abstract class AbstractScmdValueConverter {
 /**
   * Provide explicit method to get value of Argument.
   */
-object ScmdValueConverter extends AbstractScmdValueConverter {
+object ScmdValueConverter
+  extends AbstractScmdValueConverter with LowLevelImplicitForScmdValueConverter {
   implicit class ValueConverterSingleValueMOps[T](a: ValueArgument[T] with SingleValue[T] with Mandatory) {
     def value: T = a.v.getOrElse(throwIfEmptyMandatory(a))
   }
 
-  implicit class ValueConverterSingleValueDOps[T](a: ValueArgument[T] with SingleValue[T] with WithDefault) {
+  implicit class ValueConverterSingleValueDOps[T]
+  (a: ValueArgument[T] with SingleValue[T] with WithDefault) {
     def value: T = a.v.getOrElse(a.default.getOrElse(throwIfEmptyDefault(a)))
-  }
-
-  implicit class ValueConverterBooleanSingleValueOps
-  (a: ValueArgument[Boolean] with SingleValue[Boolean]) {
-    def value: Boolean = a.v.getOrElse(a.default.getOrElse(throwIfEmptyMandatory(a)))
-  }
-
-  implicit class ValueConverterSingleValueOps[T](a: ValueArgument[T] with SingleValue[T]) {
-    def value: Option[T] = a.v
   }
 
   implicit class ValueConverterVariableValueOps[T](a: ValueArgument[T] with VariableValue[T]) {
@@ -83,6 +76,17 @@ object ScmdValueConverter extends AbstractScmdValueConverter {
 
   implicit class ValueConverterPriorValueOps(priorArg: PriorArg) {
     def value: Option[Symbol] = priorArg.met
+  }
+}
+
+sealed trait LowLevelImplicitForScmdValueConverter {
+  implicit class ValueConverterBooleanSingleValueOps
+  (a: ValueArgument[Boolean] with SingleValue[Boolean]) {
+    def value: Boolean = a.v.getOrElse(a.default.getOrElse(throwIfEmptyMandatory(a)))
+  }
+
+  implicit class ValueConverterSingleValueOps[T](a: ValueArgument[T] with SingleValue[T]) {
+    def value: Option[T] = a.v
   }
 }
 

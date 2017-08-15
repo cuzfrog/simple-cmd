@@ -49,7 +49,7 @@ private case class PropsCate(arg: String, key: String, value: String,
   * multi-char -Pn  Pn is a single option abbreviation.
   */
 private object SingleOpts extends CateUtils {
-  private val EqualLitertal: Regex = """(\w+)\=(\w+)""".r
+  private val EqualLitertal: Regex = """(\w+)\=(.+)""".r
   private val ValueFolding: Regex = """(\w)([^\=]{1}.*)""".r
 
   implicit val parser: Parser[SingleOpts, AnchorEither] = new Parser[SingleOpts, AnchorEither] {
@@ -88,7 +88,8 @@ private object SingleOpts extends CateUtils {
                   if (boolNodes.size < boolSet.length) {
                     val badArgs =
                       boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
-                    ArgParseException(s"Boolean options: -$badArgs not defined", c)
+                    ArgParseException(
+                      s"Boolean options: '$badArgs' in '${a.original}' not defined", c)
                   }
                   else if (boolSet.length < bools.length) {
                     ArgParseException(s"Duplicates in boolean options: -$bools", c)

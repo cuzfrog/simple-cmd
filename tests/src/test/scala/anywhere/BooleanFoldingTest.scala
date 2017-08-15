@@ -7,7 +7,6 @@ import org.junit._
 
 class BooleanFoldingTest {
 
-  import BooleanFoldingTest._
   import scmdValueImplicitConversion._
 
   @Test
@@ -29,9 +28,7 @@ class BooleanFoldingTest {
   private implicit class ParseOps(in: List[String]) {
     def parse: BooleanFoldingDefs = new BooleanFoldingDefs(in).parse
   }
-}
 
-object BooleanFoldingTest {
   @ScmdDefTest
   private class BooleanFoldingDefs(args: Seq[String]) extends ScmdDefStub[BooleanFoldingDefs] {
     val opta = optDef[Boolean](abbr = "a")
@@ -41,7 +38,5 @@ object BooleanFoldingTest {
     val optE = optDef[Boolean](abbr = "E")
     val optF = optDef[Boolean](abbr = "F")
     val optFG = optDef[Boolean](abbr = "FG")
-    val optXX = optDef[Boolean](abbr = "XX")
-    val optYy = optDef[Boolean](abbr = "Yy")
   }
 }

@@ -31,8 +31,8 @@ It turns out that parsing command-line arguments is not an easy work.
 | Trailing option                                |`cp -r SRC DST` equivalent to `cp SRC DST -r` |
 | Mutual exclusion                                        | `--start ❘ --stop`       |
 | Mutual dependency                                   | `[-a -b]` or `[-a [-b]]`       |
-| Validation                                     | `cp SRC DST` SRC must exist  |
-| Typed argument                                     | `cp SRC DST` SRC must be file  |
+| Validation                                     | `cp SRC DST` SRC must exist/etc.  |
+| Typed argument                                 | `cp SRC DST` SRC is `File` or `Path`  |
 | Argument optionality                                     | `SRC [DST]`       |
 | Variable argument                                        | `SRC... DST`       |
 | Properties                                                 | `-Dkey=value`       | 
@@ -43,10 +43,11 @@ It turns out that parsing command-line arguments is not an easy work.
 
 ### Goals I'm trying to achieve:
 
-* **Simplicity** - Clients would be able to use it with little effort.
+* **Simplicity** - Clients would be able to use it with little effort. 
+More complex functionality should be possible and addable.
 * **Versatility** - It has to be powerful enough to tackle those tricky things.
 * **Beauty** - It should provide fluent coding style;
- It should able to generate formatted usage console info.
+ It should be able to generate formatted usage console info.
 * **Strictness** - As a library, it should be well structured, documented and self-encapsulated.
 
 ![openstack-help](/usage-pic/openstack-help.png) ![cp-help](/usage-pic/cp-help.png) 
@@ -57,7 +58,7 @@ First, define the arguments in def-class:
 import java.io.File
 import Scmd._
 @ScmdDef
-private class CpDef(args: Seq[String]) extends ScmdDefStub{ //app name 'cp' is inferred from CpDef
+private class CpDef(args: Seq[String]) extends ScmdDefStub[CpDef]{ //app name 'cp' is inferred from CpDef
     val SRC = paramDefVariable[File]().mandatory
     val DEST = paramDef[File]().mandatory
     val recursive = optDef[Boolean](abbr = "R")
@@ -273,14 +274,6 @@ val dst:File = conf.DST.value
 val port:Option[Int] = conf.remotePort.value
 ```
 
-3. Safe converter:
-```scala
-import scmdSafeValueConverter._
-val src:Seq[File] = conf.SRC.valueSeq 
-val dst:File = conf.DST.value
-val port:Option[Int] = conf.remotePort.valueOpt
-```
-
 ### Routing.
 
 Manual routing: `if(conf.cmd.met){...} else {...}`
@@ -332,6 +325,11 @@ app.runOnPrior(help){
 * Reusing arg-def in tree-building-DSL: arg cannot duplicate through lineage.
 Duplication through lineage makes it possibly ambiguous for an argument's scope.
 This makes features, like _trailing option_, very hard to implement.
+
+3. ScmdDefStub[T]
+`ScmdDefStub[T]` contains some abstract public methods for IDE to recognize the api,
+ which are stripped off during macro expansion. That means `extends ScmdDefStub[T]`
+ could be omitted without errors.
 
 ## About
 

@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
 
-private trait TreeBuilder {
+private class TreeBuilder {
   /**
     * Build a flat tree from arg definition by source code order.
     *
@@ -17,7 +17,55 @@ private trait TreeBuilder {
   @inline
   def buildArgTreeByIdx(appInfo: TermAppInfo,
                         argDefs: immutable.Seq[TermArg],
-                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
+                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
+    val idxDefs = argDefs.toIndexedSeq
+    val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
+      .map(LimitationGroup.fromTuple)
+
+    @tailrec
+    def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
+      if (args.isEmpty) builder
+      else recAdd(builder.add(args.head), args.tail)
+    }
+    val props = idxDefs.collect { case prop: TermProp => prop }
+    val priors = idxDefs.collect { case prior: TermPrior => prior }
+
+    val tree = idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
+      case None =>
+        val params = idxDefs.collect { case param: TermParam => param }
+        val opts = idxDefs.collect { case opt: TermOpt => opt }
+        TermArgTree(
+          appInfo = appInfo,
+          topParams = params,
+          topOpts = opts,
+          priors = priors,
+          props = props,
+          cmdEntry = TermCommandEntry.placeHolder,
+          globalLimitations = globalLimitations)
+
+      case Some(cmd1) =>
+        import idxDefs.indexOf
+        val topValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
+        /** param defs above first cmd will be shared by all cmd as their first param. */
+        val topParams = topValueArgs.collect { case param: TermParam => param }
+        val topOpts = topValueArgs.collect { case opt: TermOpt => opt }
+
+        val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
+        val builder = NodeBuilder.newIdxTermBuilder(cmd1, topParams)
+
+        val commands = recAdd(builder, tail).seal
+        TermArgTree(
+          appInfo = appInfo,
+          topParams = Nil,
+          topOpts = topOpts,
+          priors = priors,
+          props = props,
+          cmdEntry = TermCommandEntry.createWithCmdNodes(commands),
+          globalLimitations = globalLimitations)
+    }
+
+    checkAmbiguousParams(tree)
+  }
 
   /**
     * Build tree from DSL.
@@ -28,87 +76,56 @@ private trait TreeBuilder {
   def buildArgTreeByDSL(appInfo: TermAppInfo,
                         argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
-                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree
+                        globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
+
+    val builder = NodeBuilder.newDslTermBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
+
+    checkAmbiguousParams(builder.resolve)
+  }
+
+  private def checkAmbiguousParams(termArgTree: TermArgTree): TermArgTree = {
+    val ambiguousParams = extractAmbiguousVariableParam(termArgTree)
+    if (ambiguousParams.nonEmpty) {
+      val head = ambiguousParams.head
+      val more =
+        if (ambiguousParams.lengthCompare(1) > 0) s" and ${ambiguousParams.size - 1} more..."
+        else ""
+      abort("Optional/variable parameter cannot follow variable parameter closely." +
+        s" '${head._2.name}' is right after '${head._1.name}'" + more)
+    }
+    termArgTree
+  }
+
+  /**
+    * @param termArgTree the tree to check.
+    * @return ambiguous termParams.
+    */
+  protected def extractAmbiguousVariableParam
+  (termArgTree: TermArgTree): Seq[(TermParam, TermParam)] = {
+    checkAmbiguity(termArgTree.topParams) ++
+      termArgTree.cmdEntry.children.flatMap { cmdNode =>
+        recExtractAmbiguousVariableParam(cmdNode, Nil)
+      }
+  }
+  private def recExtractAmbiguousVariableParam
+  (termCmdNode: TermCmdNode,
+   acc: Seq[(TermParam, TermParam)]): Seq[(TermParam, TermParam)] = {
+    val ambiguousParams = checkAmbiguity(termCmdNode.params) ++ acc
+    termCmdNode.subCmdEntry.children match {
+      case Nil => ambiguousParams
+      case seq => seq.flatMap(cmdNode => recExtractAmbiguousVariableParam(cmdNode, ambiguousParams))
+    }
+  }
+  private def checkAmbiguity(params: Seq[TermParam]): Seq[(TermParam, TermParam)] = {
+    params.sliding(2).toSeq.collect {
+      case Seq(p1, p2) if p1.isVariable && !p2.isMandatory => (p1, p2)
+    }
+  }
 }
 
 private object TreeBuilder {
   /** Create a builder with logging. */
-  def builder: TreeBuilder = new TreeBuilderImpl with TreeBuilderLogging
-
-  private class TreeBuilderImpl extends TreeBuilder {
-    /**
-      * Build a flat tree from arg definition by source code order.
-      *
-      * @param argDefs arg definition list from source code with original order.
-      * @return A flat TermArgTree with at most one CmdEntryNode (to first level sub-commands).
-      */
-    @inline
-    def buildArgTreeByIdx(appInfo: TermAppInfo,
-                          argDefs: immutable.Seq[TermArg],
-                          globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
-      val idxDefs = argDefs.toIndexedSeq
-      val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
-        .map(LimitationGroup.fromTuple)
-
-      @tailrec
-      def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
-        if (args.isEmpty) builder
-        else recAdd(builder.add(args.head), args.tail)
-      }
-      val props = idxDefs.collect { case prop: TermProp => prop }
-      val priors = idxDefs.collect { case prior: TermPrior => prior }
-
-      idxDefs.collectFirst { case cmd: TermCmd => cmd } match {
-        case None =>
-          val params = idxDefs.collect { case param: TermParam => param }
-          val opts = idxDefs.collect { case opt: TermOpt => opt }
-          TermArgTree(
-            appInfo = appInfo,
-            topParams = params,
-            topOpts = opts,
-            priors = priors,
-            props = props,
-            cmdEntry = TermCommandEntry.placeHolder,
-            globalLimitations = globalLimitations)
-
-        case Some(cmd1) =>
-          import idxDefs.indexOf
-          val topValueArgs = idxDefs.filter(arg => indexOf(arg) < indexOf(cmd1))
-          /** param defs above first cmd will be shared by all cmd as their first param. */
-          val topParams = topValueArgs.collect { case param: TermParam => param }
-          val topOpts = topValueArgs.collect { case opt: TermOpt => opt }
-
-          val tail = idxDefs.filter(arg => indexOf(arg) > indexOf(cmd1))
-          val builder = NodeBuilder.newIdxTermBuilder(cmd1, topParams)
-
-          val commands = recAdd(builder, tail).seal
-          TermArgTree(
-            appInfo = appInfo,
-            topParams = Nil,
-            topOpts = topOpts,
-            priors = priors,
-            props = props,
-            cmdEntry = TermCommandEntry.createWithCmdNodes(commands),
-            globalLimitations = globalLimitations)
-      }
-    }
-
-    /**
-      * Build tree from DSL.
-      *
-      * @see [[com.github.cuzfrog.scmd.macros.NodeBuilder]]
-      * @return A TermArgTree shaped by dsl.
-      */
-    def buildArgTreeByDSL(appInfo: TermAppInfo,
-                          argDefs: immutable.Seq[TermArg],
-                          dslStats: immutable.Seq[Term.Arg],
-                          globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
-
-      val builder = NodeBuilder.newDslTermBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
-
-      builder.resolve
-    }
-  }
+  def builder: TreeBuilder = new TreeBuilder with TreeBuilderLogging
 }
 
 private object NodeBuilder {
@@ -139,8 +156,13 @@ private object NodeBuilder {
                         globalLimitationsStats: immutable.Seq[Term.Arg]): DslTermNodeBuilder =
     new DslTermNodeBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
 
-
-  /** Shared function used in both implementation. */
+  /**
+    * Shared function used in both implementation.
+    *
+    * @param argDefs termArgs defined in order previously.
+    * @param stats   tree DSL statement.
+    * @return (MutualLimitation,Seq(termArgs),idx)
+    */
   def collectLimitations
   (argDefs: immutable.Seq[TermArg],
    stats: immutable.Seq[Term.Arg]): immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] = {
@@ -162,7 +184,7 @@ private object NodeBuilder {
         val limitation = Limitation.fromOperator(operator).getOrElse(
           throw new IllegalArgumentException(
             s"Illegal limitation operator:'$operator' before '$lastArgName' in '$stat'. " +
-            s"This is probably caused by syntax error in tree DSL.")
+              s"This is probably caused by syntax error in tree DSL.")
         )
         val relationSeq = (recInfix2seq(subs) :+ lastArgName)
           .map(argName => queryArg(argName)

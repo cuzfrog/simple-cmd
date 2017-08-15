@@ -50,7 +50,7 @@ private object TermArg extends SimpleLogging {
                                                $TERM_DESCRIPTION = ${r.description.defnTerm},
                                                $TERM_IS_MANDATORY = ${r.isMandatory.defnTerm},
                                                argValue = ${r.argValue})"""
-        TermParam(r.name, term, r.pos, r.tpe, topCmdSymbol)
+        TermParam(r.name, term, r.pos, r.tpe, topCmdSymbol, r.isMandatory, r.isVariable)
 
       case r: RawOpt =>
         val term =
@@ -87,7 +87,8 @@ private final case class TermCmd(name: String, term: Term, pos: Position) extend
   val tpe: Type.Name = TYPE_NOTHING
 }
 private sealed case class TermParam(name: String, term: Term, pos: Position, tpe: Type,
-                                    parent: Lit.Symbol) extends TermValueArg
+                                    parent: Lit.Symbol,
+                                    isMandatory: Boolean, isVariable: Boolean) extends TermValueArg
 private sealed case class TermOpt(name: String, term: Term, pos: Position, tpe: Type,
                                   parent: Lit.Symbol) extends TermValueArg
 private sealed case class TermProp(name: String, flag: String,

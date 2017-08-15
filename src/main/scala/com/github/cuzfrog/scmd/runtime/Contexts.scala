@@ -118,7 +118,7 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   }
 
   /** Return current concerned arg, and set cursor to next. */
-  def nextArg: Option[String] = nextCateArg.map(_.arg)
+  def nextArg: Option[String] = nextCateArg.map(_.original)
 
   /** Return current concerned arg of given type, if successful, set cursor to next. */
   def nextArgWithType[T <: CateArg : ClassTag]: Option[String] = this.synchronized {

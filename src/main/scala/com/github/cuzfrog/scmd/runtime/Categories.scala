@@ -49,8 +49,8 @@ private case class PropsCate(arg: String, key: String, value: String,
   * multi-char -Pn  Pn is a single option abbreviation.
   */
 private object SingleOpts extends CateUtils {
-  private val EqualLitertal: Regex = """(\w+)\=(.+)""".r
-  private val ValueFolding: Regex = """(\w)([^\=]{1}.*)""".r
+  private val EqualLitertal: Regex = """([a-zA-Z]\w*)\=(.+)""".r
+  private val ValueFolding: Regex = """([a-zA-Z])([^\=]{1}.*)""".r
 
   implicit val parser: Parser[SingleOpts, AnchorEither] = new Parser[SingleOpts, AnchorEither] {
     override def parse(a: SingleOpts)(implicit c: Context): AnchorEither = {
@@ -131,7 +131,7 @@ private object SingleOpts extends CateUtils {
 }
 
 private object LongOpt extends CateUtils {
-  private val EqualLiteral: Regex = """-([\-\w\d]+)(=.*)?""".r
+  private val EqualLiteral: Regex = """-([\-\w]+)(=.*)?""".r
 
   implicit val parser: Parser[LongOpt, AnchorEither] = new Parser[LongOpt, AnchorEither] {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {

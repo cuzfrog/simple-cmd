@@ -136,10 +136,10 @@ private object BacktrackingParser {
     TypedArg(cateArg, arg)
   }
 
-  private val SingleOptExtractor: Regex = """-(\w{1}.*)""".r
-  private val LongOptExtractor: Regex = """-((-[\w\d]+)+(=.*)?)""".r
+  private val SingleOptExtractor: Regex = """-([a-zA-Z].*)""".r
+  private val LongOptExtractor: Regex = """-((-[a-zA-Z]\w*)+(=.*)?)""".r
   private object PropertiesExtractor {
-    private val RegexExtractor: Regex = """-([A-Z]{1})([a-z]+[\w\d]+)\=(.*)""".r
+    private val RegexExtractor: Regex = """-([A-Z]{1})([a-z]+\w+)\=(.*)""".r
     def unapply(arg: String)(implicit argTree: ArgTree): Option[PropsCate] = arg match {
       case RegexExtractor(flag, k, v) =>
         argTree.props.find(_.entity.flag == flag).map { node =>

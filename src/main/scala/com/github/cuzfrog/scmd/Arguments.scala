@@ -244,11 +244,13 @@ private object ValueArgument {
 }
 
 private object ArgValue {
-  private[scmd] def single[T](_default: Option[T]): SingleValue[T] = new SingleValue[T] {
+  private[scmd] def single[T](_default: Option[T],
+                              value: Option[T] = None): SingleValue[T] = new SingleValue[T] {
     override def default: Option[T] = _default
     override def v: Option[T] = None
   }
-  private[scmd] def variable[T](_default: Seq[T]): VariableValue[T] = new VariableValue[T] {
+  private[scmd] def variable[T](_default: Seq[T],
+                                value: Seq[T] = Nil): VariableValue[T] = new VariableValue[T] {
     override def default: Seq[T] = _default
     override def v: Seq[T] = Nil
   }

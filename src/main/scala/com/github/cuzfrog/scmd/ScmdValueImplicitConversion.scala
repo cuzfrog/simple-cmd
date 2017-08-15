@@ -9,30 +9,28 @@ import ScmdUtils._
   * Implicit conversion is generally discouraged. Use it within limited scope and with caution.
   *
   */
-object ScmdValueImplicitConversion extends AbstractScmdValueConverter {
+object ScmdValueImplicitConversion extends AbstractScmdValueConverter
+  with LowLevelImplicitForScmdValueImplicitConversion {
   /*
    * S = SingleValue, V = VariableValue, M = Mandatory, D = WithDefault
    */
 
   implicit def cmd2Value(in: Command): Boolean = in.met
-  implicit def paramS2value[T](in: Parameter[T] with SingleValue[T]): Option[T] = in.v
-  implicit def paramSM2value[T](in: Parameter[T] with SingleValue[T] with Mandatory): T =
+
+  implicit def paramSM2value[T](in: ValueArgument[T] with SingleValue[T] with Mandatory): T =
     in.v.getOrElse(throwIfEmptyMandatory(in))
-  implicit def paramSD2value[T](in: Parameter[T] with SingleValue[T] with WithDefault): T =
+  implicit def paramSD2value[T](in: ValueArgument[T] with SingleValue[T] with WithDefault): T =
     in.v.getOrElse(in.default.getOrElse(throwIfEmptyDefault(in)))
-  implicit def paramV2value[T](in: Parameter[T] with VariableValue[T]): Seq[T] =
+  implicit def paramV2value[T](in: ValueArgument[T] with VariableValue[T]): Seq[T] =
     if (in.v.nonEmpty) in.v else in.default
   //           paramVM same as above
-  implicit def optS2value[T](in: OptionArg[T] with SingleValue[T]): Option[T] = in.v
-  implicit def optSM2value[T](in: OptionArg[T] with SingleValue[T] with Mandatory): T =
-    in.v.getOrElse(throwIfEmptyMandatory(in))
-  implicit def optSD2value[T](in: OptionArg[T] with SingleValue[T] with WithDefault): T =
-    in.v.getOrElse(in.default.getOrElse(throwIfEmptyDefault(in)))
-  implicit def optV2value[T](in: OptionArg[T] with VariableValue[T]): Seq[T] =
-    if (in.v.nonEmpty) in.v else in.default
-  //           optVM same as above
+
   implicit def props2value[T](in: PropsV[T]): Seq[(String, T)] = in.v
   implicit def prior2value(in: PriorArg): Option[Symbol] = in.met
+}
+
+sealed trait LowLevelImplicitForScmdValueImplicitConversion {
+  implicit def paramS2value[T](in: ValueArgument[T] with SingleValue[T]): Option[T] = in.v
 
   implicit def boolValueArgument2value
   (in: ValueArgument[Boolean] with SingleValue[Boolean]): Boolean = {

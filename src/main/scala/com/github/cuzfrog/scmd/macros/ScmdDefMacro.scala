@@ -27,7 +27,11 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
 
 
     val appInfo = {
-      val inferredName = if (name.value.endsWith("Def")) name.value.dropRight(3) else name.value
+      val NameExtractor = """(\w+)Defs?""".r
+      val inferredName = name.value match{
+        case NameExtractor(n) => n
+        case n => n
+      }
       TermAppInfo.collectAppInfo(stats, inferredName.toLowerCase)
     }
     implicit val _appInfo: AppInfo = appInfo.appInfo
@@ -82,7 +86,7 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
             }catch{
               case e: ScmdException=> scmdRuntime.handleException(e)
             }
-            ..${if(isTestMode) Nil else List(q"scmdRuntime.clean()")}
+            ..${if (isTestMode) Nil else List(q"scmdRuntime.clean()")}
             evaluatedDefClass
           }"""
     }

@@ -23,7 +23,7 @@ private final case class ArgTree(appInfo: AppInfo,
   )
 }
 
-private sealed trait Node {
+private sealed trait Node extends Product with Serializable{
   def entity: Argument[_]
 }
 
@@ -35,7 +35,8 @@ private case class CmdNode(entity: Command,
 
 private case class CmdEntryNode(entity: CommandEntry,
                                 children: Seq[CmdNode]) {
-  lazy val mandatoryDownstreamCnt: Int = this.countMandatoryDownstream
+  lazy val mandatoryDownstreamCnt: Int = this.mandatoriesDownstream.size
+  lazy val mandatoriesDownstream: Seq[Node] = this.getMandatoriesDownstream
 }
 
 private case class PriorNode(entity: PriorArg, parent: scala.Symbol) extends Node

@@ -6,7 +6,7 @@ import ScmdUtils._
 /**
   * Exposed to macros for basic validation, so need to put in this package.
   */
-sealed trait Argument[+T] {
+sealed trait Argument[+T] extends Product with Serializable{
   def name: String
   def description: Option[String]
   /** Name that is meant to be on the cmd-line. */

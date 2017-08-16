@@ -198,23 +198,12 @@ private object ParamOrCmd extends CateUtils {
             if (paramNode.isVariable) {
               //variable/multiple args:
               trace(s"Parse ParamOrCmd:${a.original} -> param...")
-
-              /** Pop args from context and create anchors along the way. */
-              @tailrec
-              def recForkVariable(acc: Seq[Anchor], values: Seq[String]): Seq[Anchor] = {
-                c.nextArgWithType[ParamOrCmd] match {
-                  case Some(v) =>
-                    val accValues = values :+ v
-                    debug("ParamNode type before/after evaluation:" +
-                      paramNode.tpe + "/" + paramNode.copy(value = accValues).tpe)
-                    val newAnchor = c.anchors(paramNode.copy(value = accValues))
-                    recForkVariable(acc ++ newAnchor, accValues)
-                  case None => acc
-                }
-              }
-
+              val snapshot = c.takeSnapshot
+              val nextForks = recForkNext(arg, Nil)
+              c.restore(snapshot)
               val firstAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
-              recForkNext(arg, recForkVariable(firstAnchor, Seq(arg)))
+              val variableForks = recForkVariable(paramNode, firstAnchor, Seq(arg))
+              nextForks ++ variableForks
               //current context state should point to last anchors.
             }
 
@@ -237,6 +226,21 @@ private object ParamOrCmd extends CateUtils {
         case None =>
           trace(s"Parse ParamOrCmd:${a.original} -> cmd")
           this.consumeCmd(arg, c)
+      }
+    }
+
+    /** Pop args from context and create anchors along the way. */
+    @tailrec
+    def recForkVariable(paramNode: ParamNode[_], acc: Seq[Anchor], values: Seq[String])
+                       (implicit c: Context): Seq[Anchor] = {
+      c.nextArgWithType[ParamOrCmd] match {
+        case Some(v) =>
+          val accValues = values :+ v
+          //                    debug("ParamNode type before/after evaluation:" +
+          //                      paramNode.tpe + "/" + paramNode.copy(value = accValues).tpe)
+          val newAnchor = c.anchors(paramNode.copy(value = accValues))
+          recForkVariable(paramNode, acc ++ newAnchor, accValues)
+        case None => acc
       }
     }
 

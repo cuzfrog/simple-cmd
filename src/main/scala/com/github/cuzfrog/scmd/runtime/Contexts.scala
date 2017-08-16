@@ -157,11 +157,15 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
     paramCursor = snapshot.paramCursor
   }
 
+  def mandotariesLeft: Seq[Node] = this.synchronized {
+    val params: Seq[Node] = currentCmdNode.params.drop(paramCursor).filter(_.entity.isMandatory)
+    val opts: Seq[Node] = optsUpstreamLeft.filter(_.value.isEmpty).filter(_.entity.isMandatory)
+    val subCmds: Seq[Node] = currentCmdNode.subCmdEntry.mandatoriesDownstream
+    params ++ opts ++ subCmds
+  }
+
   def mandatoryLeftCnt: Int = this.synchronized {
-    val paramCnt = currentCmdNode.params.drop(paramCursor).count(_.entity.isMandatory)
-    val optCnt = optsUpstreamLeft.filter(_.value.isEmpty).count(_.entity.isMandatory)
-    val subCmdCnt = currentCmdNode.subCmdEntry.mandatoryDownstreamCnt
-    paramCnt + optCnt + subCmdCnt
+    this.mandotariesLeft.size
   }
 
   def isComplete: Boolean = this.synchronized {

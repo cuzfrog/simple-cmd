@@ -49,6 +49,26 @@ class OptionalityTest extends ScalacheckIntegration {
     assert(paramM.value == "strM")
   }
 
+  @Test
+  def test4(): Unit = {
+    val parsed = List("-223", "strM").parse
+    import parsed._
+    assert(parama1.value.contains(-223))
+    assert(parama2.value.isEmpty)
+    assert(paramb.value.isEmpty)
+    assert(paramM.value == "strM")
+  }
+
+  @Test
+  def test5(): Unit = {
+    val parsed = List("strM").parse
+    import parsed._
+    assert(parama1.value.isEmpty)
+    assert(parama2.value.isEmpty)
+    assert(paramb.value.isEmpty)
+    assert(paramM.value == "strM")
+  }
+
   private implicit class ParseOps(in: List[String]) {
     def parse: OptionalityDefs = new OptionalityDefs(in).parse
   }

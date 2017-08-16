@@ -117,10 +117,15 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
 
   private def proceedOne(implicit c: Context): Option[AnchorEither] = {
     if (c.isComplete) None
-    else if (c.mandatoryLeftCnt > 0 && c.noArgLeft) {
-      Some(ArgParseException("More args required", c))
-    } else {
-      c.nextCateArg.map(_.parsed)
+    else {
+      val mandatories = c.mandotariesLeft
+      if (mandatories.nonEmpty && c.noArgLeft) {
+        val more =
+          if(mandatories.lengthCompare(1)>0) s" and ${mandatories.size -1} more..." else ""
+        Some(ArgParseException(s"More args required for '${mandatories.head.entity.name}'$more", c))
+      } else {
+        c.nextCateArg.map(_.parsed)
+      }
     }
   }
 }

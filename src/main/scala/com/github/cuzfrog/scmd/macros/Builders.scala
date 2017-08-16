@@ -110,7 +110,7 @@ private class TreeBuilder {
         recExtractAmbiguousVariableParam(cmdNode, Nil)
       }
   }
-  private def recExtractAmbiguousVariableParam
+  private def recExtractAmbiguousVariableParam //todo: check if acc is needed.
   (termCmdNode: TermCmdNode,
    acc: Seq[(TermParam, TermParam)]): Seq[(TermParam, TermParam)] = {
     val ambiguousParams = checkAmbiguity(termCmdNode.params) ++ acc

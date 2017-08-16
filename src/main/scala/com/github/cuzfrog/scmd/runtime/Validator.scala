@@ -1,10 +1,12 @@
 package com.github.cuzfrog.scmd.runtime
 
-import com.github.cuzfrog.scmd.Limitation
+import com.github.cuzfrog.scmd._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.language.reflectiveCalls
+
+import ScmdUtils._
 
 private object Validator {
   /**
@@ -82,45 +84,37 @@ private object Validator {
   @throws[ArgValidationException]("when one of mutual limitations has been violated.")
   def mutualLimitationValidate(argTree: ArgTree,
                                parsedResults: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
-    val acc: ArrayBuffer[scala.Symbol] = ArrayBuffer.empty //use a accumulator for better performance
+
     val globalValueNodes = parsedResults.collect { case (n: ValueNode[_], cs) => (n, cs) }
 
-    def resolveMExclusive(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]): Unit = {
-      valueNodes.foreach { case (node, cs) =>
-        group.find(_ == node.entity.symbol).foreach(_ => acc += node.entity.symbol)
-        if (acc.length > 1) throw ArgValidationException(
-          s"${acc.map(_.name).mkString(",")} cannot be input together.", cs
-        )
-      }
-    }
-
-    def resolveMDependent(valueNodes: Seq[(Node, ContextSnapshot)], group: Seq[Symbol]): Unit = {
-      val resultSymbols = valueNodes.map { case (n, _) => n.entity.symbol }
-      valueNodes.find { case (n, _) => group.contains(n.entity.symbol) }
-        .foreach { case (foundNode, cs) =>
-          val absent = group.collect { case symbol if !resultSymbols.contains(symbol) => symbol }
-          if (absent.nonEmpty) throw ArgValidationException(
-            s"${absent.map(_.name).mkString(",")}" +
-              s" should be used with ${foundNode.entity.originalName}.", cs
-          )
-        }
-    }
-
-    argTree.globalLimitations.foreach {
-      case (_: Limitation.MExclusive, group) => resolveMExclusive(globalValueNodes, group)
-      case (_: Limitation.MDependent, group) => resolveMDependent(globalValueNodes, group)
-    }
-    acc.clear() //--------------- global validation complete. ---------------------
+    argTree.globalLimitations.foreach { tree => resolveLimitation(globalValueNodes, tree) }
+    //--------------- global validation complete. ---------------------
 
     val grouped = globalValueNodes.groupBy { case (n, _) => n.locateToCmdNode(argTree) }
     grouped.foreach { case (cmdNode, valueNodes) =>
-      cmdNode.limitations.foreach {
-        case (_: Limitation.MExclusive, group) => resolveMExclusive(valueNodes, group)
-        case (_: Limitation.MDependent, group) => resolveMDependent(valueNodes, group)
-      }
+      cmdNode.limitations.foreach { tree => resolveLimitation(valueNodes, tree) }
     }
     //--------------- per-cmd validation complete. ---------------------
     parsedResults
+  }
+  private def resolveLimitation(valueNodes: Seq[(Node, ContextSnapshot)],
+                                limitationTree: LimitationTree): Unit = {
+    val argSymbols = valueNodes.map(_._1.entity.symbol)
+    valueNodes.foreach { case (node, cs) =>
+      val exclusions = limitationTree.findExclusions(node.entity.symbol)
+      val conflicts = exclusions.intersect(argSymbols)
+      if (conflicts.nonEmpty) throw ArgValidationException(
+        s"${conflicts.map(e => s"'${e.name}'").mkString(",")} " +
+          s"cannot be input together with '${node.entity.name}'.", cs
+      )
+
+      val dependencies = limitationTree.findDependencies(node.entity.symbol)
+      val deficits = dependencies.filter(!argSymbols.contains(_))
+      if (deficits.nonEmpty) throw ArgValidationException(
+        s"${deficits.map(e => s"'${e.name}'").mkString(",")}" +
+          s" should be used with '${node.entity.originalName}'.", cs
+      )
+    }
   }
 
   private implicit class OptNodeOps(in: ValueNode[_]) {
@@ -135,4 +129,30 @@ private object Validator {
     }
   }
 
+  implicit class LimitationTreeOps(in: LimitationTree) {
+    def findExclusions(name: scala.Symbol): Seq[scala.Symbol] =
+      recFindLimitation(name, Limitation.MExclusive, Nil)
+    def findDependencies(name: scala.Symbol): Seq[scala.Symbol] =
+      recFindLimitation(name, Limitation.MDependent, Nil)
+
+    private def recFindLimitation(name: scala.Symbol,
+                                  relation: MutualLimitation,
+                                  accOppositeSide: Seq[LimitationTree]): Seq[scala.Symbol] = {
+      in match {
+        case branch: LimitationBranch =>
+          if (branch.relation == relation) {
+            val leftProjection = recFindLimitation(name, relation, branch.right +: accOppositeSide)
+            val rightProjection = recFindLimitation(name, relation, branch.left +: accOppositeSide)
+            leftProjection ++ rightProjection
+          } else {
+            val leftProjection = recFindLimitation(name, relation, accOppositeSide)
+            val rightProjection = recFindLimitation(name, relation, accOppositeSide)
+            leftProjection ++ rightProjection
+          }
+        case leaf: LimitationLeaf =>
+          if (leaf.name == name) accOppositeSide.flatMap(_.convertTo[List[scala.Symbol]])
+          else Nil
+      }
+    }
+  }
 }

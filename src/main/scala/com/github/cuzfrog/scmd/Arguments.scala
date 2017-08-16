@@ -11,7 +11,7 @@ sealed trait Argument[+T] extends Product with Serializable{
   def description: Option[String]
   /** Name that is meant to be on the cmd-line. */
   def originalName: String = name
-  def symbol: scala.Symbol = scala.Symbol(originalName)
+  val symbol: scala.Symbol = scala.Symbol(name)
 }
 
 

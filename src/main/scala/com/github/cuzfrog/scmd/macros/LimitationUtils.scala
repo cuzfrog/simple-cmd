@@ -2,8 +2,9 @@ package com.github.cuzfrog.scmd.macros
 
 import com.github.cuzfrog.scmd._
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.meta._
+import ScmdUtils._
 
 private object LimitationUtils {
   /**
@@ -38,14 +39,9 @@ private object LimitationUtils {
     }
   }
 
-  def tree2seq(limitationTree: LimitationTree): immutable.Seq[String] = recTree2seq(limitationTree)
-  private def recTree2seq(limitationTree: LimitationTree): List[String] = {
-    limitationTree match {
-      case branch: LimitationBranch =>
-        recTree2seq(branch.left) ++ recTree2seq(branch.right)
-      case leaf: LimitationLeaf => List(leaf.name.name)
-    }
-  }
+  //todo: forbid tree name duplicate
+  def tree2seq(limitationTree: LimitationTree): immutable.Seq[String] =
+    limitationTree.convertTo[List[scala.Symbol]].map(_.name)
 
 
   implicit val definableLimitationTree: Definable[LimitationTree] = {
@@ -55,7 +51,8 @@ private object LimitationUtils {
 
   private implicit val definableLimitationBranch: Definable[LimitationBranch] =
     (a: LimitationBranch) => {
-      q"""runtime.buildLimitationBranch(${Term.Name(a.relation.toString)},
+      val name = Lit.Symbol(scala.Symbol(a.relation.toString))
+      q"""runtime.buildLimitationBranch(MutualLimitation($name),
                                         ${a.left.defnTerm},
                                         ${a.right.defnTerm})"""
     }

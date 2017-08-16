@@ -107,16 +107,16 @@ private object Validator {
     }
 
     argTree.globalLimitations.foreach {
-      case (Limitation.MExclusive, group) => resolveMExclusive(globalValueNodes, group)
-      case (Limitation.MDependent, group) => resolveMDependent(globalValueNodes, group)
+      case (_: Limitation.MExclusive, group) => resolveMExclusive(globalValueNodes, group)
+      case (_: Limitation.MDependent, group) => resolveMDependent(globalValueNodes, group)
     }
     acc.clear() //--------------- global validation complete. ---------------------
 
     val grouped = globalValueNodes.groupBy { case (n, _) => n.locateToCmdNode(argTree) }
     grouped.foreach { case (cmdNode, valueNodes) =>
       cmdNode.limitations.foreach {
-        case (Limitation.MExclusive, group) => resolveMExclusive(valueNodes, group)
-        case (Limitation.MDependent, group) => resolveMDependent(valueNodes, group)
+        case (_: Limitation.MExclusive, group) => resolveMExclusive(valueNodes, group)
+        case (_: Limitation.MDependent, group) => resolveMDependent(valueNodes, group)
       }
     }
     //--------------- per-cmd validation complete. ---------------------

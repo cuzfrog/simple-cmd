@@ -42,11 +42,19 @@ private object LimitationUtils {
     ???
   }
 
-  implicit val definableLimitationTree: Definable[LimitationTree] = ???
+  implicit val definableLimitationTree: Definable[LimitationTree] = {
+    case leaf: LimitationLeaf => leaf.defnTerm
+    case branch: LimitationBranch => branch.defnTerm
+  }
 
-  private implicit val definableLimitationBranch: Definable[LimitationBranch] = ???
+  private implicit val definableLimitationBranch: Definable[LimitationBranch] =
+    (a: LimitationBranch) => {
+      q"""runtime.buildLimitationBranch(${Term.Name(a.relation.toString)},
+                                        ${a.left.defnTerm},
+                                        ${a.right.defnTerm})"""
+    }
 
-  private implicit val definableLimitationLeaf: Definable[LimitationLeaf] = (a: LimitationLeaf) =>{
-    q"LimitationLeaf"
+  private implicit val definableLimitationLeaf: Definable[LimitationLeaf] = (a: LimitationLeaf) => {
+    q"runtime.buildLimitationLeaf(${Lit.Symbol(a.name)})"
   }
 }

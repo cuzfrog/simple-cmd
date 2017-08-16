@@ -16,13 +16,14 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @Test
   def test1(): Unit = {
-    val prop = forAll(arbInt, arbStr, arbStr, arbStr) { case (int, str1, str2, strM) =>
-      val parsed = List(int, str1, str2, strM).map(_.toString).parse
+    val prop = forAll(arbInt, arbStr, arbStr, arbStr, arbStr) { case (int, str1, str2, str3, strM) =>
+      val parsed = List(int, str1, str2, str3, strM).map(_.toString).parse
       import parsed._
-      debug(paramb.value + "|" + str1 + str2)
+      //debug(paramb.value + "|" + str1 + str2)
 
-      //parama.value.contains(int)
-      paramb.value == Seq(str1, str2) &&
+      parama1.value.contains(int) &&
+        parama2.value.contains(str1) &&
+        paramb.value == Seq(str2, str3) &&
         paramM.value == strM
     }
     assert(prop)
@@ -30,10 +31,22 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @Test
   def test2(): Unit = {
-    val parsed = List("1","str1","str2","strM").parse
+    val parsed = List("-223", "str1", "str2", "strM").parse
     import parsed._
+    assert(parama1.value.contains(-223))
+    assert(parama2.value.contains("str1"))
+    assert(paramb.value == Seq("str2"))
+    assert(paramM.value == "strM")
+  }
 
-    assert(parama.value.contains(1))
+  @Test
+  def test3(): Unit = {
+    val parsed = List("-223", "str2", "strM").parse
+    import parsed._
+    assert(parama1.value.contains(-223))
+    assert(parama2.value.contains("str2"))
+    assert(paramb.value.isEmpty)
+    assert(paramM.value == "strM")
   }
 
   private implicit class ParseOps(in: List[String]) {
@@ -42,10 +55,11 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @ScmdDefTest
   private class OptionalityDefs(args: Seq[String]) extends ScmdDefStub[OptionalityDefs] {
-    val parama = paramDef[Int]()
+    val parama1 = paramDef[Int]()
+    val parama2 = paramDef[String]()
     val paramb = paramDefVariable[String]()
-    val paramc = paramDef[Int]() //should trigger compile-time error
+    //val paramc = paramDef[Int]() //should trigger compile-time error
     val paramM = paramDef[String]().mandatory
-    val paramd = paramDef[String]()
+    //val paramd = paramDef[String]() //should trigger compile-time error
   }
 }

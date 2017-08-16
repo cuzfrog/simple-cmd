@@ -90,8 +90,10 @@ private class TreeBuilder {
       val more =
         if (ambiguousParams.lengthCompare(1) > 0) s" and ${ambiguousParams.size - 1} more..."
         else ""
-      abort("Optional/variable parameter cannot follow variable parameter closely." +
-        s" '${head._2.name}' is right after '${head._1.name}'" + more)
+      abort("Ambiguous args definition. " +
+        "Optional/variable parameter cannot be put behind a variable parameter" +
+        " within the same command scope." +
+        s" '${head._2.name}' is after '${head._1.name}'" + more)
     }
     termArgTree
   }
@@ -117,8 +119,11 @@ private class TreeBuilder {
     }
   }
   private def checkAmbiguity(params: Seq[TermParam]): Seq[(TermParam, TermParam)] = {
-    params.sliding(2).toSeq.collect {
-      case Seq(p1, p2) if p1.isVariable && !p2.isMandatory => (p1, p2)
+    val beginsWithVariable = params.dropWhile(_.isVariable.unary_!)
+    if (beginsWithVariable.lengthCompare(2) < 0) return Nil
+    val variable = beginsWithVariable.head
+    beginsWithVariable.drop(1).filter(p => p.isVariable || !p.isMandatory).map { p =>
+      (variable, p)
     }
   }
 }

@@ -34,6 +34,7 @@ private[macros] trait TreeBuilderLogging extends TreeBuilder with SimpleLogging 
     result
   }
 
+  @IgnoreLogging
   abstract override protected
   def extractAmbiguousVariableParam(termArgTree: TermArgTree): Seq[(TermParam, TermParam)] = {
 

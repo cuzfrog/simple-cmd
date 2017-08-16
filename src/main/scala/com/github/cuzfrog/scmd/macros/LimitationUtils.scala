@@ -9,7 +9,7 @@ private object LimitationUtils {
   /**
     * Shared function used in both implementation.
     *
-    * @param stats   tree DSL statement.
+    * @param stats tree DSL statement.
     * @return (LimitationTree,idx)
     */
   def collectLimitationsWithIdx
@@ -38,9 +38,15 @@ private object LimitationUtils {
     }
   }
 
-  def tree2seq(limitationTree: LimitationTree): immutable.Seq[String] = {
-    ???
+  def tree2seq(limitationTree: LimitationTree): immutable.Seq[String] = recTree2seq(limitationTree)
+  private def recTree2seq(limitationTree: LimitationTree): List[String] = {
+    limitationTree match {
+      case branch: LimitationBranch =>
+        recTree2seq(branch.left) ++ recTree2seq(branch.right)
+      case leaf: LimitationLeaf => List(leaf.name.name)
+    }
   }
+
 
   implicit val definableLimitationTree: Definable[LimitationTree] = {
     case leaf: LimitationLeaf => leaf.defnTerm

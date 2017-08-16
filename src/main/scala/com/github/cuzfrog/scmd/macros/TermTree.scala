@@ -1,17 +1,20 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.LimitationTree
 import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.macros.Constants._
 
 import scala.collection.immutable
 import scala.meta._
 
+import LimitationUtils.definableLimitationTree
+
 private final
 case class TermCmdNode(cmd: TermCmd,
                        params: immutable.Seq[TermParam],
                        opts: immutable.Seq[TermOpt],
                        subCmdEntry: TermCommandEntry,
-                       limitations: immutable.Seq[LimitationGroup] = Nil)
+                       limitations: immutable.Seq[LimitationTree] = Nil)
 
 private final
 case class TermArgTree(appInfo: TermAppInfo,
@@ -20,8 +23,8 @@ case class TermArgTree(appInfo: TermAppInfo,
                        priors: immutable.Seq[TermPrior],
                        props: immutable.Seq[TermProp],
                        cmdEntry: TermCommandEntry,
-                       topLimitations: immutable.Seq[LimitationGroup] = Nil,
-                       globalLimitations: immutable.Seq[LimitationGroup] = Nil)
+                       topLimitations: immutable.Seq[LimitationTree] = Nil,
+                       globalLimitations: immutable.Seq[LimitationTree] = Nil)
 
 private object TermTree {
   def collectTreeDefDsl(stats: immutable.Seq[Stat]): immutable.Seq[Term.Arg] = {

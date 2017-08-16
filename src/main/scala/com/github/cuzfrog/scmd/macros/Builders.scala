@@ -19,8 +19,9 @@ private class TreeBuilder {
                         argDefs: immutable.Seq[TermArg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
     val idxDefs = argDefs.toIndexedSeq
-    val globalLimitations = LimitationUtils.collectLimitations(globalLimitationsStats)
-      .flatMap { case (_tree, _) => LimitationGroup.fromTree(_tree) }
+    val globalLimitations =
+      LimitationUtils.collectLimitations(globalLimitationsStats)
+    //todo: check tree legality.
 
     @tailrec
     def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
@@ -203,7 +204,7 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
     val topNode = recResolve(None, dslStats)
     val props = argDefs.collect { case prop: TermProp => prop }
     val priors = argDefs.collect { case prior: TermPrior => prior }
-    val globalLimitations = collectLimitations(globalLimitationsStats).map(LimitationGroup.fromTuple)
+    val globalLimitations = LimitationUtils.collectLimitations(globalLimitationsStats)
 
     val tree = TermArgTree(
       appInfo = appInfo,
@@ -248,12 +249,22 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
         case None => notDefined(argName)
       }
     }
-    val groupArgs: immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] =
-      collectLimitations(dslStats)
+
+    val limitationTreeWithIdx = LimitationUtils.collectLimitationsWithIdx(dslStats)
+    //todo: check tree's legality
+    val groupArgs: immutable.Seq[(immutable.Seq[TermArg], Int)] = limitationTreeWithIdx
+      .map { case (tree, idx) =>
+        val args = LimitationUtils.tree2seq(tree).map { argName =>
+          queryArg(argName) match {
+            case Some(termArg) => termArg
+            case None => notDefined(argName)
+          }
+        }
+        (args, idx)
+      }
 
     val termArgs =
-      (singleArgs.map { case (termArg, idx) => immutable.Seq(termArg) -> idx } ++
-        groupArgs.map { case (_, relationSeq, idx) => relationSeq -> idx })
+      (singleArgs.map { case (termArg, idx) => immutable.Seq(termArg) -> idx } ++ groupArgs)
         .sortBy(_._2).flatMap { case (termArg, _) => termArg }
 
     val duplicates = termArgs.groupBy(identity)
@@ -302,7 +313,7 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
       params = termArgs.collect { case a: TermParam => a.copy(parent = scopeCmdSymbol) },
       opts = termArgs.collect { case a: TermOpt => a.copy(parent = scopeCmdSymbol) },
       subCmdEntry = subCmdEntry,
-      limitations = groupArgs.map(LimitationGroup.fromTuple)
+      limitations = limitationTreeWithIdx.map { case (_tree, _) => _tree }
     )
   }
 
@@ -325,22 +336,6 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
     }
     tree.cmdEntry.children.flatMap { n =>
       recGetDescentDuplicates(topAncestors, n, Nil)
-    }
-  }
-
-  private def collectLimitations
-  (stats: immutable.Seq[Term.Arg])
-  : immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] = {
-    LimitationUtils.collectLimitations(stats).flatMap { case (tree, idx) =>
-      LimitationUtils.tree2seq(tree).map { case (li, argNames) =>
-        val args = argNames.map{ argName=>
-          queryArg(argName) match{
-            case Some(termArg) => termArg
-            case None => notDefined(argName)
-          }
-        }
-        (li, args, idx)
-      }
     }
   }
 

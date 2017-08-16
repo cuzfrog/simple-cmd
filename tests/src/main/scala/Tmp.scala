@@ -32,7 +32,6 @@ object Tmp {
     //    )
 
   }
-
   @ScmdValid
   class CatValidation(argDef: CatDef) {
     validation(argDef.files) { files =>

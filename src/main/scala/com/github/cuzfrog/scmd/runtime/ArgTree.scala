@@ -12,8 +12,8 @@ private final case class ArgTree(appInfo: AppInfo,
                                  priors: Seq[PriorNode],
                                  props: Seq[PropNode[_]],
                                  cmdEntry: CmdEntryNode,
-                                 topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
-                                 globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) {
+                                 topLimitations: Seq[LimitationTree] = Nil,
+                                 globalLimitations: Seq[LimitationTree] = Nil) {
   def toTopNode: CmdNode = CmdNode(
     entity = Command.topCmd(appInfo.name).copy(description = appInfo.shortDescription),
     params = topParams,
@@ -31,7 +31,7 @@ private case class CmdNode(entity: Command,
                            params: Seq[ParamNode[_]],
                            opts: Seq[OptNode[_]],
                            subCmdEntry: CmdEntryNode,
-                           limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil) extends Node
+                           limitations: Seq[LimitationTree] = Nil) extends Node
 
 private case class CmdEntryNode(entity: CommandEntry,
                                 children: Seq[CmdNode]) {

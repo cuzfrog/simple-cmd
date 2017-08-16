@@ -20,3 +20,9 @@ private object Limitation {
   case object MExclusive extends MutuallyExclusive
   case object MDependent extends MutuallyDependent
 }
+
+private sealed trait LimitationTree extends Product with Serializable
+private final case class LimitationBranch(relation: MutualLimitation,
+                                    left: LimitationTree,
+                                    right: LimitationTree) extends LimitationTree
+private final case class LimitationLeaf(name: scala.Symbol) extends LimitationTree

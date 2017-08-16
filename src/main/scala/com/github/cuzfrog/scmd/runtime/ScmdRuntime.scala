@@ -77,16 +77,17 @@ sealed trait ScmdRuntime {
                    params: Seq[Int],
                    opts: Seq[Int],
                    subCmdEntry: Int,
-                   limitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): Int
-
+                   limitations: Seq[Int] = Nil): Int
+  def buildLimitationLeaf(name: scala.Symbol): Int
+  def buildLimitationBranch(relation: MutualLimitation, left: Int, right: Int): Int
   def buildArgTree(appInfo: AppInfo,
                    topParams: Seq[Int],
                    topOpts: Seq[Int],
                    priors: Seq[Int],
                    props: Seq[Int],
                    cmdEntry: Int,
-                   topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil,
-                   globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])] = Nil): this.type
+                   topLimitations: Seq[Int] = Nil,
+                   globalLimitations: Seq[Int] = Nil): this.type
   private[runtime] def getArgTree: ArgTree
 
   def addValidation[T](name: scala.Symbol, func: T => Unit): Unit
@@ -303,15 +304,30 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                             params: Seq[Int],
                             opts: Seq[Int],
                             subCmdEntry: Int,
-                            limitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): Int = {
+                            limitations: Seq[Int]): Int = {
     val id = idGen.getAndIncrement()
     val e = getEntity[Command](entity)
     val p = params.map(getEntity[ParamNode[_]])
     val o = opts.map(getEntity[OptNode[_]])
     val se = getEntity[CmdEntryNode](subCmdEntry)
-    val a = CmdNode(e, p, o, se, limitations)
+    val ls = limitations.map(getEntity[LimitationTree])
+    val a = CmdNode(e, p, o, se, ls)
     repository.put(id, Box(a))
     nodeRefs.put(scala.Symbol(e.name), a)
+    id
+  }
+  override def buildLimitationLeaf(name: scala.Symbol): Int = {
+    val id = idGen.getAndIncrement()
+    val a: LimitationTree = LimitationLeaf(name)
+    repository.put(id, Box(a))
+    id
+  }
+  override def buildLimitationBranch(relation: MutualLimitation, left: Int, right: Int): Int = {
+    val id = idGen.getAndIncrement()
+    val leftTree = getEntity[LimitationTree](left)
+    val rightTree = getEntity[LimitationTree](right)
+    val a: LimitationTree = LimitationBranch(relation, leftTree, rightTree)
+    repository.put(id, Box(a))
     id
   }
   override def buildArgTree(appInfo: AppInfo,
@@ -320,14 +336,18 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
                             priors: Seq[Int],
                             props: Seq[Int],
                             cmdEntry: Int,
-                            topLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])],
-                            globalLimitations: Seq[(MutualLimitation, Seq[scala.Symbol])]): this.type = {
+                            topLimitations: Seq[Int],
+                            globalLimitations: Seq[Int]): this.type = {
     val tp = topParams.map(getEntity[ParamNode[_]])
     val to = topOpts.map(getEntity[OptNode[_]])
     val pr = priors.map(getEntity[PriorNode])
     val ps = props.map(getEntity[PropNode[_]])
     val ce = getEntity[CmdEntryNode](cmdEntry)
-    argTree = Some(ArgTree(appInfo, tp, to, pr, ps, ce, topLimitations, globalLimitations))
+    argTree = Some(
+      ArgTree(appInfo, tp, to, pr, ps, ce,
+        topLimitations.map(getEntity[LimitationTree]),
+        globalLimitations.map(getEntity[LimitationTree]))
+    )
     repository.clear()
     this
   }

@@ -20,8 +20,3 @@ private object Limitation {
   case object MExclusive extends MutuallyExclusive
   case object MDependent extends MutuallyDependent
 }
-
-//private sealed trait LimitationGroup[T]
-//private final case class MutuallyExclusiveG[T](args: immutable.Seq[T]) extends LimitationGroup[T]
-//private final case class MutuallyDependentG[T](args: immutable.Seq[T]) extends LimitationGroup[T]
-//

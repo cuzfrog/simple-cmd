@@ -19,8 +19,8 @@ private class TreeBuilder {
                         argDefs: immutable.Seq[TermArg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
     val idxDefs = argDefs.toIndexedSeq
-    val globalLimitations = NodeBuilder.collectLimitations(argDefs, globalLimitationsStats)
-      .map(LimitationGroup.fromTuple)
+    val globalLimitations = LimitationUtils.collectLimitations(globalLimitationsStats)
+      .flatMap { case (_tree, _) => LimitationGroup.fromTree(_tree) }
 
     @tailrec
     def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
@@ -160,44 +160,6 @@ private object NodeBuilder {
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): DslTermNodeBuilder =
     new DslTermNodeBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
-
-  /**
-    * Shared function used in both implementation.
-    *
-    * @param argDefs termArgs defined in order previously.
-    * @param stats   tree DSL statement.
-    * @return (MutualLimitation,Seq(termArgs),idx)
-    */
-  def collectLimitations
-  (argDefs: immutable.Seq[TermArg],
-   stats: immutable.Seq[Term.Arg]): immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] = {
-    @tailrec
-    def recInfix2seq(subTerm: Term,
-                     acc: immutable.Seq[String] = immutable.Seq()): immutable.Seq[String] =
-      subTerm match {
-        case Term.Name(argName) => argName +: acc
-        case Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(argName)))
-          if operator == "&" || operator == "|" => recInfix2seq(subs, argName +: acc)
-        case bad =>
-          throw new IllegalArgumentException(s"Tree DSL cannot be parsed: $bad")
-      }
-
-    def queryArg(name: String): Option[TermArg] = argDefs.find(_.name == name)
-
-    stats.zipWithIndex.collect {
-      case (stat@Term.ApplyInfix(subs, Term.Name(operator), _, Seq(Term.Name(lastArgName))), idx) =>
-        val limitation = Limitation.fromOperator(operator).getOrElse(
-          throw new IllegalArgumentException(
-            s"Illegal limitation operator:'$operator' before '$lastArgName' in '$stat'. " +
-              s"This is probably caused by syntax error in tree DSL.")
-        )
-        val relationSeq = (recInfix2seq(subs) :+ lastArgName)
-          .map(argName => queryArg(argName)
-            .getOrElse(
-              throw new IllegalArgumentException(s"Arg in Tree DSL not defined yet:$argName")))
-        (limitation, relationSeq, idx)
-    }
-  }
 }
 
 /** Not thread-safe */
@@ -294,7 +256,7 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
         groupArgs.map { case (_, relationSeq, idx) => relationSeq -> idx })
         .sortBy(_._2).flatMap { case (termArg, _) => termArg }
 
-    val duplicates = termArgs.groupBy(t => t)
+    val duplicates = termArgs.groupBy(identity)
       .collect { case (termArg, seq) if seq.size > 1 => termArg }
     if (duplicates.nonEmpty)
       abort(dslStats.head.pos,
@@ -367,11 +329,23 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
   }
 
   private def collectLimitations
-  (stats: immutable.Seq[Term.Arg]): immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] =
-    NodeBuilder.collectLimitations(argDefs, stats)
+  (stats: immutable.Seq[Term.Arg])
+  : immutable.Seq[(MutualLimitation, immutable.Seq[TermArg], Int)] = {
+    LimitationUtils.collectLimitations(stats).flatMap { case (tree, idx) =>
+      LimitationUtils.tree2seq(tree).map { case (li, argNames) =>
+        val args = argNames.map{ argName=>
+          queryArg(argName) match{
+            case Some(termArg) => termArg
+            case None => notDefined(argName)
+          }
+        }
+        (li, args, idx)
+      }
+    }
+  }
 
   private def queryArg(name: String): Option[TermArg] = argDefs.find(_.name == name)
 
   private def notDefined(name: String): Nothing =
-    throw new IllegalArgumentException(s"Arg in Tree DSL not defined yet:$name")
+    throw new IllegalArgumentException(s"Arg in Tree DSL not defined yet: $name")
 }

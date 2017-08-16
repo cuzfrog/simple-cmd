@@ -31,7 +31,7 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @Test
   def test2(): Unit = {
-    val parsed = List("-223", "str1", "str2", "strM").parse
+    val parsed = List("-223", "str1", "-d", "str2", "strM", "-c").parse
     import parsed._
     assert(parama1.value.contains(-223))
     assert(parama2.value.contains("str1"))
@@ -41,7 +41,7 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @Test
   def test3(): Unit = {
-    val parsed = List("-223", "str2", "strM").parse
+    val parsed = List("-223", "-c", "-e", "str2", "-d", "strM").parse
     import parsed._
     assert(parama1.value.contains(-223))
     assert(parama2.value.contains("str2"))
@@ -51,7 +51,7 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @Test
   def test4(): Unit = {
-    val parsed = List("-223", "strM").parse
+    val parsed = List("-223", "-e", "strM", "-c", "-d").parse
     import parsed._
     assert(parama1.value.contains(-223))
     assert(parama2.value.isEmpty)
@@ -61,7 +61,7 @@ class OptionalityTest extends ScalacheckIntegration {
 
   @Test
   def test5(): Unit = {
-    val parsed = List("strM").parse
+    val parsed = List("-c", "strM", "-d").parse
     import parsed._
     assert(parama1.value.isEmpty)
     assert(parama2.value.isEmpty)
@@ -76,10 +76,14 @@ class OptionalityTest extends ScalacheckIntegration {
   @ScmdDefTest
   private class OptionalityDefs(args: Seq[String]) extends ScmdDefStub[OptionalityDefs] {
     val parama1 = paramDef[Int]()
+    val opt1 = optDef[Boolean](abbr = "b")
     val parama2 = paramDef[String]()
+    val opt2 = optDef[Boolean](abbr = "c")
     val paramb = paramDefVariable[String]()
+    val opt3 = optDef[Boolean](abbr = "d")
     //val paramc = paramDef[Int]() //should trigger compile-time error
     val paramM = paramDef[String]().mandatory
     //val paramd = paramDef[String]() //should trigger compile-time error
+    val opt4 = optDef[Boolean](abbr = "e")
   }
 }

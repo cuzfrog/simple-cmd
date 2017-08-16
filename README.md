@@ -18,13 +18,12 @@ If you ask google "scala command line arguments parser github", google gives you
 answers. Some libraries said: "Life is too short to parse command-line arguments". I think it might 
 be "Life is too short to swing from one command-line argument parser to another". I tried many of 
 these parsers, some are complicated with hard-to-read README,
- some kind of lack features that fit into some cases, some do not generate usage info.
-It turns out that parsing command-line arguments is not an easy work.
- Here's some common features:
+ some kind of lack features that fit into some cases, some do not generate usage info...
+
+**Scmd** brings these features all-in-one:
  
 | Fetures                                                              | example | 
 |----------------------------------------------------------------------|---------|
-| Sub commands and argument hierarchy                 | `openstack nova list service` | 
 | Boolean option folding                                                |  `-xyz`       |
 | Option Value folding                                                 |`-fValue`       |
 | Option Value evaluation                                            |`-f=Value`       |
@@ -36,10 +35,11 @@ It turns out that parsing command-line arguments is not an easy work.
 | Argument optionality                                     | `SRC [DST]`       |
 | Variable argument                                        | `SRC... DST`       |
 | Properties                                                 | `-Dkey=value`       | 
-| Contextual help                                            | preciser help info       | 
-| Routing             | no manually writing `if` ..  `else` or `match case` to route command      | 
-
- There are so many tricky things to be done to bring these features into reality. And Scmd did so.
+| Sub commands and argument hierarchy                 | `openstack nova list service` | 
+| Optional commands                              | `command [<command1> <command2>]` | 
+| Routing             | no manually writing `if` ..  `else` or `match case` to route command   | 
+| Contextual help                                            | preciser help info    | 
+| Usage info generation                                    | see pictures below   | 
 
 ### Goals I'm trying to achieve:
 
@@ -202,12 +202,12 @@ import scmdTreeDefDSL._
 argTreeDef( //app entry
   verbose, //opt
   nova(
-    list(service ?, project), //cmds under list are optional.
+    list(service ?, project)//cmds under list are optional.
     //equivalent to list(service ?, project ?)
   ),
   neutron(
     alive | dead, // --alive | --dead, mutual exclusion
-    list(service, project) ?, //trailing comma is supported through macros.
+    list(service, project) ?
     //cmd list is optional. but once list is entered, one of its sub-cmds is required.
   ),
   cinder(
@@ -234,7 +234,9 @@ openstack
               +-service
               +-project
 ```
-Notice, `service`, `project` and `list` are reused in the DSL. They have only one definition each.
+Notice, `service`, `project` and `list` are reused in the DSL.
+
+Tree's legality is checked at compile time by macros.
 
 ### Validation.
 This refers to argument basic(low-level) validation. 
@@ -307,7 +309,13 @@ def buildRoute(argDef: ArgDef): ArgRoute = {
  
 ### Misc.
 
-1. built-in priors:
+1. limitations:
+
+* Reusing arg-def in tree-building-DSL: arg cannot duplicate through lineage.
+Duplication through lineage makes it possibly ambiguous for an argument's scope.
+This makes features, like _trailing option_, very hard to implement.
+
+2. built-in priors:
 `help` and `version` are built-in prior arguments. When they are matched against top cmd(app itself),
 usage info and version info will be printed respectively. The alias of them will be matched only,
 i.e. `-help`, `--help`
@@ -319,12 +327,6 @@ app.runOnPrior(help){
   //different behavior
 }.run{...}
 ```
-
-2. limitations:
-
-* Reusing arg-def in tree-building-DSL: arg cannot duplicate through lineage.
-Duplication through lineage makes it possibly ambiguous for an argument's scope.
-This makes features, like _trailing option_, very hard to implement.
 
 3. ScmdDefStub[T]
 `ScmdDefStub[T]` contains some abstract public methods for IDE to recognize the api,

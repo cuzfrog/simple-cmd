@@ -21,7 +21,6 @@ private class TreeBuilder {
     val idxDefs = argDefs.toIndexedSeq
     val globalLimitations =
       LimitationUtils.collectLimitations(globalLimitationsStats)
-    //todo: check tree legality.
 
     @tailrec
     def recAdd(builder: IdxTermNodeBuilder, args: immutable.Seq[TermArg]): IdxTermNodeBuilder = {
@@ -251,7 +250,6 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
     }
 
     val limitationTreeWithIdx = LimitationUtils.collectLimitationsWithIdx(dslStats)
-    //todo: check tree's legality
     val groupArgs: immutable.Seq[(immutable.Seq[TermArg], Int)] = limitationTreeWithIdx
       .map { case (tree, idx) =>
         val args = LimitationUtils.tree2seq(tree).map { argName =>

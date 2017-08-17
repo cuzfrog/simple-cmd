@@ -2,7 +2,6 @@ package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd._
 
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.language.reflectiveCalls
 
@@ -129,30 +128,5 @@ private object Validator {
     }
   }
 
-  implicit class LimitationTreeOps(in: LimitationTree) {
-    def findExclusions(name: scala.Symbol): Seq[scala.Symbol] =
-      recFindLimitation(name, Limitation.MExclusive, Nil)
-    def findDependencies(name: scala.Symbol): Seq[scala.Symbol] =
-      recFindLimitation(name, Limitation.MDependent, Nil)
 
-    private def recFindLimitation(name: scala.Symbol,
-                                  relation: MutualLimitation,
-                                  accOppositeSide: Seq[LimitationTree]): Seq[scala.Symbol] = {
-      in match {
-        case branch: LimitationBranch =>
-          if (branch.relation == relation) {
-            val leftProjection = recFindLimitation(name, relation, branch.right +: accOppositeSide)
-            val rightProjection = recFindLimitation(name, relation, branch.left +: accOppositeSide)
-            leftProjection ++ rightProjection
-          } else {
-            val leftProjection = recFindLimitation(name, relation, accOppositeSide)
-            val rightProjection = recFindLimitation(name, relation, accOppositeSide)
-            leftProjection ++ rightProjection
-          }
-        case leaf: LimitationLeaf =>
-          if (leaf.name == name) accOppositeSide.flatMap(_.convertTo[List[scala.Symbol]])
-          else Nil
-      }
-    }
-  }
 }

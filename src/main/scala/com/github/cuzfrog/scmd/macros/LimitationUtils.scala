@@ -1,10 +1,10 @@
 package com.github.cuzfrog.scmd.macros
 
+import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd._
 
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
 import scala.meta._
-import ScmdUtils._
 
 private object LimitationUtils {
   /**
@@ -15,16 +15,28 @@ private object LimitationUtils {
     */
   def collectLimitationsWithIdx
   (stats: immutable.Seq[Term.Arg]): immutable.Seq[(LimitationTree, Int)] = {
-    stats.zipWithIndex.collect {
+    val collected = stats.zipWithIndex.collect {
       case (stat: Term.ApplyInfix, idx) =>
         val tree = recInfix2Tree(stat)
+
         val duplicates = getDuplicates(tree)
         if (duplicates.nonEmpty)
-          abort(stat.pos, s"Duplicates ${duplicates.map(s => s"'${s.name}'").mkString(",")}"
+          abort(stat.pos, s"Duplicates ${duplicates.prettyString}"
             + s"  found in '${stat.syntax}', this is not allowed." +
             s" If complicated mutual limitation is needed, define them in another clause.")
         (tree, idx)
     }
+    val logicViolations = getLogicViolations(collected.map(_._1))
+    if (logicViolations.nonEmpty) {
+      val (name, conflicts) = logicViolations.head
+      val more =
+        if (logicViolations.lengthCompare(1) > 0) s" and ${logicViolations.size - 1} more..."
+        else "."
+      abort(stats.head.pos, s"Logic violation found: ${conflicts.prettyString} are defined as " +
+        s"both exclusive and dependent against '${name.name}'$more")
+    }
+
+    collected
   }
   def collectLimitations
   (stats: immutable.Seq[Term.Arg]): immutable.Seq[LimitationTree] =
@@ -55,9 +67,31 @@ private object LimitationUtils {
   def tree2seq(limitationTree: LimitationTree): immutable.Seq[String] =
     limitationTree.convertTo[List[scala.Symbol]].map(_.name)
 
-  def getLogicVialations(trees: Seq[LimitationTree]) = {
-    
+  //Contract: a tree does not have duplicate names.
+  def getLogicViolations(trees: Seq[LimitationTree]): Seq[(scala.Symbol, Seq[scala.Symbol])] = {
+    val uniquePairs = for {
+      (treeX, idxX) <- trees.zipWithIndex
+      (treeY, idxY) <- trees.zipWithIndex
+      if idxX < idxY
+    } yield (treeX, treeY)
+    uniquePairs.flatMap {
+      case (tree1, tree2) => getLogicViolation(tree1, tree2)
+    }
   }
+  /** @return List(concern,conflicts) */
+  private def getLogicViolation(tree1: LimitationTree,
+                                tree2: LimitationTree): Seq[(scala.Symbol, Seq[scala.Symbol])] = {
+    val commons = tree1.convertTo[List[scala.Symbol]].intersect(tree2.convertTo[List[scala.Symbol]])
+    commons.map { name =>
+      val conflicts =
+        tree1.findExclusions(name).intersect(tree2.findDependencies(name)) ++
+          tree1.findDependencies(name).intersect(tree2.findExclusions(name))
+      name -> conflicts
+    }
+  }
+
+  private implicit val symbolSeqPrettyString: CanFormPrettyString[Seq[scala.Symbol]] =
+    (a: Seq[scala.Symbol]) => a.map(s => s"'${s.name}'").mkString(",")
 
   implicit val definableLimitationTree: Definable[LimitationTree] = {
     case leaf: LimitationLeaf => leaf.defnTerm

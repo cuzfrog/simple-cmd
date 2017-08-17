@@ -34,6 +34,7 @@ class MutualLimitationTest {
       // param1 | param2 inferred.
       param3 & optc & optd,
       //opta & optb, //should trigger compile-time error
+      //param1 & param2 //should trigger compile-time error
     )
   }
 }

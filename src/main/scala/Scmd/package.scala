@@ -24,5 +24,7 @@ package object Scmd extends ScmdValidationApi {
       MacroUtil('Valid, defn)
     }
   }
+
+  type ArgRoute = com.github.cuzfrog.scmd.ArgRoute
 }
 

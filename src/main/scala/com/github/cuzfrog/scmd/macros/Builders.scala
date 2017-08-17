@@ -106,16 +106,16 @@ private class TreeBuilder {
   (termArgTree: TermArgTree): Seq[(TermParam, TermParam)] = {
     checkAmbiguity(termArgTree.topParams) ++
       termArgTree.cmdEntry.children.flatMap { cmdNode =>
-        recExtractAmbiguousVariableParam(cmdNode, Nil)
+        recExtractAmbiguousVariableParam(cmdNode)
       }
   }
-  private def recExtractAmbiguousVariableParam //todo: check if acc is needed.
-  (termCmdNode: TermCmdNode,
-   acc: Seq[(TermParam, TermParam)]): Seq[(TermParam, TermParam)] = {
-    val ambiguousParams = checkAmbiguity(termCmdNode.params) ++ acc
+  private def recExtractAmbiguousVariableParam
+  (termCmdNode: TermCmdNode): Seq[(TermParam, TermParam)] = {
+    val ambiguousParams = checkAmbiguity(termCmdNode.params)
     termCmdNode.subCmdEntry.children match {
       case Nil => ambiguousParams
-      case seq => seq.flatMap(cmdNode => recExtractAmbiguousVariableParam(cmdNode, ambiguousParams))
+      case seq =>
+        seq.flatMap(cmdNode => recExtractAmbiguousVariableParam(cmdNode)) ++ ambiguousParams
     }
   }
   private def checkAmbiguity(params: Seq[TermParam]): Seq[(TermParam, TermParam)] = {

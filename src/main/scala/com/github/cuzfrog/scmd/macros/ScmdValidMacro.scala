@@ -15,6 +15,8 @@ private class ScmdValidMacro extends ScmdMacro {
       case _ => abort("ValidationClass should have DefClass as its first argument.")
     }
 
+    val imports = stats.collect { case i: Import => i}
+
     /**
       * Client defined validations against arguments.
       *
@@ -27,6 +29,7 @@ private class ScmdValidMacro extends ScmdMacro {
     }
 
     q"""..$mods class $name ..$ctorMods (...$paramss){
+          ..$imports
           ..$addStats
         }"""
   }

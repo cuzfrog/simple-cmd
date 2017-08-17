@@ -28,7 +28,7 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
 
     val appInfo = {
       val NameExtractor = """(\w+)Defs?""".r
-      val inferredName = name.value match{
+      val inferredName = name.value match {
         case NameExtractor(n) => n
         case n => n
       }
@@ -141,6 +141,17 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
       public_def_parse
     )
 
+    val otherStats = {
+      val definedArgNames = rawArgs.map(_.name)
+      stats collect {
+        case stat: Defn.Def if !definedArgNames.contains(stat.name.value) => stat
+        case stat: Defn.Val
+          if definedArgNames.intersect(
+            stat.pats.map(_.asInstanceOf[Pat.Var.Term].name.value)).isEmpty =>
+          stat
+      }
+    }
+
     val testMethods = if (isTestMode) List(
       q"def getRuntime:ScmdRuntime = scmdRuntime",
       q"def appInfoString:String = scmdRuntime.appInfoString",
@@ -160,6 +171,7 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
           ..${ArgUtils.builtInPriorsStub}
           ..${ArgUtils.addExplicitType(rawArgs)}
           ..$addMethods
+          ..$otherStats
           ..$testMethods
         }"""
   }

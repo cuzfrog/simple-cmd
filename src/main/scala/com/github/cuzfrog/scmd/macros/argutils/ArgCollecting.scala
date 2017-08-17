@@ -159,6 +159,7 @@ private object ArgCollectImpl extends SimpleLogging {
         recSelect(inner, acc :+ s)
       case method@Term.Apply(_: Term.Name, _) => method -> acc
       case method@Term.Apply(_: Term.ApplyType, _) => method -> acc
+      case other => other -> Nil
     }
 
     stat match {

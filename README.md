@@ -1,5 +1,7 @@
 # Scmd - The simple cmd-line arguments parser.
 
+[![Join the chat at https://gitter.im/simple-cmd/Lobby](https://badges.gitter.im/simple-cmd/Lobby.svg)](https://gitter.im/simple-cmd/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This project is under development now.
 
 ## Nomenclature

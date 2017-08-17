@@ -3,19 +3,26 @@ package anywhere
 import java.nio.file.Path
 
 import Scmd._
-import com.github.cuzfrog.scmd.{ScalacheckIntegration, ScmdDefTest}
+import com.github.cuzfrog.scmd.{ScalacheckIntegration, ScmdDefTest, ScmdDefTestStub}
 import org.junit._
 
-class MutualLimitationTest {
+class MutualLimitationTest extends ScalacheckIntegration{
+
+  import scmdValueConverter._
 
   @Test
   def test1(): Unit = {
-
+    val parsed = List("324","-a=2","-c","str2","/path/file").parse
+    import parsed._
+    debug(opta.value)
+    assert(param1.value.contains(324))
+    assert(opta.value.contains(2))
   }
+
 
   @ScmdDefTest
   private class OptionValueFoldingDefs(args: Seq[String])
-    extends ScmdDefStub[OptionValueFoldingDefs] {
+    extends ScmdDefTestStub[OptionValueFoldingDefs] {
     val opta = optDef[Int](abbr = "a")
     val optb = optDef[String](abbr = "B")
     val optc = optDef[Boolean](abbr = "c")
@@ -28,13 +35,18 @@ class MutualLimitationTest {
     import scmdTreeDefDSL._
 
     argTreeDef(
-      (param1 & opta) | (param2 & optb),
-//      param1 & opta,
-//      param2 & optb,
-      // param1 | param2 inferred.
-      param3 & optc & optd,
-      //opta & optb, //should trigger compile-time error
-      //param1 & param2 //should trigger compile-time error
+      (opta & optc) | (optb & optd),
+      //optc | optd, //should trigger compile-time duplication error
+      //opta & optb, //should trigger compile-time logic error
+      param1,
+      param2,
+      param3,
     )
+  }
+
+  private implicit class ParseOps(in: List[String]) {
+    val defClass = new OptionValueFoldingDefs(in)
+    println(defClass.argTreeString)
+    def parse: OptionValueFoldingDefs = defClass.parse
   }
 }

@@ -198,9 +198,8 @@ private object ParamOrCmd extends CateUtils {
             if (paramNode.isVariable) {
               //variable/multiple args:
               trace(s"Parse ParamOrCmd:${a.original} -> param...")
-              val snapshot = c.takeSnapshot
-              val nextForks = recForkNext(arg, Nil)
-              c.restore(snapshot)
+              val nextForks = forkNext(arg)
+
               val firstAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
               val variableForks = recForkVariable(paramNode, firstAnchor, Seq(arg))
               nextForks ++ variableForks
@@ -213,7 +212,7 @@ private object ParamOrCmd extends CateUtils {
               if (paramNode.isMandatory) c.anchors(paramNode.copy(value = Seq(arg)))
               else { //if the param is optional.
                 val newAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
-                recForkNext(arg, newAnchor)
+                forkNext(arg) ++ newAnchor
               }
             }
 
@@ -231,8 +230,8 @@ private object ParamOrCmd extends CateUtils {
 
     /** Pop args from context and create anchors along the way. */
     @tailrec
-    def recForkVariable(paramNode: ParamNode[_], acc: Seq[Anchor], values: Seq[String])
-                       (implicit c: Context): Seq[Anchor] = {
+    private def recForkVariable(paramNode: ParamNode[_], acc: Seq[Anchor], values: Seq[String])
+                               (implicit c: Context): Seq[Anchor] = {
       c.nextArgWithType[ParamOrCmd] match {
         case Some(v) =>
           val accValues = values :+ v
@@ -245,12 +244,22 @@ private object ParamOrCmd extends CateUtils {
     }
 
     /** Try to match next mandatory one. */
+    private def forkNext(arg: String)(implicit c: Context): Seq[Anchor] = {
+      val cs = c.takeSnapshot
+      val nextPossibles = recForkNext(arg, Nil)
+      if(nextPossibles.isEmpty) c.restore(cs)
+      nextPossibles
+    }
     @tailrec
-    def recForkNext(arg: String, acc: Seq[Anchor])(implicit c: Context): Seq[Anchor] = {
+    private def recForkNext(arg: String, acc: Seq[Anchor])(implicit c: Context): Seq[Anchor] = {
       c.nextParamNode match {
-        case Some(nextParamNode) if nextParamNode.isMandatory =>
-          acc :+ c.anchor(nextParamNode.copy(value = Seq(arg)))
-        case Some(_) => recForkNext(arg, acc) //skip optional param
+        case Some(nextParamNode) =>
+          val anchors = acc :+ c.anchor(nextParamNode.copy(value = Seq(arg)))
+          if (nextParamNode.isMandatory) {
+            anchors
+          } else {
+            recForkNext(arg, acc) //skip optional param
+          }
         case None => acc
       }
     }

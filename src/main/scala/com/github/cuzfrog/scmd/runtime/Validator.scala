@@ -104,14 +104,14 @@ private object Validator {
       val conflicts = exclusions.intersect(argSymbols)
       if (conflicts.nonEmpty) throw ArgValidationException(
         s"${conflicts.map(e => s"'${e.name}'").mkString(",")} " +
-          s"cannot be input together with '${node.entity.name}'.", cs
+          s"cannot be input together with '${node.entity.name}'", cs
       )
 
       val dependencies = limitationTree.findDependencies(node.entity.symbol)
       val deficits = dependencies.filter(!argSymbols.contains(_))
       if (deficits.nonEmpty) throw ArgValidationException(
         s"${deficits.map(e => s"'${e.name}'").mkString(",")}" +
-          s" should be used with '${node.entity.originalName}'.", cs
+          s" should be used with '${node.entity.originalName}'", cs
       )
     }
   }

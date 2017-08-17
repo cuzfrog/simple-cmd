@@ -12,6 +12,7 @@ private[runtime] trait ContextLogging extends Context with SimpleLogging {
     super.anchor(n)
   }
 
+  @IgnoreLogging
   abstract override def nodeAdvance(cmdName: String): Option[CmdNode] = {
     val result = super.nodeAdvance(cmdName)
     result match {

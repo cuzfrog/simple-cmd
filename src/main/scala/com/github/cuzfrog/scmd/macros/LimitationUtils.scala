@@ -87,7 +87,7 @@ private object LimitationUtils {
         tree1.findExclusions(name).intersect(tree2.findDependencies(name)) ++
           tree1.findDependencies(name).intersect(tree2.findExclusions(name))
       name -> conflicts
-    }
+    }.filter { case (name, conflicts) => conflicts.nonEmpty }
   }
 
   private implicit val symbolSeqPrettyString: CanFormPrettyString[Seq[scala.Symbol]] =

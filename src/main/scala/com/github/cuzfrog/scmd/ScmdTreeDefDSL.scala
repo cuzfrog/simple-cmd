@@ -16,26 +16,16 @@ object ScmdTreeDefDSL {
     def ? : Command = a
   }
 
-  implicit final class ValueArgumentOps(a: ValueArgument[_]) {
+  implicit final class ValueArgumentOps(a: OptionArg[_]) {
     /** One of (mutually exclusive) */
-    def |(that: ValueArgument[_]): ValueArgument[_] with MutuallyExclusive = {
-      a.asInstanceOf[ValueArgument[_] with MutuallyExclusive]
+    def |(that: OptionArg[_]): OptionArg[_] with MutuallyExclusive = {
+      a.asInstanceOf[OptionArg[_] with MutuallyExclusive]
     }
 
     /** Both of (mutually inclusive) */
-    def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyDependent = {
-      a.asInstanceOf[ValueArgument[_] with MutuallyDependent]
+    def &(that: OptionArg[_]): OptionArg[_] with MutuallyDependent = {
+      a.asInstanceOf[OptionArg[_] with MutuallyDependent]
     }
-  }
-
-  implicit final class MutuallyExclusiveOps(g: ValueArgument[_] with MutuallyExclusive) {
-    /** One of (mutually exclusive) */
-    def |(that: ValueArgument[_]): ValueArgument[_] with MutuallyExclusive = g
-  }
-
-  implicit final class MutuallyDependentOps(g: ValueArgument[_] with MutuallyDependent) {
-    /** Both of (mutually inclusive) */
-    def &(that: ValueArgument[_]): ValueArgument[_] with MutuallyDependent = g
   }
 
   // ------- Built in args --------

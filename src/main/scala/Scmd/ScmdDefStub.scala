@@ -1,7 +1,7 @@
 package Scmd
 
 import com.github.cuzfrog.scmd.runtime.console.ConsoleType
-import com.github.cuzfrog.scmd.{ArgRoute, PriorArg, ScmdDefApi}
+import com.github.cuzfrog.scmd.{PriorArg, ScmdDefApi}
 
 
 abstract class ScmdDefStub[D] extends ScmdDefApi {

@@ -90,7 +90,7 @@ sealed trait RouteCommandOperations {
   }
   def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
     CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = true)
-  }
+  }//todo: make compile-time error when R is RouteCommand
   /** Same as run, except it will not end the whole route after running. */
   def runThrough[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
     CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = false)

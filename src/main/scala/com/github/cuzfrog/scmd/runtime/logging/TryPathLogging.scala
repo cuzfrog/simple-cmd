@@ -27,4 +27,18 @@ private[runtime] trait TryPathLogging extends TryPath with SimpleLogging {
     //trace(s"After backtrack path:\n${super.toTop.prettyString}")
     result
   }
+
+  abstract override def findUnsealedFork: Option[TryPath] = {
+    val result = super.findUnsealedFork
+    result match {
+      case Some(b) => debug(s"find unsealed path: ${b.anchor.node.prettyString}")
+      case None => debug(s"Path sealed.")
+    }
+    result
+  }
+
+  abstract override def pipeAddFork(path: TryPath): TryPath = {
+    debug(s"Add fork '${path.anchor.node.prettyString}' to path: ${this.anchor.node.entity.name}")
+    super.pipeAddFork(path)
+  }
 }

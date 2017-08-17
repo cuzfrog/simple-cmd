@@ -198,7 +198,7 @@ private object ParamOrCmd extends CateUtils {
             if (paramNode.isVariable) {
               //variable/multiple args:
               trace(s"Parse ParamOrCmd:${a.original} -> param...")
-              val nextForks = forkNext(arg)
+              val nextForks = if (paramNode.isMandatory) Nil else forkNext(arg)
 
               val firstAnchor = c.anchors(paramNode.copy(value = Seq(arg)))
               val variableForks = recForkVariable(paramNode, firstAnchor, Seq(arg))
@@ -247,16 +247,15 @@ private object ParamOrCmd extends CateUtils {
     private def forkNext(arg: String)(implicit c: Context): Seq[Anchor] = {
       val cs = c.takeSnapshot
       val nextPossibles = recForkNext(arg, Nil)
-      if(nextPossibles.isEmpty) c.restore(cs)
+      c.restore(cs)
       nextPossibles
     }
     @tailrec
     private def recForkNext(arg: String, acc: Seq[Anchor])(implicit c: Context): Seq[Anchor] = {
       c.nextParamNode match {
         case Some(nextParamNode) =>
-          val anchors = acc :+ c.anchor(nextParamNode.copy(value = Seq(arg)))
           if (nextParamNode.isMandatory) {
-            anchors
+            acc :+ c.anchor(nextParamNode.copy(value = Seq(arg)))
           } else {
             recForkNext(arg, acc) //skip optional param
           }

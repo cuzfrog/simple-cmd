@@ -58,24 +58,31 @@ private class TryPath(argAnchor: Anchor) {
     * @return an Option of unexplored Path.
     */
   def backtrack: Option[TryPath] = {
-    @tailrec
-    def recBacktrack(currentTop: TryPath): Option[TryPath] = {
-      currentTop.parentOpt match {
-        case Some(parent) =>
-          if (parent.branches.isEmpty) {
-            throw new AssertionError("Forks have not been put into anchor." +
-              "Children not in parent's branches." +
-              s"Of node: ${this.anchor.node.prettyString}")
-          } else if (parent.branches.size == 1) {
-            recBacktrack(parent)
-          } else { //forks > 1
-            parent.branches -= currentTop
-            parent.branches.filter(!_.isComplete).lastOption
-          }
-        case None => None
-      }
-    }
     recBacktrack(this)
+  }
+  @tailrec
+  private def recBacktrack(currentTop: TryPath): Option[TryPath] = {
+    currentTop.parentOpt match {
+      case Some(parent) =>
+        if (parent.branches.isEmpty) {
+          throw new AssertionError("Forks have not been put into anchor." +
+            "Children not in parent's branches." +
+            s"Of node: ${this.anchor.node.prettyString}")
+        } else if (parent.branches.lengthCompare(1) == 0) {
+          recBacktrack(parent)
+        } else { //forks > 1
+          parent.branches -= currentTop
+          parent.branches.filter(!_.isComplete).flatMap(recGetIncompleteChild).headOption
+        }
+      case None => None
+    }
+  }
+  //contract: current.isComplete == false
+  private def recGetIncompleteChild(current: TryPath): Option[TryPath] = {
+    current.branches.filter(!_.isComplete) match {
+      case arr if arr.isEmpty => Some(current) //no child.
+      case arr => arr.flatMap(recGetIncompleteChild).headOption
+    }
   }
 
   /**
@@ -125,12 +132,13 @@ private class TryPath(argAnchor: Anchor) {
   def toTop: TryPath = TryPath.getTop(this)
 
   /** From this, downstream, try to find an end path that is not complete. */
-  def findUnsealedFork: Option[TryPath] = {
+  def findUnsealedFork: Option[TryPath] = this.recFindUnsealedFork
+  private def recFindUnsealedFork: Option[TryPath] = {
     if (this.isComplete) None
     else {
       this.branches match {
         case arr if arr.isEmpty => Some(this) //end with empty, not complete
-        case arr => arr.flatMap(_.findUnsealedFork).headOption
+        case arr => arr.flatMap(_.recFindUnsealedFork).headOption
       }
     }
   }

@@ -37,8 +37,16 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
     * return a new tree containing value and consisting of only the right path.
     */
   def parse: Seq[(Node, ContextSnapshot)] = {
-    recProceed(topPath, Seq())
-    checkIfUniquePath(topPath)
+    try {
+      recProceed(topPath, Seq())
+      checkIfUniquePath(topPath)
+    }
+    catch {
+      case e: Exception =>
+        debug(s"Parse failed ---------- path:\n${topPath.prettyString}\n" +
+          s"----------------------------path end----")
+        throw e
+    }
     trace(s"\nParsed path:--------\n${topPath.prettyString}\n-------------Path end.")
     topPath.convertTo[Seq[(Node, ContextSnapshot)]]
   }
@@ -121,7 +129,7 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
       val mandatories = c.mandotariesLeft
       if (mandatories.nonEmpty && c.noArgLeft) {
         val more =
-          if(mandatories.lengthCompare(1)>0) s" and ${mandatories.size -1} more..." else ""
+          if (mandatories.lengthCompare(1) > 0) s" and ${mandatories.size - 1} more..." else ""
         Some(ArgParseException(s"More args required for '${mandatories.head.entity.name}'$more", c))
       } else {
         c.nextCateArg.map(_.parsed)

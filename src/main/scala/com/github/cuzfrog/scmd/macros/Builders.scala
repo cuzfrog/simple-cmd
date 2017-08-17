@@ -3,6 +3,8 @@ package com.github.cuzfrog.scmd.macros
 import com.github.cuzfrog.scmd.macros.logging.TreeBuilderLogging
 import com.github.cuzfrog.scmd._
 import ScmdUtils._
+import com.github.cuzfrog.scmd.macros.LimitationUtils.getLogicViolations
+
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.meta._
@@ -64,7 +66,7 @@ private class TreeBuilder {
           globalLimitations = globalLimitations)
     }
 
-    checkAmbiguousParams(tree)
+    tree $ checkAmbiguousParams $ checkLogicVialation
   }
 
   /**
@@ -77,10 +79,9 @@ private class TreeBuilder {
                         argDefs: immutable.Seq[TermArg],
                         dslStats: immutable.Seq[Term.Arg],
                         globalLimitationsStats: immutable.Seq[Term.Arg]): TermArgTree = {
-
     val builder = NodeBuilder.newDslTermBuilder(appInfo, argDefs, dslStats, globalLimitationsStats)
 
-    checkAmbiguousParams(builder.resolve)
+    builder.resolve $ checkAmbiguousParams $ checkLogicVialation
   }
 
   private def checkAmbiguousParams(termArgTree: TermArgTree): TermArgTree = {
@@ -125,6 +126,34 @@ private class TreeBuilder {
     beginsWithVariable.drop(1).filter(p => p.isVariable || !p.isMandatory).map { p =>
       (variable, p)
     }
+  }
+
+  private def checkLogicVialation(termArgTree: TermArgTree): TermArgTree = {
+    implicit val global: Seq[LimitationTree] = termArgTree.globalLimitations
+    checkTreeLogicVialation(termArgTree.topLimitations ++ global)
+    termArgTree.cmdEntry.children.foreach(recCheckLogicVialation)
+    termArgTree
+  }
+  private def recCheckLogicVialation(termCmdNode: TermCmdNode)
+                                    (implicit globalLimitations: Seq[LimitationTree]): Unit = {
+    checkTreeLogicVialation(termCmdNode.limitations ++ globalLimitations)
+    termCmdNode.subCmdEntry.children.foreach(recCheckLogicVialation)
+  }
+  private def checkTreeLogicVialation(trees: Seq[LimitationTree]): Unit = {
+    val logicViolations = getLogicViolations(trees)
+    if (logicViolations.nonEmpty) {
+      val (name, conflicts) = logicViolations.head
+      val more =
+        if (logicViolations.lengthCompare(1) > 0) s" and ${logicViolations.size - 1} more..."
+        else "."
+      abort(s"Logic violation found: ${conflicts.prettyString} are defined as " +
+        s"both exclusive and dependent against '${name.name}'$more")
+    }
+  }
+
+  private implicit class Embrace[A](a: A) {
+    /** Embrace a function. */
+    def $[T](f: A => T): T = f(a)
   }
 }
 

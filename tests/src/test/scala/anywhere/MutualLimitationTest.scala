@@ -3,6 +3,7 @@ package anywhere
 import java.nio.file.Path
 
 import Scmd._
+import com.github.cuzfrog.scmd.runtime.ArgValidationException
 import com.github.cuzfrog.scmd.{ScalacheckIntegration, ScmdDefTest, ScmdDefTestStub}
 import org.junit._
 
@@ -19,6 +20,23 @@ class MutualLimitationTest extends ScalacheckIntegration{
     assert(opta.value.contains(2))
   }
 
+  @Test(expected = classOf[ArgValidationException])
+  def adConflict(): Unit = {
+    val parsed = List("324","-a=2","-d=123","str2").parse
+    import parsed._
+    debug(opta.value)
+    assert(param1.value.contains(324))
+    assert(opta.value.contains(2))
+  }
+
+  @Test(expected = classOf[ArgValidationException])
+  def cDeficit(): Unit = {
+    val parsed = List("324","-a=2","str2").parse
+    import parsed._
+    debug(opta.value)
+    assert(param1.value.contains(324))
+    assert(opta.value.contains(2))
+  }
 
   @ScmdDefTest
   private class OptionValueFoldingDefs(args: Seq[String])

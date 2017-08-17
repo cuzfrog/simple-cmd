@@ -26,15 +26,6 @@ private object LimitationUtils {
             s" If complicated mutual limitation is needed, define them in another clause.")
         (tree, idx)
     }
-    val logicViolations = getLogicViolations(collected.map(_._1))
-    if (logicViolations.nonEmpty) {
-      val (name, conflicts) = logicViolations.head
-      val more =
-        if (logicViolations.lengthCompare(1) > 0) s" and ${logicViolations.size - 1} more..."
-        else "."
-      abort(stats.head.pos, s"Logic violation found: ${conflicts.prettyString} are defined as " +
-        s"both exclusive and dependent against '${name.name}'$more")
-    }
 
     collected
   }
@@ -89,9 +80,6 @@ private object LimitationUtils {
       name -> conflicts
     }.filter { case (name, conflicts) => conflicts.nonEmpty }
   }
-
-  private implicit val symbolSeqPrettyString: CanFormPrettyString[Seq[scala.Symbol]] =
-    (a: Seq[scala.Symbol]) => a.map(s => s"'${s.name}'").mkString(",")
 
   implicit val definableLimitationTree: Definable[LimitationTree] = {
     case leaf: LimitationLeaf => leaf.defnTerm

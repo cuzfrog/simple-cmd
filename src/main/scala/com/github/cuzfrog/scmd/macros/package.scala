@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd
 
+import com.github.cuzfrog.scmd.ScmdUtils.CanFormPrettyString
+
 import scala.meta._
 import scala.reflect.ClassTag
 import scala.collection.immutable
@@ -53,4 +55,7 @@ package object macros {
     case Some(dscr) => q"Option(${Lit.String(dscr)})"
     case None => q"None"
   }
+
+  private[macros] implicit val symbolSeqPrettyString: CanFormPrettyString[Seq[scala.Symbol]] =
+    (a: Seq[scala.Symbol]) => a.map(s => s"'${s.name}'").mkString(",")
 }

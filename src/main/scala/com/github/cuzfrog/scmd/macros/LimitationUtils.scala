@@ -16,7 +16,14 @@ private object LimitationUtils {
   def collectLimitationsWithIdx
   (stats: immutable.Seq[Term.Arg]): immutable.Seq[(LimitationTree, Int)] = {
     stats.zipWithIndex.collect {
-      case (stat: Term.ApplyInfix, idx) => (recInfix2Tree(stat), idx)
+      case (stat: Term.ApplyInfix, idx) =>
+        val tree = recInfix2Tree(stat)
+        val duplicates = getDuplicates(tree)
+        if (duplicates.nonEmpty)
+          abort(stat.pos, s"Duplicates ${duplicates.map(s => s"'${s.name}'").mkString(",")}"
+            + s"  found in '${stat.syntax}', this is not allowed." +
+            s" If complicated mutual limitation is needed, define them in another clause.")
+        (tree, idx)
     }
   }
   def collectLimitations
@@ -39,10 +46,18 @@ private object LimitationUtils {
     }
   }
 
-  //todo: forbid tree name duplicate
+  private def getDuplicates(limitationTree: LimitationTree): Seq[scala.Symbol] = {
+    limitationTree.convertTo[List[scala.Symbol]].groupBy(identity).toSeq.collect {
+      case (symbol, seq) if seq.lengthCompare(1) > 0 => symbol
+    }
+  }
+
   def tree2seq(limitationTree: LimitationTree): immutable.Seq[String] =
     limitationTree.convertTo[List[scala.Symbol]].map(_.name)
 
+  def getLogicVialations(trees: Seq[LimitationTree]) = {
+    
+  }
 
   implicit val definableLimitationTree: Definable[LimitationTree] = {
     case leaf: LimitationLeaf => leaf.defnTerm

@@ -1,5 +1,6 @@
 package com.github.cuzfrog.scmd.runtime
 
+import com.github.cuzfrog.scmd.Defaults
 import com.github.cuzfrog.scmd.runtime.logging.ContextLogging
 
 import scala.collection.mutable
@@ -175,11 +176,26 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
   def noArgLeft: Boolean = this.synchronized(args.length <= argCursor)
 
   def tryToCorrectArg(arg: String): Option[String] = this.synchronized {
+    import ContextSnapshot.levenshteinDistance
     if (arg.startsWith("--")) { //long-opt
-
+      if (optsUpstreamLeft.isEmpty) None else {
+        val names = optsUpstreamLeft.flatMap(n => List(n.entity.hyphenName, n.entity.name))
+        val (name, distance) =
+          names.map { name => name -> levenshteinDistance(name, arg.drop(2)) }.minBy(_._2)
+        if (distance < name.length * Defaults.levenshteinDistanceThresholdFactor)
+          Some("--" + name)
+        else None
+      }
     }
     else { //cmd:
-      currentCmdNode.subCmdEntry.children
+      if (currentCmdNode.subCmdEntry.children.isEmpty) None else {
+        val (node, distance) =
+          currentCmdNode.subCmdEntry.children
+            .map(n => n -> levenshteinDistance(n.entity.name, arg)).minBy(_._2)
+        if (distance < node.entity.name.length * Defaults.levenshteinDistanceThresholdFactor)
+          Some(node.entity.name)
+        else None
+      }
     }
   }
 
@@ -208,6 +224,27 @@ private object ContextSnapshot {
     rudeArg = "",
     paramCursor = 0
   )
+  //copied from https://oldfashionedsoftware.com/2009/11/19/string-distance-and-refactoring-in-scala/
+  def levenshteinDistance(s1: String, s2: String): Int = {
+    import Math.min
+    def minimum(i1: Int, i2: Int, i3: Int) = min(min(i1, i2), i3)
+    var dist = (new Array[Int](s1.length + 1),
+      new Array[Int](s1.length + 1))
+    for (idx <- 0 to s1.length) dist._2(idx) = idx
+    for (jdx <- 1 to s2.length) {
+      val (newDist, oldDist) = dist
+      newDist(0) = jdx
+      for (idx <- 1 to s1.length) {
+        newDist(idx) = minimum(
+          oldDist(idx) + 1,
+          newDist(idx - 1) + 1,
+          oldDist(idx - 1) + (if (s1(idx - 1) == s2(jdx - 1)) 0 else 1)
+        )
+      }
+      dist = dist.swap
+    }
+    dist._2(s1.length)
+  }
 }
 
 private case class TypedArg[+A <: CateArg](typedArg: A, rude: String)

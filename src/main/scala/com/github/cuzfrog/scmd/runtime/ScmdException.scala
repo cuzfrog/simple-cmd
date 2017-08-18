@@ -40,7 +40,7 @@ private object ScmdExceptionHandler {
   implicit val defaultParseExceptionHandler: ScmdExceptionHandler[ArgParseException] =
     (e: ArgParseException) => {
       val hint = e.code match {
-        case ScmdExceptionCode.UNDEFINED_ARGS(Some(correction)) => s"did you mean: $correction"
+        case ScmdExceptionCode.UNDEFINED_ARGS(Some(correction)) => s"did you mean: '$correction'?"
         case _ => "use '-help' to get usage info."
       }
       System.err.println(s"error: ${e.getMessage}" + NEWLINE + hint)

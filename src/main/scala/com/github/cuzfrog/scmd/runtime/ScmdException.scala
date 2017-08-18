@@ -37,13 +37,13 @@ trait ScmdExceptionHandler[E <: ScmdException] {
 private object ScmdExceptionHandler {
   implicit val defaultParseExceptionHandler: ScmdExceptionHandler[ArgParseException] =
     (e: ArgParseException) => {
-      println(s"Handle parse exception: ${e.getMessage}")
+      System.err.println(s"error: ${e.getMessage}" + NEWLINE + "use '-help' to get usage info.")
       throw e
     }
-  //todo: implement handling printing.
+  //todo: provide client api to get error detail.
   implicit val defaultValidationExceptionHandler: ScmdExceptionHandler[ArgValidationException] =
     (e: ArgValidationException) => {
-      println(s"Handle validation exception: ${e.getMessage}")
+      System.err.println(s"error: ${e.getMessage}" + NEWLINE + "use '-help' to get usage info.")
       throw e
     }
 

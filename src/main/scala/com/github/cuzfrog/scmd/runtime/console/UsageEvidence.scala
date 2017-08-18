@@ -43,7 +43,6 @@ private object UsageEvidence extends BuilderUtils {
       ansi"%underline{Descr:}".add.line
       a.toTopNode.genUsage
       a.appInfo.version.foreach(v => ansi"%underline{Version}: $v".add.line)
-
       builder
     }
   }
@@ -63,7 +62,6 @@ private object UsageEvidence extends BuilderUtils {
       a.params.foreach(p => ansi"%yellow{${p.name}} ".add)
       a.description.indent(a.descrOffset - 1).add
       newline
-
       alignOpts(a.opts).foreach(_.genUsage)
       align(a.subCmds).foreach { e => recGenUsage(e, indent + 2) }
     }

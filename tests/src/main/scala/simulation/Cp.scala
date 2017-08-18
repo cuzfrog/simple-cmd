@@ -4,9 +4,11 @@ import java.io.File
 
 import Scmd._
 
+import scala.util.Try
+
 object Cp {
   @ScmdDef
-  class CpDef(args: Seq[String]) extends ScmdDefStub{
+  class CpDef(args: Seq[String]) extends ScmdDefStub[CpDef]{
     appDef(name = "cp",shortDescription = "copy file or dir.")
     val SRC = paramDefVariable[File]().mandatory
     val DEST = paramDef[File]().mandatory
@@ -28,8 +30,8 @@ object Cp {
     println("-----------Arg tree------------")
     println(conf.argTreeString)
     println("---------Parsed node sequence:----------")
-    val parsed: CpDef = conf.parse
-    println(conf.parsedSeqString)
-    println("---------Parsed values:----------")
+    Try(conf.parse).toOption.foreach{parsed=>
+      println(parsed.parsedSeqString)
+    }
   }
 }

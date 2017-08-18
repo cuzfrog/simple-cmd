@@ -4,8 +4,9 @@ import com.github.cuzfrog.scmd.ScmdUtils.CanFormPrettyString
 import com.github.cuzfrog.scmd.internal.SimpleLogging
 import ScmdUtils._
 
+import scala.reflect.ClassTag
+
 sealed trait ArgRoute extends SimpleLogging {
-  override protected implicit val loggerLevel: SimpleLogging.Level = SimpleLogging.Trace
   /** Trigger the route to run. */
   protected def execute: Boolean
 
@@ -20,14 +21,14 @@ private sealed case class CmdRoute(cmd: Command,
     * Add inner func, not really run or execute.
     *
     * @param innerF   code to run later, could be an inner route.
-    * @param ev       to check the innerF is a route or not.
     * @tparam R the return type of inner statement.
     * @return an ArgRoute that encapsulate inner route or inner func.
     */
-  def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
-    val _next: Option[ArgRoute] = Option(ev) match {
-      case Some(_) => Option(RunRoute(() => innerF, isInnerRoute = true))
-      case None => Option(RunRoute(() => innerF, isInnerRoute = false))
+  def run[R: ClassTag](innerF: => R): ArgRoute = {
+    val tpe = implicitly[ClassTag[R]]
+    val _next: Option[ArgRoute] = tpe.runtimeClass match {
+      case rc if rc == classOf[ArgRoute] => Option(RunRoute(() => innerF, isInnerRoute = true))
+      case _ => Option(RunRoute(() => innerF, isInnerRoute = false))
     }
     this.copy(next = _next)
   }

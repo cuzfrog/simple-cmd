@@ -43,7 +43,7 @@ class RoutingAndArgTreeTest extends ScalacheckIntegration {
   @Test
   def test3(): Unit = record.synchronized {
     val prop = forAll(arbStr) { (str) =>
-      !List("cmd1", str, "cmd2").run &&
+      List("cmd1", str, "cmd2").run &&
         record.contains(str)
     }
     assert(prop)
@@ -98,30 +98,30 @@ class RoutingAndArgTreeTest extends ScalacheckIntegration {
     import scmdValueConverter._
 
     app.run {
-      println(s"app run|$record")
+      //println(s"app run|$record")
       cmd1.run {
         param1.value.foreach(record += _)
-        println("eval param1|" + record)
+        //println("eval param1|" + record)
       } &
         cmd1.run {
-          println(s"cmd1 run|$record")
+          //println(s"cmd1 run|$record")
           cmd2.onConditions(
             opta.expect(_.exists(_ > 1000))
           ).run {
             record += "moreThan1000"
-            println(s"cmd2 run|$record")
+            //println(s"cmd2 run|$record")
           } ~
             cmd2.onConditions(
               opta.expect(_.exists(_ <= 1000))
             ).run {
               record += "within1000"
-              println(s"cmd2 run|$record")
+              //println(s"cmd2 run|$record")
             } ~
             cmd2.onConditions(
               optb.expectTrue
             ).run {
               record += "optb"
-              println(s"cmd2 run|$record")
+              //println(s"cmd2 run|$record")
             }
         }
     }

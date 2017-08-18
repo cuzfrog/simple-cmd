@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd
 
+import scala.reflect.ClassTag
+
 /**
   * DSL to built scmd route.
   */
@@ -88,10 +90,43 @@ sealed trait RouteCommandOperations {
   def runOnPrior(a: PriorArg)(action: => Unit): RouteCommand = {
     rcmd.copy(priorActions = rcmd.priorActions :+ (a -> (() => action)))
   }
-  def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
+  //@formatter:off
+  /**
+    * Define a run clause. Which will be executed when def-class `runWithRoute`.<br><br>
+    *
+    * @see [[com.github.cuzfrog.scmd.ScmdRouteRunTypeConstraint]]
+    * @param innerF statement.
+    * @tparam R the return type of statement.<br>
+    *           `RouteCommand` is constrained by ambiguous implicits.<br><br>
+    *           Caution: Inner route can only be executed when the route returns.
+    *           If return type is Unit, the route will be ignored. e.g.:{{{
+    * cmd.run{
+    *   subCmd.run{...} //not returned, so ignored.
+    *   println("do other things")
+    * }
+    * }}}
+    * @return an `ArgRoute`
+    */
+  //@formatter:on
+  def run[R: ClassTag : ScmdRouteRunTypeConstraint](innerF: => R): ArgRoute = {
     CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF)
   }
-  //todo: make compile-time error when R is RouteCommand
+
+  //todo: provide a macro api to check routes.
+}
+
+/**
+  * Constrain `RouteCommand` not to return in run clause.
+  */
+trait ScmdRouteRunTypeConstraint[R]
+private object ScmdRouteRunTypeConstraint extends LowLevelImplicitsForScmdRouteRunTypeConstraint {
+  implicit def routeCommandAmbiguous1: ScmdRouteRunTypeConstraint[RouteCommand] =
+    new ScmdRouteRunTypeConstraint[RouteCommand] {}
+  implicit def routeCommandAmbiguous2: ScmdRouteRunTypeConstraint[RouteCommand] =
+    new ScmdRouteRunTypeConstraint[RouteCommand] {}
+}
+private sealed trait LowLevelImplicitsForScmdRouteRunTypeConstraint {
+  implicit def default[R]: ScmdRouteRunTypeConstraint[R] = new ScmdRouteRunTypeConstraint[R] {}
 }
 
 //todo: add scope to param and opt to limit them to their cmd. (why necessary?)

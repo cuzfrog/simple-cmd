@@ -2,6 +2,7 @@ package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd.SingleValue
 import com.github.cuzfrog.scmd.internal.SimpleLogging
+import com.github.cuzfrog.scmd.runtime.ScmdExceptionCode._
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
@@ -71,13 +72,14 @@ private object SingleOpts extends CateUtils {
                 case EqualLitertal(argAbbr, bool) if optNode1.entity.abbr.contains(argAbbr) =>
                   parseBoolStr(bool) match {
                     case Some(b) => c.anchors(optNode1.addValue(b))
-                    case None => ArgParseException(s"Unknown bool literal: '$bool'", c)
+                    case None =>
+                      ArgParseException(s"Unknown bool literal: '$bool'", BAD_BOOLEAN_LITERAL, c)
                   }
                 //multichar single abbr
                 case bool if optNode1.entity.abbr.contains(bool) =>
                   c.anchors(optNode1.addValue(extractBooleanValue(optNode1)))
                 //folded letters
-                case bools if bools.matches("""\w+""") =>
+                case bools if bools.matches("""[a-zA-Z]+""") =>
                   val boolSet = bools.split("").distinct
                   /** Nodes with optDefs matched with args with type Boolean. */
                   val boolNodes = c.getUpstreamLeftOpts.collect {
@@ -88,11 +90,11 @@ private object SingleOpts extends CateUtils {
                   if (boolNodes.size < boolSet.length) {
                     val badArgs =
                       boolSet.filterNot(s => boolNodes.flatMap(_.entity.abbr).contains(s)).mkString
-                    ArgParseException(
-                      s"Boolean options: '$badArgs' in '${a.original}' not defined", c)
+                    ArgParseException(s"Boolean options: '$badArgs' in '${a.original}' not defined"
+                      , UNDEFINED_ARGS(), c)
                   }
                   else if (boolSet.length < bools.length) {
-                    ArgParseException(s"Duplicates in boolean options: '-$bools'", c)
+                    ArgParseException(s"Duplicates in boolean options: '-$bools'", DUPLICATE_ARGS, c)
                   }
                   else {
                     val optNodesWithValue = c.anchorMultiple(
@@ -104,7 +106,7 @@ private object SingleOpts extends CateUtils {
                   }
 
                 case bad =>
-                  ArgParseException(s"Boolean opts '-$bad' contain unsupported letter", c)
+                  ArgParseException(s"Boolean opts '-$bad' contain unsupported letter", BAD_FORMAT, c)
               }
 
             //found argDef for other types
@@ -115,8 +117,9 @@ private object SingleOpts extends CateUtils {
                   case ValueFolding(argAbbr, v) if optNode1.entity.abbr.contains(argAbbr) => v
                   case single if optNode1.entity.abbr.contains(single) => c.nextArg.getOrElse(
                     throw ArgParseException(
-                      s"No value found for opt '${a.original}' with type[${otherTpe.name}].", c))
-                  case bad => throw ArgParseException(s"Malformed opt '-$bad'", c)
+                      s"No value found for opt '${a.original}' with type[${otherTpe.name}].",
+                      DEFICIT_ARGS, c))
+                  case bad => throw ArgParseException(s"Malformed opt '-$bad'", BAD_FORMAT, c)
                 }
                 c.anchors(optNode1.addValue(value))
               } catch {
@@ -124,14 +127,14 @@ private object SingleOpts extends CateUtils {
               }
           }
         case None =>
-          ArgParseException(s"Unknown opt '${a.original}'", c)
+          ArgParseException(s"Unknown opt '${a.original}'", UNDEFINED_ARGS(), c)
       }
     }
   }
 }
 
 private object LongOpt extends CateUtils {
-  private val EqualLiteral: Regex = """-([\-\w]+)(=.*)?""".r
+  private val EqualLiteral: Regex = """-([\-\w]+)(=.*)?""".r //guarded by categorize in ArgParser.
 
   implicit val parser: Parser[LongOpt, AnchorEither] = new Parser[LongOpt, AnchorEither] {
     override def parse(a: LongOpt)(implicit c: Context): AnchorEither = {
@@ -154,7 +157,8 @@ private object LongOpt extends CateUtils {
                   valueOpt match {
                     case Some(boolStr) => parseBoolStr(boolStr) match {
                       case Some(b) => c.anchors(optNode.addValue(b))
-                      case None => ArgParseException(s"Unknown bool literal: '${a.original}'", c)
+                      case None => ArgParseException(s"Unknown bool literal: '${a.original}'",
+                        BAD_BOOLEAN_LITERAL, c)
                     }
                     case None =>
                       c.anchors(optNode.addValue(extractBooleanValue(optNode)))
@@ -169,16 +173,17 @@ private object LongOpt extends CateUtils {
                   vOpt match {
                     case Some(v) => c.anchors(optNode.addValue(v))
                     case None =>
-                      ArgParseException(
-                        s"No value found for opt '${a.original}' with type[${otherTpe.name}].", c)
+                      ArgParseException(s"No value found for opt '${a.original}' " +
+                        s"with type[${otherTpe.name}].", DEFICIT_ARGS, c)
                   }
               }
 
             case None =>
               trace(s"Parse LongOpt ${a.original} -> not-matched.")
-              ArgParseException(s"Unknown option: '${a.original}'", c)
+              ArgParseException(s"Unknown option: '${a.original}'",
+                UNDEFINED_ARGS(c.tryToCorrectArg(a.original)), c)
           }
-        case _ => ArgParseException(s"Malformed option: '${a.original}'", c)
+        case _ => ArgParseException(s"Malformed option: '${a.original}'", BAD_FORMAT, c)
       }
     }
   }
@@ -267,7 +272,8 @@ private object ParamOrCmd extends CateUtils {
     private def consumeCmd(arg: String, c: Context): AnchorEither = {
       c.nodeAdvance(arg) match {
         case Some(childCmdNode) => c.anchors(childCmdNode)
-        case None => ArgParseException(s"Unknown cmd: '$arg'", c)
+        case None => ArgParseException(s"Unknown cmd: '$arg'",
+          UNDEFINED_ARGS(c.tryToCorrectArg(arg)), c)
       }
     }
   }

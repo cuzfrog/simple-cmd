@@ -2,6 +2,7 @@ package com.github.cuzfrog.scmd.runtime
 
 import com.github.cuzfrog.scmd.ScmdUtils._
 import com.github.cuzfrog.scmd.internal.SimpleLogging
+import com.github.cuzfrog.scmd.runtime.ScmdExceptionCode.{AMBIGUOUS_ARGS, DEFICIT_ARGS, NO_ARGS}
 
 import scala.annotation.tailrec
 import scala.language.reflectiveCalls
@@ -26,7 +27,8 @@ private object ArgParser {
   */
 private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) extends SimpleLogging {
   if (args.isEmpty)
-    throw ArgParseException("No args specified.", ContextSnapshot.preContextSnapshot(argTree))
+    throw ArgParseException("No args specified.",
+      NO_ARGS, ContextSnapshot.preContextSnapshot(argTree))
 
   import BacktrackingParser._
 
@@ -64,7 +66,8 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
           case n@(_: OptNode[_] | _: PropNode[_] | _: PriorNode) =>
             throw new AssertionError(s"OptNode/PropNode should not be ambiguous.[${n.entity.name}]")
         }.map(n => s"'$n'")
-        throw ArgParseException(s"Ambiguous arg: '$arg' for: ${msg.mkString(",")}", c)
+        throw ArgParseException(s"Ambiguous arg: '$arg' for: ${msg.mkString(",")}",
+          AMBIGUOUS_ARGS, c)
     }
   }
 
@@ -130,7 +133,8 @@ private class BacktrackingParser(args: Seq[String])(implicit argTree: ArgTree) e
       if (mandatories.nonEmpty && c.noArgLeft) {
         val more =
           if (mandatories.lengthCompare(1) > 0) s" and ${mandatories.size - 1} more..." else ""
-        Some(ArgParseException(s"More args required for '${mandatories.head.entity.name}'$more", c))
+        Some(ArgParseException(s"More args required for " +
+          s"'${mandatories.head.entity.name}'$more", DEFICIT_ARGS, c))
       } else {
         c.nextCateArg.map(_.parsed)
       }

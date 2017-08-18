@@ -41,6 +41,7 @@ these parsers, some are complicated with hard-to-read README,
 | Optional commands                              | `command [<command1> <command2>]` | 
 | Routing             | no manually writing `if` ..  `else` or `match case` to route command   | 
 | Contextual help                                            | preciser help info    | 
+| Typo correction              | `git comit` triggers: `did you mean: 'commit'`    | 
 | Usage info generation                                    | see pictures below   | 
 
 ### Goals I'm trying to achieve:

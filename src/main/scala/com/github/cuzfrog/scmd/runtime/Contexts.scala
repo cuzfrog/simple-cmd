@@ -174,6 +174,15 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   def noArgLeft: Boolean = this.synchronized(args.length <= argCursor)
 
+  def tryToCorrectArg(arg: String): Option[String] = this.synchronized {
+    if (arg.startsWith("--")) { //long-opt
+
+    }
+    else { //cmd:
+      currentCmdNode.subCmdEntry.children
+    }
+  }
+
   private def noMoreParamForThisCmd: Boolean =
     this.synchronized(currentCmdNode.params.length <= paramCursor)
 }

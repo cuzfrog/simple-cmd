@@ -72,9 +72,12 @@ private object UsageArgTree {
 
   implicit def paramNode2usageEv[T]: Convertible[ParamNode[T], UsageParamNode] =
     (a: ParamNode[T]) => {
-      val name = s"<${a.entity.originalName}>"
+      val name = {
+        val variable = if(a.isVariable) "..." else ""
+        s"<${a.entity.originalName}$variable>"
+      }
       val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
-      UsageParamNode(name, description, a.entity.isMandatory)
+      UsageParamNode(name, description, a.isMandatory)
     }
 
   implicit def optNode2usageEv[T]: Convertible[OptNode[T], UsageOptNode] =

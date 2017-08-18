@@ -6,7 +6,7 @@ import ScmdUtils._
 /**
   * Exposed to macros for basic validation, so need to put in this package.
   */
-sealed trait Argument[+T] extends Product with Serializable{
+sealed trait Argument[+T] extends Product with Serializable {
   def name: String
   def description: Option[String]
   /** Name that is meant to be on the cmd-line. */
@@ -114,7 +114,7 @@ private[scmd] object DummyArgument {
 
 private object Command {
   /** Return a top cmd representing app. */
-  def topCmd(appName: String): Command = Command(appName, None)
+  def topCmd(appName: String): Command = Command(appName, None, met = true)
 }
 
 private object Parameter {

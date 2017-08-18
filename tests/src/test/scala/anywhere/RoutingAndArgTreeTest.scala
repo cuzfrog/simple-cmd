@@ -17,7 +17,7 @@ class RoutingAndArgTreeTest extends ScalacheckIntegration {
   }
 
   @Test
-  def test1(): Unit = {
+  def test1(): Unit = record.synchronized {
     val prop = forAll(arbInt, arbStr) { (int, str) =>
       (int > 1000) ==> {
         List("cmd1", str, "cmd2", "-a", int.toString).run &&
@@ -29,7 +29,7 @@ class RoutingAndArgTreeTest extends ScalacheckIntegration {
   }
 
   @Test
-  def test2(): Unit = {
+  def test2(): Unit = record.synchronized {
     val prop = forAll(arbInt, arbStr) { (int, str) =>
       (int <= 1000) ==> {
         List("cmd1", str, "cmd2", "-a", int.toString).run &&
@@ -41,23 +41,32 @@ class RoutingAndArgTreeTest extends ScalacheckIntegration {
   }
 
   @Test
-  def test3(): Unit = {
+  def test3(): Unit = record.synchronized {
     val prop = forAll(arbStr) { (str) =>
       !List("cmd1", str, "cmd2").run &&
-        record.contains(str) && record.length == 1
+        record.contains(str)
     }
     assert(prop)
   }
 
   @Test
-  def test4(): Unit = {
+  def test4(): Unit = record.synchronized {
     val prop = forAll(arbStr) { (str) =>
       List("cmd1", str, "cmd2", "-b").run &&
-        record.contains(str) && record.contains("optb") && record.length == 2
+        record.contains(str) && record.contains("optb")
     }
     assert(prop)
   }
 
+  @Test
+  def test5(): Unit = record.synchronized {
+
+    List("cmd1", "str", "cmd2", "-b").run
+
+    assert(record.contains("str"))
+    assert(record.contains("optb"))
+    assert(record.length == 2)
+  }
 
   @ScmdDefTest
   private class ArgDefs(args: Seq[String])
@@ -88,28 +97,34 @@ class RoutingAndArgTreeTest extends ScalacheckIntegration {
     import argDefs._
     import scmdValueConverter._
 
-    app.run(
-      cmd1.runThrough(
+    app.run {
+      println(s"app run|$record")
+      cmd1.run {
         param1.value.foreach(record += _)
-      ) ~
+        println("eval param1|" + record)
+      } &
         cmd1.run {
+          println(s"cmd1 run|$record")
           cmd2.onConditions(
             opta.expect(_.exists(_ > 1000))
           ).run {
             record += "moreThan1000"
+            println(s"cmd2 run|$record")
           } ~
             cmd2.onConditions(
               opta.expect(_.exists(_ <= 1000))
             ).run {
               record += "within1000"
+              println(s"cmd2 run|$record")
             } ~
             cmd2.onConditions(
               optb.expectTrue
-            ).run(
+            ).run {
               record += "optb"
-            )
+              println(s"cmd2 run|$record")
+            }
         }
-    )
+    }
   }
 
   private implicit class ParseOps(in: List[String]) {

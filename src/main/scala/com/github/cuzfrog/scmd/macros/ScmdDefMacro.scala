@@ -100,7 +100,7 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
                println(scmdRuntime.usageString)
              }.runOnPrior(defCls.version) {
                println(defCls.appInfo.version.getOrElse("No version number."))
-             }.runThrough(println("built-in route run through"))
+             }.run(())
           }"""
     }
 

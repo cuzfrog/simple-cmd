@@ -55,16 +55,16 @@ object ScmdRouteDSL {
 
   implicit final class ScmdRouteOps(in: ArgRoute) {
     /**
-      * Link two routes. Linked routes are tried to execute in order.
-      * <br><br>
-      * If a route's conditions are reached, it's executed, and the whole route ends.
-      * Except, a route built by <strong>runThrough</strong> will not end the whole route
-      * after execution.
+      * Link two routes in logic 'or' pattern. Linked routes are tried to execute in order.
+      * If one route's conditions are reached, it's executed, and the whole route ends.
       */
-    def ~(that: ArgRoute): ArgRoute = in match {
-      case linkRoute: LinkRoute => linkRoute.copy(linkRoute.seq :+ that)
-      case otherRoute => LinkRoute(Seq(otherRoute, that))
-    }
+    def ~(that: ArgRoute): ArgRoute = LinkRoute(Seq(in, that), exhaustive = false)
+
+    /** Link two routes in logic 'and' pattern. Linked routes are tried to execute in order.
+      * Both routes' conditions will be tested, and those with reached conditions will be executed.
+      * If more than zero of the routes have been executed, the whole route will end.
+      */
+    def &(that: ArgRoute): ArgRoute = LinkRoute(Seq(in, that), exhaustive = true)
   }
 }
 
@@ -89,12 +89,9 @@ sealed trait RouteCommandOperations {
     rcmd.copy(priorActions = rcmd.priorActions :+ (a -> (() => action)))
   }
   def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
-    CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = true)
-  }//todo: make compile-time error when R is RouteCommand
-  /** Same as run, except it will not end the whole route after running. */
-  def runThrough[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
-    CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF, endRoute = false)
+    CmdRoute(rcmd.cmd, rcmd.conditions, rcmd.priorActions).run(innerF)
   }
+  //todo: make compile-time error when R is RouteCommand
 }
 
 //todo: add scope to param and opt to limit them to their cmd. (why necessary?)

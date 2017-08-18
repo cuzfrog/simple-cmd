@@ -12,24 +12,22 @@ sealed trait ArgRoute extends SimpleLogging {
   private[scmd] def queryPrior(cmdSymbol: scala.Symbol): Seq[PriorArg]
 }
 
-private sealed case
-class CmdRoute private[scmd](cmd: Command,
-                             conditions: Seq[RouteCondition] = Nil,
-                             priorActions: Seq[(PriorArg, () => Unit)],
-                             next: Option[ArgRoute] = None) extends ArgRoute {
+private sealed case class CmdRoute(cmd: Command,
+                                   conditions: Seq[RouteCondition] = Nil,
+                                   priorActions: Seq[(PriorArg, () => Unit)],
+                                   next: Option[ArgRoute] = None) extends ArgRoute {
   /**
     * Add inner func, not really run or execute.
     *
     * @param innerF   code to run later, could be an inner route.
-    * @param endRoute when inner run finishes, whether to end the route or go through and continue.
     * @param ev       to check the innerF is a route or not.
     * @tparam R the return type of inner statement.
     * @return an ArgRoute that encapsulate inner route or inner func.
     */
-  def run[R](innerF: => R, endRoute: Boolean)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
+  def run[R](innerF: => R)(implicit ev: R <:< ArgRoute = null): ArgRoute = {
     val _next: Option[ArgRoute] = Option(ev) match {
-      case Some(_) => Option(innerF)
-      case None => Option(RunRoute(() => innerF, endRoute))
+      case Some(_) => Option(RunRoute(() => innerF, isInnerRoute = true))
+      case None => Option(RunRoute(() => innerF, isInnerRoute = false))
     }
     this.copy(next = _next)
   }
@@ -55,19 +53,28 @@ class CmdRoute private[scmd](cmd: Command,
   }
 }
 
-private final case class RunRoute private[scmd](runF: (() => R) forSome {type R},
-                                                endRoute: Boolean) extends ArgRoute {
-  override def execute: Boolean = {
-    debug(s"runRoute executed: ${this.asInstanceOf[RunRoute].prettyString}")
+//private final class LazyRoute(inner: => ArgRoute) extends ArgRoute {
+//  override protected def execute = ???
+//  override private[scmd] def queryPrior(cmdSymbol: Symbol) = Nil
+//}
+
+private final case class RunRoute(runF: (() => R) forSome {type R},
+                                  isInnerRoute: Boolean) extends ArgRoute {
+  override def execute: Boolean = if (isInnerRoute) {
+    debug(s"innerRoute executed:~")
+    runF().asInstanceOf[ArgRoute].execute
+  } else {
+    debug(s"runRoute executed:${this.asInstanceOf[RunRoute].prettyString}")
     runF()
-    endRoute
+    true
   }
   override def queryPrior(cmdSymbol: Symbol): Seq[PriorArg] = Nil
 }
-private final case class LinkRoute private[scmd](seq: Seq[ArgRoute]) extends ArgRoute {
+private final case class LinkRoute(seq: Seq[ArgRoute], exhaustive: Boolean) extends ArgRoute {
   override def execute: Boolean = {
     debug(s"linkRoute executed: ${this.asInstanceOf[ArgRoute].prettyString}")
-    seq.exists(_.execute)
+    if (exhaustive) seq.map(_.execute).exists(identity)
+    else seq.exists(_.execute)
   }
   override def queryPrior(cmdSymbol: Symbol): Seq[PriorArg] = {
     this.seq.flatMap(_.queryPrior(cmdSymbol))
@@ -91,7 +98,7 @@ object ArgRoute {
     to match {
       case cru: CmdRoute =>
         val filtered = cru.filterPriorActions(p => !from.queryPrior(cru.cmd.symbol).contains(p))
-        filtered ~ from
+        filtered & from
       case _ => throw new UnsupportedOperationException("Only cmd route can be merged to.")
     }
   }
@@ -101,7 +108,7 @@ object ArgRoute {
   }
   private def recPrettyString(r: ArgRoute, indent: String = " "): String = r match {
     case r: CmdRoute => indent + r.prettyString
-    case r: LinkRoute => "LinkRoute:" +
+    case r: LinkRoute => s"LinkRoute(exhaustive:${r.exhaustive}):" +
       NEWLINE + r.seq.map(lr => recPrettyString(lr, indent + " ")).mkString(NEWLINE)
     case r: RunRoute => indent + r.prettyString
   }
@@ -119,6 +126,6 @@ private object CmdRoute {
 
 private object RunRoute {
   implicit def canFormPrettyString: CanFormPrettyString[RunRoute] = (a: RunRoute) => {
-    s"RunRoute(endRoute:${a.endRoute})"
+    s"RunRoute"
   }
 }

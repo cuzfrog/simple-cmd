@@ -46,4 +46,6 @@ private object ScmdUtils {
     throw new IllegalArgumentException(s"Default value empty for ${arg.originalName}")
   def throwIfEmptyMandatory(arg: Argument[_]): Nothing =
     throw new IllegalArgumentException(s"Mandatory value empty for ${arg.originalName}")
+
+  val NEWLINE: String = System.lineSeparator
 }

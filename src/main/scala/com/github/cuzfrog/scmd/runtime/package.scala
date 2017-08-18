@@ -5,7 +5,7 @@ import scala.reflect.ClassTag
 package object runtime extends ArgTreeUtils {
   private[runtime] type AnchorEither = Either[ArgParseException, Seq[Anchor]]
 
-  private[runtime] val NEWLINE: String = System.lineSeparator
+  private[runtime] val NEWLINE: String = ScmdUtils.NEWLINE
 
   private[runtime] trait Parser[A, R] {
     def parse(a: A)(implicit c: Context): R

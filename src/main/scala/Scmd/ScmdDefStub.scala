@@ -20,7 +20,7 @@ abstract class ScmdDefStub[D] extends ScmdDefApi {
     *
     * @param toRoute function that accepts def-class and return [[ArgRoute]]
     * @return true if the route has been run, false if route has been passed through.<br>
-    *         Exception: see [[runThrough]] in [[com.github.cuzfrog.scmd.RouteCommandOperations]]
+    * @see [[com.github.cuzfrog.scmd.RouteCommandOperations]]
     */
   def runWithRoute(toRoute: D => ArgRoute): Boolean
   /**

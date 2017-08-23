@@ -5,6 +5,7 @@ import com.github.cuzfrog.scmd.runtime.logging.ContextLogging
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import scala.util.matching.Regex
 
 /**
   * Stateful OOP object representing parsing process.
@@ -175,13 +176,20 @@ private[runtime] class Context(argTree: ArgTree, args: Seq[TypedArg[CateArg]]) {
 
   def noArgLeft: Boolean = this.synchronized(args.length <= argCursor)
 
+  private val EqualLiteral: Regex = """-?([\-\w]+)(=.*)?""".r
   def tryToCorrectArg(arg: String): Option[String] = this.synchronized {
     import ContextSnapshot.levenshteinDistance
-    if (arg.startsWith("--")) { //long-opt
+    if (arg.startsWith("-")) { //long-opt or short-opt
       if (optsUpstreamLeft.isEmpty) None else {
         val names = optsUpstreamLeft.flatMap(n => List(n.entity.hyphenName, n.entity.name))
+        val argName = arg match{
+          case EqualLiteral(a,_) => a
+          case a if a.matches("""--w+.*""") => a.drop(2)
+          case a if a.matches("""-w+.*""") => a.drop(1)
+          case _ => "" //sure to return None
+        }
         val (name, distance) =
-          names.map { name => name -> levenshteinDistance(name, arg.drop(2)) }.minBy(_._2)
+          names.map { name => name -> levenshteinDistance(name, argName) }.minBy(_._2)
         if (distance < name.length * Defaults.levenshteinDistanceThresholdFactor)
           Some("--" + name)
         else None

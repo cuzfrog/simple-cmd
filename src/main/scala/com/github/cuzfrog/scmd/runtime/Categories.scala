@@ -127,7 +127,8 @@ private object SingleOpts extends CateUtils {
               }
           }
         case None =>
-          ArgParseException(s"Unknown opt '${a.original}'", UNDEFINED_ARGS(), c)
+          ArgParseException(s"Unknown opt '${a.original}'",
+            UNDEFINED_ARGS(c.tryToCorrectArg(a.original)), c)
       }
     }
   }
@@ -183,7 +184,21 @@ private object LongOpt extends CateUtils {
               ArgParseException(s"Unknown option: '${a.original}'",
                 UNDEFINED_ARGS(c.tryToCorrectArg(a.original)), c)
           }
-        case _ => ArgParseException(s"Malformed option: '${a.original}'", BAD_FORMAT, c)
+        case longOpt =>
+          val matchOpt = c.getUpstreamLeftOpts.find { n =>
+            n.entity.name == longOpt || n.entity.hyphenName == longOpt
+          }
+          matchOpt match {
+            case Some(optNode) =>
+              val value = c.nextArg.getOrElse(
+                throw ArgParseException(
+                  s"No value found for opt '${a.original}' with type[${optNode.tpe.name}].",
+                  DEFICIT_ARGS, c))
+              c.anchors(optNode.addValue(value))
+            case None =>
+              ArgParseException(s"Unknown option: '${a.original}'",
+                UNDEFINED_ARGS(c.tryToCorrectArg(a.original)), c)
+          }
       }
     }
   }

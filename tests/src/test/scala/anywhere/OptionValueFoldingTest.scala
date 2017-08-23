@@ -45,7 +45,7 @@ class OptionValueFoldingTest extends ScalacheckIntegration {
   @Test
   def evaluationLongTest(): Unit = {
     val prop = forAll(arbInt, arbStr) { case (int, str) =>
-      val parsed = List("--opta=" + int, "-optb=" + str).parse
+      val parsed = List("--opta=" + int, "--optb=" + str).parse
       parsed.opta.value.contains(int) &&
         parsed.optb.value.contains(str)
     }

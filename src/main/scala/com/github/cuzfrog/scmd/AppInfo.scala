@@ -11,7 +11,9 @@ sealed case class AppInfo(name: String,
                           version: Option[String] = Option(getClass.getPackage.getImplementationVersion),
                           license: Option[String] = None,
                           author: Option[String] = None,
-                          custom: immutable.Seq[(String, String)] = immutable.Seq.empty)
+                          custom: immutable.Seq[(String, String)] = immutable.Seq.empty){
+  private def combineBasics:Seq[(String,String)] = Empty //see scalameta #1090
+}
 
 private object AppInfo {
   /**

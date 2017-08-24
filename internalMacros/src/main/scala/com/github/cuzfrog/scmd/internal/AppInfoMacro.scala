@@ -8,7 +8,7 @@ private[scmd] class AppInfoMacro extends StaticAnnotation {
   inline def apply(defn: Any): Any = meta {
     defn match {
       case Term.Block(
-      Seq(q"..$mods class $tname ..$ctorMods (...$paramss)", companion: Defn.Object)) =>
+      Seq(q"..$mods class $tname ..$ctorMods (...$paramss) {$_}", companion: Defn.Object)) =>
         val basics = paramss.head.collect {
           case param"..$mods $name: Option[String] = $_" =>
             q"${Term.Name(name.value)}.map(v=>(${Lit.String(name.value)},v))"

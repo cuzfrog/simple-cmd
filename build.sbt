@@ -2,7 +2,7 @@ import CommonSettings._
 
 shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
 //onLoad in Global := (onLoad in Global).value andThen (Command.process(s"", _))
-scalaVersion in ThisBuild := "2.12.3"
+scalaVersion in ThisBuild := "2.11.11"
 version in ThisBuild := "0.1.0-SNAPSHOT"
 
 val macroAnnotationSettings = Seq(
@@ -25,14 +25,14 @@ val internalMacros = project
 
 val scmd = (project in file("."))
   .settings(
-    commonSettings, macroAnnotationSettings
+    commonSettings, publishSettings, macroAnnotationSettings
   )
   .settings(
     name := "scmd",
     description := "simple-cmd, a command-line argument parsing library for scala.",
     mappings in(Compile, packageBin) ++= mappings.in(internalMacros, Compile, packageBin).value,
     mappings in(Compile, packageSrc) ++= mappings.in(internalMacros, Compile, packageSrc).value,
-    publishArtifact in (Compile, packageDoc) := false
+    publishArtifact in(Compile, packageDoc) := false
   ).dependsOn(internalMacros % "compile-internal, test-internal")
 
 

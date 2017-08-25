@@ -25,7 +25,7 @@ before_cache:
 
 deploy:
   provider: script
-  script: sbt ";generateCredential;set isSnapshot in ThisBuild := false;publish"
+  script: sbt ";set isSnapshot in ThisBuild := false;publish"
   on:
     all_branches: true
     tags: true

@@ -1,6 +1,8 @@
-[![Join the chat at https://gitter.im/simple-cmd/Lobby](https://badges.gitter.im/simple-cmd/scmd.svg)](https://gitter.im/simple-cmd/scmd?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 # Scmd - The simple cmd-line arguments parser.
+[![Join the chat at https://gitter.im/simple-cmd/Lobby](https://badges.gitter.im/simple-cmd/scmd.svg)]
+(https://gitter.im/simple-cmd/scmd?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/cuzfrog/simple-cmd.svg?branch=master)]
+(https://travis-ci.org/cuzfrog/simple-cmd)
 
 This project is under development now.
 

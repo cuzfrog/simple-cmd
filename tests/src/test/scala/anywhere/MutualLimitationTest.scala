@@ -58,7 +58,7 @@ class MutualLimitationTest extends ScalacheckIntegration{
       //opta & optb, //should trigger compile-time logic error
       param1,
       param2,
-      param3,
+      param3
     )
   }
 

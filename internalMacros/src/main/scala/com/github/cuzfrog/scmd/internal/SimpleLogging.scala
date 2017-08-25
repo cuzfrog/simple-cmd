@@ -1,5 +1,7 @@
 package com.github.cuzfrog.scmd.internal
 
+import java.io.InputStream
+
 import scala.util.Try
 
 /**
@@ -26,7 +28,7 @@ private[scmd] trait SimpleLogging {
 
   private def pl(x: => Any, level: Level, color: String = "")
                 (withTitle: Boolean)
-                (implicit agent: LoggerAgent, levelThreshold: Level) = {
+                (implicit agent: LoggerAgent, levelThreshold: Level): Unit = {
     lazy val prefix = if (withTitle) s"[$agent][$color$level$RESET]" else ""
     if (level.level >= levelThreshold.level) println(s"$prefix$x")
   }
@@ -35,7 +37,7 @@ private[scmd] trait SimpleLogging {
 }
 
 private[scmd] object SimpleLogging {
-  class LoggerAgent(val name: String) extends AnyVal{
+  class LoggerAgent(val name: String) extends AnyVal {
     override def toString: String = name
   }
   object LoggerAgent {
@@ -53,17 +55,18 @@ private[scmd] object SimpleLogging {
       case bad => throw new IllegalArgumentException(s"Unknown log level $bad")
     }
   }
-  case object Trace extends Level {val level = -2}
-  case object Debug extends Level {val level = -1}
-  case object Info extends Level {val level = 0}
-  case object Warn extends Level {val level = 1}
-  case object Error extends Level {val level = 2}
+  case object Trace extends Level {val level: Int = -2}
+  case object Debug extends Level {val level: Int = -1}
+  case object Info extends Level {val level: Int = 0}
+  case object Warn extends Level {val level: Int = 1}
+  case object Error extends Level {val level: Int = 2}
 
   private val properties: Map[String, Level] = {
     val x = new java.util.Properties
-    val result = Try(
-      x.load(scala.io.Source.fromResource("simple-logger.properties").reader())
-    )
+    val result = Try {
+      val stream: InputStream = getClass.getResourceAsStream("simple-logger.properties")
+      x.load(scala.io.Source.fromInputStream(stream).reader())
+    }
     import scala.collection.JavaConverters._
     if (result.isFailure) Map.empty
     else x.asScala.map { case (k, v) => k -> Level.fromString(v) }.toMap

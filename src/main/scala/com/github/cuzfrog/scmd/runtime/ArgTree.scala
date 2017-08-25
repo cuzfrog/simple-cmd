@@ -23,7 +23,7 @@ private final case class ArgTree(appInfo: AppInfo,
   )
 }
 
-private sealed trait Node extends Product with Serializable{
+private sealed trait Node extends Product with Serializable {
   def entity: Argument[_]
 }
 
@@ -79,46 +79,49 @@ private case class PropNode[T](entity: PropertyArg[T] with VariableValue[(String
                                value: Seq[(String, String)], tpe: ClassTag[_]) extends Node
 
 private object ArgTree {
-  implicit val canFormPrettyString: CanFormPrettyString[ArgTree] = (a: ArgTree) => {
-    val cmdNode = a.toTopNode
-
-    def variableOrMandatory(n: ValueNode[_]): (String, String) = {
-      val ifVariable = if (n.isVariable) "..." else ""
-      val ifMandatory = if (n.isMandatory) "(Mandatory)" else "(Optional)"
-      (ifVariable, ifMandatory)
+  implicit val canFormPrettyString: CanFormPrettyString[ArgTree] =
+    new CanFormPrettyString[ArgTree] {
+      override def mkPrettyString(a: ArgTree): String = {
+        val cmdNode = a.toTopNode
+        recMkPrettyString(cmdNode, props = a.props, priors = a.priors)
+      }
     }
-
-    def recMkPrettyString(cmdNode: CmdNode, indent: String = "",
-                          props: Seq[PropNode[_]] = Nil,
-                          priors: Seq[PriorNode] = Nil): String = {
-      val cmd = indent + cmdNode.entity.name
-      val priorsStr = priors.map { n =>
-        s"$indent+-prior: ${n.entity.name} alias: ${n.entity.alias.mkString(",")}"
-      }
-      val propsStr =
-        props.map(p => s"+-props: ${p.entity.name}[key->${p.tpe}] flag ${p.entity.originalName}")
-      val params = cmdNode.params.map { n =>
-        val (ifVariable, ifMandatory) = variableOrMandatory(n)
-        s"$indent+-param$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory"
-      }
-      val opts = cmdNode.opts.map { n =>
-        val (ifVariable, ifMandatory) = variableOrMandatory(n)
-        s"$indent+-opt$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory ${n.entity.originalName}"
-      }
-      val subCmds =
-        cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
-      val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
-      val result: Seq[String] =
-        Seq(cmd) ++ propsStr ++ priorsStr ++ params ++ opts ++ cmdEntry ++ subCmds
-      result.mkString(NEWLINE)
+  private def variableOrMandatory(n: ValueNode[_]): (String, String) = {
+    val ifVariable = if (n.isVariable) "..." else ""
+    val ifMandatory = if (n.isMandatory) "(Mandatory)" else "(Optional)"
+    (ifVariable, ifMandatory)
+  }
+  private def recMkPrettyString(cmdNode: CmdNode, indent: String = "",
+                                props: Seq[PropNode[_]] = Nil,
+                                priors: Seq[PriorNode] = Nil): String = {
+    val cmd = indent + cmdNode.entity.name
+    val priorsStr = priors.map { n =>
+      s"$indent+-prior: ${n.entity.name} alias: ${n.entity.alias.mkString(",")}"
     }
-
-    recMkPrettyString(cmdNode, props = a.props, priors = a.priors)
+    val propsStr =
+      props.map(p => s"+-props: ${p.entity.name}[key->${p.tpe}] flag ${p.entity.originalName}")
+    val params = cmdNode.params.map { n =>
+      val (ifVariable, ifMandatory) = variableOrMandatory(n)
+      s"$indent+-param$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory"
+    }
+    val opts = cmdNode.opts.map { n =>
+      val (ifVariable, ifMandatory) = variableOrMandatory(n)
+      s"$indent+-opt$ifVariable: ${n.entity.name}[${n.tpe}] $ifMandatory ${n.entity.originalName}"
+    }
+    val subCmds =
+      cmdNode.subCmdEntry.children.map(n => recMkPrettyString(n, indent + "   "))
+    val cmdEntry = if (subCmds.isEmpty) Seq.empty else Seq(s"$indent +-CmdEntry")
+    val result: Seq[String] =
+      Seq(cmd) ++ propsStr ++ priorsStr ++ params ++ opts ++ cmdEntry ++ subCmds
+    result.mkString(NEWLINE)
   }
 }
 
 private object Node {
-  implicit def canFormPrettyString[N <: Node]: CanFormPrettyString[N] = recPrettyString
+  implicit def canFormPrettyString[N <: Node]: CanFormPrettyString[N] =
+    new CanFormPrettyString[N] {
+      override def mkPrettyString(a: N): String = recPrettyString(a)
+    }
 
   private def recPrettyString[N <: Node](a: N): String = a match {
     case n: CmdNode =>

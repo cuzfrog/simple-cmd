@@ -39,7 +39,9 @@ private final case class LimitationLeaf(name: scala.Symbol) extends LimitationTr
 
 private object LimitationTree {
   implicit def convert2seqOfSymbol: Convertible[LimitationTree, List[scala.Symbol]] =
-    (a: LimitationTree) => recTree2seq(a)
+    new Convertible[LimitationTree, List[scala.Symbol]] {
+      override def convertTo(a: LimitationTree): List[Symbol] = recTree2seq(a)
+    }
 
   private def recTree2seq(limitationTree: LimitationTree): List[scala.Symbol] = {
     limitationTree match {

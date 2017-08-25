@@ -20,7 +20,7 @@ private sealed case class CmdRoute(cmd: Command,
   /**
     * Add inner func, not really run or execute.
     *
-    * @param innerF   code to run later, could be an inner route.
+    * @param innerF code to run later, could be an inner route.
     * @tparam R the return type of inner statement.
     * @return an ArgRoute that encapsulate inner route or inner func.
     */
@@ -104,9 +104,10 @@ object ArgRoute {
     }
   }
 
-  private[scmd] implicit def canFormPrettyString: CanFormPrettyString[ArgRoute] = (a: ArgRoute) => {
-    recPrettyString(a)
-  }
+  private[scmd] implicit def canFormPrettyString: CanFormPrettyString[ArgRoute] =
+    new CanFormPrettyString[ArgRoute] {
+      override def mkPrettyString(a: ArgRoute): String = recPrettyString(a)
+    }
   private def recPrettyString(r: ArgRoute, indent: String = " "): String = r match {
     case r: CmdRoute => indent + r.prettyString
     case r: LinkRoute => s"LinkRoute(exhaustive:${r.exhaustive}):" +
@@ -116,17 +117,23 @@ object ArgRoute {
 }
 
 private object CmdRoute {
-  implicit def canFormPrettyString: CanFormPrettyString[CmdRoute] = (a: CmdRoute) => {
-    val next = a.next match {
-      case None => None
-      case Some(r) => r.prettyString
+  implicit def canFormPrettyString: CanFormPrettyString[CmdRoute] =
+    new CanFormPrettyString[CmdRoute] {
+      override def mkPrettyString(a: CmdRoute): String = {
+        val next = a.next match {
+          case None => None
+          case Some(r) => r.prettyString
+        }
+        s"CmdRoute(${a.cmd.name}->$next)"
+      }
     }
-    s"CmdRoute(${a.cmd.name}->$next)"
-  }
 }
 
 private object RunRoute {
-  implicit def canFormPrettyString: CanFormPrettyString[RunRoute] = (a: RunRoute) => {
-    s"RunRoute"
-  }
+  implicit def canFormPrettyString: CanFormPrettyString[RunRoute] =
+    new CanFormPrettyString[RunRoute] {
+      override def mkPrettyString(a: RunRoute): String = {
+        s"RunRoute"
+      }
+    }
 }

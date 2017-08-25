@@ -119,27 +119,32 @@ private object Command {
 
 private object Parameter {
   private[scmd] implicit def mergeValue[T]: CanMerge[Parameter[T], Seq[T]] =
-    (a: Parameter[T], stuff: Seq[T]) => {
-      val result = a match {
-        case arg: SingleValue[T@unchecked] =>
-          createParam[T](a.name, a.description, arg.isMandatory, stuff.headOption, arg.default)
-        case arg: VariableValue[T@unchecked] =>
-          createParam[T](a.name, a.description, arg.isMandatory, stuff, arg.default)
-        case arg: Parameter[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+    new CanMerge[Parameter[T], Seq[T]] {
+      override def merge(a: Parameter[T], stuff: Seq[T]): Parameter[T] = {
+        val result = a match {
+          case arg: SingleValue[T@unchecked] =>
+            createParam[T](a.name, a.description, arg.isMandatory, stuff.headOption, arg.default)
+          case arg: VariableValue[T@unchecked] =>
+            createParam[T](a.name, a.description, arg.isMandatory, stuff, arg.default)
+          case arg: Parameter[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+        }
+        result.asInstanceOf[Parameter[T]]
       }
-      result.asInstanceOf[Parameter[T]]
     }
+
 
   private[scmd] implicit def mixValueTrait
   [T, V <: ArgValue[T]]: CanMix[Parameter[T], V] =
-    (a: Parameter[T], stuff: V) => {
-      val result = stuff match {
-        case s: SingleValue[T@unchecked] =>
-          createParam[T](a.name, a.description, a.isMandatory, s.v, s.default)
-        case m: VariableValue[T@unchecked] =>
-          createParam[T](a.name, a.description, a.isMandatory, m.v, m.default)
+    new CanMix[Parameter[T], V] {
+      override def mix(a: Parameter[T], _trait: V): Parameter[T] with V = {
+        val result = _trait match {
+          case s: SingleValue[T@unchecked] =>
+            createParam[T](a.name, a.description, a.isMandatory, s.v, s.default)
+          case m: VariableValue[T@unchecked] =>
+            createParam[T](a.name, a.description, a.isMandatory, m.v, m.default)
+        }
+        result.asInstanceOf[Parameter[T] with V]
       }
-      result.asInstanceOf[Parameter[T] with V]
     }
 
   @ArgCreationMacro
@@ -152,28 +157,32 @@ private object Parameter {
 
 private object OptionArg {
   private[scmd] implicit def mergeValue[T]: CanMerge[OptionArg[T], Seq[T]] =
-    (a: OptionArg[T], stuff: Seq[T]) => {
-      val result = a match {
-        case arg: SingleValue[T@unchecked] =>
-          createOpt[T](a.name, arg.abbr, a.description, arg.isMandatory, stuff.headOption, arg.default)
-        case arg: VariableValue[T@unchecked] =>
-          createOpt[T](a.name, arg.abbr, a.description, arg.isMandatory, stuff, arg.default)
-        case arg: OptionArg[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+    new CanMerge[OptionArg[T], Seq[T]] {
+      override def merge(a: OptionArg[T], stuff: Seq[T]): OptionArg[T] = {
+        val result = a match {
+          case arg: SingleValue[T@unchecked] =>
+            createOpt[T](a.name, arg.abbr, a.description, arg.isMandatory, stuff.headOption, arg.default)
+          case arg: VariableValue[T@unchecked] =>
+            createOpt[T](a.name, arg.abbr, a.description, arg.isMandatory, stuff, arg.default)
+          case arg: OptionArg[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+        }
+        result.asInstanceOf[OptionArg[T]]
       }
-      result.asInstanceOf[OptionArg[T]]
     }
 
   private[scmd] implicit def mixValueTrait
   [T, V <: ArgValue[T]]: CanMix[OptionArg[T], V] =
-    (a: OptionArg[T], stuff: V) => {
-      val result = stuff match {
-        case s: SingleValue[T@unchecked] =>
-          createOpt[T](a.name, a.abbr, a.description, a.isMandatory, s.v, s.default)
+    new CanMix[OptionArg[T], V] {
+      override def mix(a: OptionArg[T], _trait: V): OptionArg[T] with V = {
+        val result = _trait match {
+          case s: SingleValue[T@unchecked] =>
+            createOpt[T](a.name, a.abbr, a.description, a.isMandatory, s.v, s.default)
 
-        case m: VariableValue[T@unchecked] =>
-          createOpt[T](a.name, a.abbr, a.description, a.isMandatory, m.v, m.default)
+          case m: VariableValue[T@unchecked] =>
+            createOpt[T](a.name, a.abbr, a.description, a.isMandatory, m.v, m.default)
+        }
+        result.asInstanceOf[OptionArg[T] with V]
       }
-      result.asInstanceOf[OptionArg[T] with V]
     }
 
   @ArgCreationMacro
@@ -201,16 +210,20 @@ private object OptionArg {
 
 private object PropertyArg {
   private[scmd] implicit def mergeValue[T]: CanMerge[PropertyArg[T], Seq[(String, T)]] =
-    (a: PropertyArg[T], stuff: Seq[(String, T)]) => a match {
-      case arg: VariableValue[(String, T)@unchecked] =>
-        createProp[T](a.name, arg.flag, a.description, stuff, arg.default)
-      case arg: PropertyArg[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+    new CanMerge[PropertyArg[T], Seq[(String, T)]] {
+      override def merge(a: PropertyArg[T], stuff: Seq[(String, T)]): PropertyArg[T] = a match {
+        case arg: VariableValue[(String, T)@unchecked] =>
+          createProp[T](a.name, arg.flag, a.description, stuff, arg.default)
+        case arg: PropertyArg[T] => throw new AssertionError(s"Nude arg:$arg cannot merge a value.")
+      }
     }
 
-
   private[scmd] implicit def mixValueTrait[T]: CanMix[PropertyArg[T], VariableValue[(String, T)]] =
-    (a: PropertyArg[T], stuff: VariableValue[(String, T)]) => {
-      createProp[T](a.name, a.flag, a.description, stuff.v, stuff.default)
+    new CanMix[PropertyArg[T], VariableValue[(String, T)]] {
+      override def mix(a: PropertyArg[T], _trait: VariableValue[(String, T)])
+      : PropertyArg[T] with VariableValue[(String, T)] = {
+        createProp[T](a.name, a.flag, a.description, _trait.v, _trait.default)
+      }
     }
 
   private def createProp[T](name: String, flag: String, description: Option[String],
@@ -234,12 +247,14 @@ private object PropertyArg {
 private object ValueArgument {
   implicit def mergeValue
   [T, V <: ArgValue[T]]: CanMerge[ValueArgument[T], Seq[T]] =
-    (a: ValueArgument[T], stuff: Seq[T]) => {
-      val result = a match {
-        case p: Parameter[T] => merge(p, stuff)
-        case o: OptionArg[T] => merge(o, stuff)
+    new CanMerge[ValueArgument[T], Seq[T]] {
+      override def merge(a: ValueArgument[T], stuff: Seq[T]): ValueArgument[T] = {
+        val result = a match {
+          case p: Parameter[T] => ScmdUtils.merge(p, stuff)
+          case o: OptionArg[T] => ScmdUtils.merge(o, stuff)
+        }
+        result.asInstanceOf[ValueArgument[T] with V]
       }
-      result.asInstanceOf[ValueArgument[T] with V]
     }
 }
 

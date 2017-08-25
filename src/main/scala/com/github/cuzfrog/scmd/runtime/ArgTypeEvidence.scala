@@ -9,17 +9,43 @@ trait ArgTypeEvidence[V] {
 }
 
 object ArgTypeEvidence {
-  implicit val nothingEv:ArgTypeEvidence[Nothing] = (v:String) =>
-    throw new UnsupportedOperationException("ArgTypeEvidence[Nothing] should not be used.")
+  implicit val nothingEv: ArgTypeEvidence[Nothing] =
+    new ArgTypeEvidence[Nothing] {
+      override def verify(v: String): Nothing =
+        throw new UnsupportedOperationException("ArgTypeEvidence[Nothing] should not be used.")
+    }
 
-  implicit val stringEv: ArgTypeEvidence[String] = (v: String) => v
-  implicit val booleanEv: ArgTypeEvidence[Boolean] = (v: String) => v.toBoolean
-  implicit val intEv: ArgTypeEvidence[Int] = (v: String) => v.toInt
-  implicit val longEv: ArgTypeEvidence[Long] = (v: String) => v.toLong
-  implicit val floatEv: ArgTypeEvidence[Float] = (v: String) => v.toFloat
-  implicit val doubleEv: ArgTypeEvidence[Double] = (v: String) => v.toDouble
+  implicit val stringEv: ArgTypeEvidence[String] =
+    new ArgTypeEvidence[String] {
+      override def verify(v: String): String = v
+    }
+  implicit val booleanEv: ArgTypeEvidence[Boolean] =
+    new ArgTypeEvidence[Boolean] {
+      override def verify(v: String): Boolean = v.toBoolean
+    }
+  implicit val intEv: ArgTypeEvidence[Int] =
+    new ArgTypeEvidence[Int]{
+      override def verify(v: String): Int =  v.toInt
+    }
+  implicit val longEv: ArgTypeEvidence[Long] =
+    new ArgTypeEvidence[Long]{
+      override def verify(v: String): Long = v.toLong
+    }
+  implicit val floatEv: ArgTypeEvidence[Float] =
+    new ArgTypeEvidence[Float]{
+      override def verify(v: String): Float = v.toFloat
+    }
+  implicit val doubleEv: ArgTypeEvidence[Double] =
+    new ArgTypeEvidence[Double]{
+      override def verify(v: String): Double = v.toDouble
+    }
 
-  implicit val pathEv: ArgTypeEvidence[Path] = (v: String) => Paths.get(v)
-  implicit val fileEv: ArgTypeEvidence[File] = (v: String) => new File(v)
-
+  implicit val pathEv: ArgTypeEvidence[Path] =
+    new ArgTypeEvidence[Path]{
+      override def verify(v: String): Path = Paths.get(v)
+    }
+  implicit val fileEv: ArgTypeEvidence[File] =
+    new ArgTypeEvidence[File]{
+      override def verify(v: String): File = new File(v)
+    }
 }

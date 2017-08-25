@@ -51,9 +51,10 @@ class LowLevelValidationTest extends ScalacheckIntegration {
     val file = optDef[File]()
 
     private implicit val dummyExceptionHandler: ScmdExceptionHandler[ScmdException] =
-      (e: ScmdException) => throw e
+      new ScmdExceptionHandler[ScmdException] {
+        override def handle(e: ScmdException): Nothing = throw e
+      }
   }
-
 
 
   private implicit class ParseOps(in: List[String]) {

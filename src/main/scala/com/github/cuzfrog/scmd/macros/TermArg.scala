@@ -105,54 +105,69 @@ private object TermCmd {
 }
 
 private object TermParam {
-  implicit val definable: Definable[TermParam] = (a: TermParam) => {
-    q"""runtime.buildParamNode[${a.tpe}](
+  implicit val definable: Definable[TermParam] =
+    new Definable[TermParam] {
+      override def defnTerm(a: TermParam): Term = {
+        q"""runtime.buildParamNode[${a.tpe}](
             entity = ${a.term},
             value = Nil,
             parent = ${a.parent}
         )"""
-  }
+      }
+    }
 }
 
 private object TermOpt {
-  implicit val definable: Definable[TermOpt] = (a: TermOpt) => {
-    q"""runtime.buildOptNode[${a.tpe}](
+  implicit val definable: Definable[TermOpt] =
+    new Definable[TermOpt]{
+      override def defnTerm(a: TermOpt): Term = {
+        q"""runtime.buildOptNode[${a.tpe}](
             entity = ${a.term},
             value = Nil,
             parent = ${a.parent}
         )"""
-  }
+      }
+    }
 }
 
 private object TermProp {
-  implicit val definable: Definable[TermProp] = (a: TermProp) => {
-    q"""runtime.buildPropNode[${a.tpe}](
+  implicit val definable: Definable[TermProp] =
+    new Definable[TermProp]{
+      override def defnTerm(a: TermProp): Term = {
+        q"""runtime.buildPropNode[${a.tpe}](
             entity = ${a.term},
             value = Nil
         )"""
-  }
+      }
+    }
 }
 
 private object TermPrior {
-  implicit val definable: Definable[TermPrior] = (a: TermPrior) => {
-    q"""runtime.buildPriorNode(
+  implicit val definable: Definable[TermPrior] =
+    new Definable[TermPrior]{
+      override def defnTerm(a: TermPrior): Term = {
+        q"""runtime.buildPriorNode(
             entity = ${a.term},
             parent = ${a.parent}
         )"""
-  }
+      }
+    }
 }
 
 private object TermCommandEntry {
-  implicit val definable: Definable[TermCommandEntry] = (a: TermCommandEntry) => {
-    val children = a.children match {
-      case Nil => q"$TERM_immutable.Seq.empty[Int]"
-      case cdren => q"$TERM_immutable.Seq(..${cdren.map(_.defnTerm)})"
-    }
-    q"""runtime.buildCmdEntryNode(
+  implicit val definable: Definable[TermCommandEntry] =
+    new Definable[TermCommandEntry]{
+      override def defnTerm(a: TermCommandEntry): Term = {
+        val children = a.children match {
+          case Nil => q"$TERM_immutable.Seq.empty[Int]"
+          case cdren => q"$TERM_immutable.Seq(..${cdren.map(_.defnTerm)})"
+        }
+        q"""runtime.buildCmdEntryNode(
           entity = ${a.term},
           children = $children
         )"""
-  }
+      }
+    }
 
   def getTerm(isMandatory: Boolean): Term = q"runtime.buildCmdEntry(${Lit.Boolean(isMandatory)})"
 

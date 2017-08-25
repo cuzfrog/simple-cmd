@@ -35,7 +35,10 @@ private[runtime] trait ArgTreeUtils {
   }
 
 
-  implicit val nodeSeqCanFormPrettyString: CanFormPrettyString[Seq[Node]] = (a: Seq[Node]) => {
-    a.map(_.prettyString).mkString(System.lineSeparator)
-  }
+  implicit val nodeSeqCanFormPrettyString: CanFormPrettyString[Seq[Node]] =
+    new CanFormPrettyString[Seq[Node]] {
+      override def mkPrettyString(a: Seq[Node]): String = {
+        a.map(_.prettyString).mkString(System.lineSeparator)
+      }
+    }
 }

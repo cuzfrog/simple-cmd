@@ -81,20 +81,29 @@ private object LimitationUtils {
     }.filter { case (name, conflicts) => conflicts.nonEmpty }
   }
 
-  implicit val definableLimitationTree: Definable[LimitationTree] = {
-    case leaf: LimitationLeaf => leaf.defnTerm
-    case branch: LimitationBranch => branch.defnTerm
-  }
-
-  private implicit val definableLimitationBranch: Definable[LimitationBranch] =
-    (a: LimitationBranch) => {
-      val name = Lit.Symbol(scala.Symbol(a.relation.toString))
-      q"""runtime.buildLimitationBranch(MutualLimitation($name),
-                                        ${a.left.defnTerm},
-                                        ${a.right.defnTerm})"""
+  implicit val definableLimitationTree: Definable[LimitationTree] =
+    new Definable[LimitationTree] {
+      override def defnTerm(a: LimitationTree): Term = a match {
+        case leaf: LimitationLeaf => leaf.defnTerm
+        case branch: LimitationBranch => branch.defnTerm
+      }
     }
 
-  private implicit val definableLimitationLeaf: Definable[LimitationLeaf] = (a: LimitationLeaf) => {
-    q"runtime.buildLimitationLeaf(${Lit.Symbol(a.name)})"
-  }
+
+  private implicit val definableLimitationBranch: Definable[LimitationBranch] =
+    new Definable[LimitationBranch] {
+      override def defnTerm(a: LimitationBranch): Term = {
+        val name = Lit.Symbol(scala.Symbol(a.relation.toString))
+        q"""runtime.buildLimitationBranch(MutualLimitation($name),
+                                        ${a.left.defnTerm},
+                                        ${a.right.defnTerm})"""
+      }
+    }
+
+  private implicit val definableLimitationLeaf: Definable[LimitationLeaf] =
+    new Definable[LimitationLeaf] {
+      override def defnTerm(a: LimitationLeaf): Term = {
+        q"runtime.buildLimitationLeaf(${Lit.Symbol(a.name)})"
+      }
+    }
 }

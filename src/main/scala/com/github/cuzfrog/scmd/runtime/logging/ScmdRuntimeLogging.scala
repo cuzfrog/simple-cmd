@@ -7,7 +7,7 @@ import com.github.cuzfrog.scmd.runtime.{ArgTypeEvidence, Node, ScmdRuntime, Scmd
 import scala.reflect.ClassTag
 
 private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLogging {
-  override protected lazy val loggerAgent = classOf[ScmdRuntime].getName
+  override protected lazy val loggerAgent: SimpleLogging.LoggerAgent = classOf[ScmdRuntime].getName
 
   @IgnoreLogging
   abstract override def buildParamNode[T: ClassTag](entity: Int,
@@ -32,9 +32,9 @@ private[runtime] trait ScmdRuntimeLogging extends ScmdRuntimeImpl with SimpleLog
   abstract override def getEvaluatedArgumentByName
   [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A = {
     val result = super.getEvaluatedArgumentByName[T, A](name)
-    val value = result match{
-      case v:SingleValue[_] => v.v.toSeq
-      case v:VariableValue[_] => v.v
+    val value = result match {
+      case v: SingleValue[_] => v.v.toSeq
+      case v: VariableValue[_] => v.v
       case v => Nil
     }
     debug(s"Get evaluated Argument(${result.name})" +

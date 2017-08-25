@@ -194,10 +194,13 @@ private object TryPath {
   }
 
   implicit val convert2nodeSeq: Convertible[TryPath, Seq[(Node, ContextSnapshot)]] =
-    (a: TryPath) => {
-      val top = a.toTop
-      recConvert(top, Seq())
+    new Convertible[TryPath, Seq[(Node, ContextSnapshot)]] {
+      override def convertTo(a: TryPath): Seq[(Node, ContextSnapshot)] = {
+        val top = a.toTop
+        recConvert(top, Seq())
+      }
     }
+
   @tailrec private
   def recConvert(p: TryPath, acc: Seq[(Node, ContextSnapshot)]): Seq[(Node, ContextSnapshot)] = {
     val elems = p.anchor.anchors.map { n => n.node -> n.contextSnapshot }
@@ -209,31 +212,31 @@ private object TryPath {
   }
 
 
-  implicit val canFormPrettyString: CanFormPrettyString[TryPath] = (a: TryPath) => {
-    val top = a.toTop
-
-    def recMkPrettyString(p: TryPath, indent: String = ""): Seq[String] = {
-      val thisP = p.anchor.anchors.map { anchr =>
-        anchr.node match {
-          case n: CmdNode => s"${indent}cmd - ${n.entity.name}"
-          case n: PriorNode => s"${indent}prior - ${n.entity.name}"
-          case n: ParamNode[_] =>
-            s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
-          case n: OptNode[_] =>
-            s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
-          case n: PropNode[_] =>
-            s"${indent}prop : ${n.entity.name}[${n.tpe}] - ${n.value.mkString("|")}"
-        }
+  implicit val canFormPrettyString: CanFormPrettyString[TryPath] =
+    new CanFormPrettyString[TryPath] {
+      override def mkPrettyString(a: TryPath): String = {
+        val top = a.toTop
+        recMkPrettyString(top).mkString(System.lineSeparator)
       }
-      val subs = if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
-        p.branches.flatMap(p => recMkPrettyString(p, indent + " "))
-      } else Nil
-      thisP ++ subs
     }
-
-    recMkPrettyString(top).mkString(System.lineSeparator)
+  private def recMkPrettyString(p: TryPath, indent: String = ""): Seq[String] = {
+    val thisP = p.anchor.anchors.map { anchr =>
+      anchr.node match {
+        case n: CmdNode => s"${indent}cmd - ${n.entity.name}"
+        case n: PriorNode => s"${indent}prior - ${n.entity.name}"
+        case n: ParamNode[_] =>
+          s"${indent}param : ${n.entity.name}[${n.tpe}] - ${n.value}"
+        case n: OptNode[_] =>
+          s"${indent}opt : ${n.entity.name}[${n.tpe}] - ${n.value}"
+        case n: PropNode[_] =>
+          s"${indent}prop : ${n.entity.name}[${n.tpe}] - ${n.value.mkString("|")}"
+      }
+    }
+    val subs = if (!(p.branches.isEmpty || p.branches.contains(CompletePath))) {
+      p.branches.flatMap(p => recMkPrettyString(p, indent + " "))
+    } else Nil
+    thisP ++ subs
   }
-
   /** Get top Path from any given Path. */
   @tailrec
   private def getTop(a: TryPath): TryPath = {

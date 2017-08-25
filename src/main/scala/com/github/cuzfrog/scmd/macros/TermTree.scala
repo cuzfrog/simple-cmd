@@ -41,7 +41,10 @@ private object TermTree {
 }
 
 private object TermCmdNode {
-  implicit val definable: Definable[TermCmdNode] = (a: TermCmdNode) => recDefine(a)
+  implicit val definable: Definable[TermCmdNode] =
+    new Definable[TermCmdNode] {
+      override def defnTerm(a: TermCmdNode): Term = recDefine(a)
+    }
 
   private def recDefine(a: TermCmdNode): Term = {
     val entity = a.cmd.term
@@ -61,15 +64,17 @@ private object TermCmdNode {
 }
 
 private object TermArgTree {
-  implicit val definable: Definable[TermArgTree] = (a: TermArgTree) => {
-    val topParams = a.topParams.map(_.defnTerm)
-    val topOpts = a.topOpts.map(_.defnTerm)
-    val priors = a.priors.map(_.defnTerm)
-    val props = a.props.map(_.defnTerm)
-    val cmdEntry = a.cmdEntry.defnTerm
-    val topLimitations = q"$TERM_immutable.Seq(..${a.topLimitations.map(_.defnTerm)})"
-    val globalLimitations = q"$TERM_immutable.Seq(..${a.globalLimitations.map(_.defnTerm)})"
-    q"""runtime.buildArgTree(
+  implicit val definable: Definable[TermArgTree] =
+    new Definable[TermArgTree] {
+      override def defnTerm(a: TermArgTree): Term = {
+        val topParams = a.topParams.map(_.defnTerm)
+        val topOpts = a.topOpts.map(_.defnTerm)
+        val priors = a.priors.map(_.defnTerm)
+        val props = a.props.map(_.defnTerm)
+        val cmdEntry = a.cmdEntry.defnTerm
+        val topLimitations = q"$TERM_immutable.Seq(..${a.topLimitations.map(_.defnTerm)})"
+        val globalLimitations = q"$TERM_immutable.Seq(..${a.globalLimitations.map(_.defnTerm)})"
+        q"""runtime.buildArgTree(
           appInfo = ${a.appInfo.term},
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
@@ -79,15 +84,18 @@ private object TermArgTree {
           topLimitations = $topLimitations,
           globalLimitations = $globalLimitations
         )"""
-  }
+      }
+    }
 
   implicit val convert2NodeSeq: Convertible[TermArgTree, immutable.Seq[TermArg]] =
-    (a: TermArgTree) => {
-      def recConvertTermCmdNode2NodeSeq(tn: TermCmdNode): immutable.Seq[TermArg] = {
-        tn.params ++ tn.opts ++
-          tn.subCmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq) :+ tn.cmd
+    new Convertible[TermArgTree, immutable.Seq[TermArg]] {
+      override def convertTo(a: TermArgTree): immutable.Seq[TermArg] = {
+        def recConvertTermCmdNode2NodeSeq(tn: TermCmdNode): immutable.Seq[TermArg] = {
+          tn.params ++ tn.opts ++
+            tn.subCmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq) :+ tn.cmd
+        }
+        a.props ++ a.priors ++ a.topParams ++ a.topOpts ++
+          a.cmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq)
       }
-      a.props ++ a.priors ++ a.topParams ++ a.topOpts ++
-        a.cmdEntry.children.flatMap(recConvertTermCmdNode2NodeSeq)
     }
 }

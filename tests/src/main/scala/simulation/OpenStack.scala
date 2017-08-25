@@ -26,7 +26,7 @@ object OpenStack {
       verbose,
       inTable,
       nova(
-        list(service ?, project), //cmds under list are optional.
+        list(service ?, project) //cmds under list are optional.
         //equivalent to list(service ?, project ?)
       ),
       neutron(

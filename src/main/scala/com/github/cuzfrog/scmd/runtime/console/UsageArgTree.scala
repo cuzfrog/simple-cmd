@@ -52,14 +52,17 @@ private[console] case class UsagePropNode(name: String, flag: String, descriptio
 }
 
 private object UsageArgTree {
-  implicit val argTree2usageEv: Convertible[ArgTree, UsageArgTree] = (a: ArgTree) => {
-    val topParams = a.topParams.map(_.convertTo[UsageParamNode])
-    val topOpts = a.topOpts.map(_.convertTo[UsageOptNode])
-    val priors = a.priors.map(_.convertTo[UsagePriorNode])
-    val props = a.props.map(_.convertTo[UsagePropNode])
-    val subCmds = a.cmdEntry.children.map(recConvertCmdNode)
-    UsageArgTree(a.appInfo, topParams, topOpts, priors, props, subCmds)
-  }
+  implicit val argTree2usageEv: Convertible[ArgTree, UsageArgTree] =
+    new Convertible[ArgTree, UsageArgTree] {
+      override def convertTo(a: ArgTree): UsageArgTree = {
+        val topParams = a.topParams.map(_.convertTo[UsageParamNode])
+        val topOpts = a.topOpts.map(_.convertTo[UsageOptNode])
+        val priors = a.priors.map(_.convertTo[UsagePriorNode])
+        val props = a.props.map(_.convertTo[UsagePropNode])
+        val subCmds = a.cmdEntry.children.map(recConvertCmdNode)
+        UsageArgTree(a.appInfo, topParams, topOpts, priors, props, subCmds)
+      }
+    }
 
   private def recConvertCmdNode(a: CmdNode): UsageCmdNode = {
     val name = a.entity.originalName
@@ -71,36 +74,45 @@ private object UsageArgTree {
   }
 
   implicit def paramNode2usageEv[T]: Convertible[ParamNode[T], UsageParamNode] =
-    (a: ParamNode[T]) => {
-      val name = {
-        val variable = if(a.isVariable) "..." else ""
-        s"<${a.entity.originalName}$variable>"
+    new Convertible[ParamNode[T], UsageParamNode] {
+      override def convertTo(a: ParamNode[T]): UsageParamNode = {
+        val name = {
+          val variable = if (a.isVariable) "..." else ""
+          s"<${a.entity.originalName}$variable>"
+        }
+        val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
+        UsageParamNode(name, description, a.isMandatory)
       }
-      val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
-      UsageParamNode(name, description, a.isMandatory)
     }
 
   implicit def optNode2usageEv[T]: Convertible[OptNode[T], UsageOptNode] =
-    (a: OptNode[T]) => {
-      val abbr = a.entity.originalAbbr.map(ab => s"$ab ").getOrElse("")
-      val name = a.entity.originalName
-      val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
-      UsageOptNode(abbr, name, description, a.entity.isMandatory)
+    new Convertible[OptNode[T], UsageOptNode] {
+      override def convertTo(a: OptNode[T]): UsageOptNode = {
+        val abbr = a.entity.originalAbbr.map(ab => s"$ab ").getOrElse("")
+        val name = a.entity.originalName
+        val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
+        UsageOptNode(abbr, name, description, a.entity.isMandatory)
+      }
     }
 
   implicit val priorNode2usageEv: Convertible[PriorNode, UsagePriorNode] =
-    (a: PriorNode) => {
-      val name = a.entity.originalName
-      val alias = a.entity.alias
-      val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
-      UsagePriorNode(name, alias, description)
+    new Convertible[PriorNode, UsagePriorNode] {
+      override def convertTo(a: PriorNode): UsagePriorNode = {
+        val name = a.entity.originalName
+        val alias = a.entity.alias
+        val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
+        UsagePriorNode(name, alias, description)
+      }
     }
 
   implicit def propNode2usageEv[T]: Convertible[PropNode[T], UsagePropNode] =
-    (a: PropNode[T]) => {
-      val name = a.entity.originalName
-      val flag = "-" + a.entity.flag
-      val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
-      UsagePropNode(name, flag, description)
+    new Convertible[PropNode[T], UsagePropNode] {
+      override def convertTo(a: PropNode[T]): UsagePropNode = {
+        val name = a.entity.originalName
+        val flag = "-" + a.entity.flag
+        val description = a.entity.description.map(dscr => s": $dscr").getOrElse("")
+        UsagePropNode(name, flag, description)
+      }
     }
+
 }

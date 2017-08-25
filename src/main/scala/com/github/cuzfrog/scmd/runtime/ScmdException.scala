@@ -38,26 +38,33 @@ trait ScmdExceptionHandler[E <: ScmdException] {
 
 private object ScmdExceptionHandler {
   implicit val defaultParseExceptionHandler: ScmdExceptionHandler[ArgParseException] =
-    (e: ArgParseException) => {
-      val hint = e.code match {
-        case ScmdExceptionCode.UNDEFINED_ARGS(Some(correction)) => s"did you mean: '$correction'?"
-        case _ => "use '-help' to get usage info."
+    new ScmdExceptionHandler[ArgParseException] {
+      override def handle(e: ArgParseException): Nothing = {
+        val hint = e.code match {
+          case ScmdExceptionCode.UNDEFINED_ARGS(Some(correction)) => s"did you mean: '$correction'?"
+          case _ => "use '-help' to get usage info."
+        }
+        System.err.println(s"error: ${e.getMessage}" + NEWLINE + hint)
+        throw e
       }
-      System.err.println(s"error: ${e.getMessage}" + NEWLINE + hint)
-      throw e
     }
   //todo: provide client api to get error detail.
   implicit val defaultValidationExceptionHandler: ScmdExceptionHandler[ArgValidationException] =
-    (e: ArgValidationException) => {
-      System.err.println(s"error: ${e.getMessage}" + NEWLINE + "use '-help' to get usage info.")
-      throw e
+    new ScmdExceptionHandler[ArgValidationException] {
+      override def handle(e: ArgValidationException): Nothing = {
+        System.err.println(s"error: ${e.getMessage}" + NEWLINE + "use '-help' to get usage info.")
+        throw e
+      }
     }
 
   /** Client provides this to override default handling behavior. */
-  implicit val defaultHandler: ScmdExceptionHandler[ScmdException] = {
-    case ex: ArgParseException => defaultParseExceptionHandler.handle(ex)
-    case ex: ArgValidationException => defaultValidationExceptionHandler.handle(ex)
-  }
+  implicit val defaultHandler: ScmdExceptionHandler[ScmdException] =
+    new ScmdExceptionHandler[ScmdException] {
+      override def handle(e: ScmdException): Nothing = e match {
+        case ex: ArgParseException => defaultParseExceptionHandler.handle(ex)
+        case ex: ArgValidationException => defaultValidationExceptionHandler.handle(ex)
+      }
+    }
 }
 
 sealed trait ScmdExceptionCode

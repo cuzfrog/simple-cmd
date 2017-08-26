@@ -1,10 +1,12 @@
-# Scmd - The simple cmd-line arguments parser.
-[![Join the chat at https://gitter.im/simple-cmd/Lobby](https://badges.gitter.im/simple-cmd/scmd.svg)]
-(https://gitter.im/simple-cmd/scmd?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/cuzfrog/simple-cmd.svg?branch=master)]
-(https://travis-ci.org/cuzfrog/simple-cmd)
+# Scmd - Simple yet powerful command-line arguments parser for scala.
 
-This project is under development now.
+[![Join the chat at https://gitter.im/simple-cmd/Lobby](https://badges.gitter.im/simple-cmd/scmd.svg)](https://gitter.im/simple-cmd/scmd?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/cuzfrog/simple-cmd.svg?branch=master)](https://travis-ci.org/cuzfrog/simple-cmd)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.cuzfrog/simple-cmd/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.cuzfrog/simple-cmd)
+
+This project is under improvement. It's you who can push it to maturity.
+
+Built against scala versions: 2.11.11, 2.12.3
 
 ## Nomenclature
 * Argument _arg_ - general phrase of all below.
@@ -95,6 +97,7 @@ object CpApp extends App{
 * [Validation](#validation)
 * [Use parsed values](#use-parsed-values)
 * [Routing](#routing)
+* [Customization](#customization)
 * [Misc](#misc)
 
 ### Project setup:
@@ -111,7 +114,7 @@ val yourProject = project
   .settings(macroAnnotationSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.cuzfrog" %% "scmd" % "version"
+      "com.github.cuzfrog" %% "scmd" % "0.1.0"
     )
   )
 ```
@@ -311,6 +314,20 @@ def buildRoute(argDef: ArgDef): ArgRoute = {
  the route continues to try through. Once a `run` is done, the whole route ends.
   If one does not want the whole route to end
  after one of the `run` finishes, use `runThrough` instead.
+ 
+### Customization.
+
+1. Customize argument exception handling.
+```scala
+implicit val customHandler: ScmdExceptionHandler[ScmdException] =
+    new ScmdExceptionHandler[ScmdException] {
+      override def handle(e: ScmdException): Nothing = e match {
+        case ex: ArgParseException => //...handle
+        case ex: ArgValidationException => //...handle
+      }
+    }
+```
+Put evidence above inside def-class or suitable scope.
  
 ### Misc.
 

@@ -2,9 +2,9 @@
 
 [![Join the chat at https://gitter.im/simple-cmd/Lobby](https://badges.gitter.im/simple-cmd/scmd.svg)](https://gitter.im/simple-cmd/scmd?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/cuzfrog/simple-cmd.svg?branch=master)](https://travis-ci.org/cuzfrog/simple-cmd)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.cuzfrog/simple-cmd/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.cuzfrog/simple-cmd)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.cuzfrog/scmd_2.12.svg)]()
 
-This project is under improvement. It's you who can push it to maturity.
+This project is under improvement. It needs your help to push it to maturity.
 
 Built against scala versions: 2.11.11, 2.12.3
 

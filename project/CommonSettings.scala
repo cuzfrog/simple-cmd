@@ -21,7 +21,7 @@ object CommonSettings {
       "junit" % "junit" % "4.12" % "test",
       "com.novocode" % "junit-interface" % "0.11" % "test->default"
     ),
-    //autoAPIMappings := true,
+    autoAPIMappings := true,
     logBuffered in Test := false,
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-v", "-q", "-a"),
     parallelExecution in Test := false
@@ -29,6 +29,7 @@ object CommonSettings {
 
   val publishSettings = Seq(
     publishMavenStyle := true,
+    pomIncludeRepository := { _ => false },
     publishTo := Some(
       if (isSnapshot.value)
         Opts.resolver.sonatypeSnapshots

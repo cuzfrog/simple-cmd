@@ -40,7 +40,7 @@ these parsers, some are complicated with hard-to-read README,
 | Typed argument                                 | `cp SRC DST` SRC is `File` or `Path`  |
 | Argument optionality                                     | `SRC [DST]`       |
 | Variable argument                                        | `SRC... DST`       |
-| Properties                                                 | `-Dkey=value`       | 
+| Properties                                                 | `-Dkey=value`, `-Dkey:value`      | 
 | Sub commands and argument hierarchy                 | `openstack nova list service` | 
 | Optional commands                              | `command [<command1> <command2>]` | 
 | Routing             | no manually writing `if` ..  `else` or `match case` to route command   | 
@@ -265,7 +265,7 @@ Arguments will be checked by validation statements when they are evaluated(parse
 
 ### Use parsed values.
 
-Scmd provides 3 styles of getting evaluated arguments: 
+Scmd provides 2 styles of getting evaluated arguments: 
 
 1. Implicit conversion:
 ```scala

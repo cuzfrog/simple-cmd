@@ -9,9 +9,6 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters
 
 class OptionalityTest extends ScalacheckIntegration {
-  override protected def scalacheckParams: Parameters =
-    Parameters.defaultVerbose.withMaxSize(1)
-
   import scmdValueConverter._
 
   @Test

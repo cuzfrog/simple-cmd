@@ -297,8 +297,14 @@ private object ParamOrCmd extends CateUtils {
 private object PropsCate extends CateUtils {
   implicit val parser: Parser[PropsCate, AnchorEither] = new Parser[PropsCate, AnchorEither] {
     override def parse(a: PropsCate)(implicit c: Context): AnchorEither = {
-      val nodeWithValue = a.prop.copy(value = a.prop.value :+ (a.key, a.value))
-      c.anchors(nodeWithValue)
+      if (a.value.isEmpty)
+        ArgParseException(
+          s"Input arg: '${a.original}' has empty value for property '${a.prop.entity.originalName}'",
+          DEFICIT_ARGS, c)
+      else {
+        val nodeWithValue = a.prop.copy(value = a.prop.value :+ (a.key, a.value))
+        c.anchors(nodeWithValue)
+      }
     }
   }
 }

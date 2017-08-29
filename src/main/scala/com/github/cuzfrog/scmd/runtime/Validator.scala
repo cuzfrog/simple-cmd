@@ -66,8 +66,8 @@ private object Validator {
     try {implicitly[ArgTypeEvidence[T]].verify(v)}
     catch {
       case e: Exception =>
-        throw ArgValidationException(s"For Arg ${cs.rudeArg} to ${node.entity.originalName}"
-          + s", value:$v does not cohere to expected type[${implicitly[ClassTag[T]]}]", cs, Some(e))
+        throw ArgValidationException(s"For Arg '${cs.rudeArg}' parsed against ${node.entity.originalName}"
+          + s", value: '$v' does not conform to expected type[${implicitly[ClassTag[T]]}]", cs, Some(e))
     }
 
   /**

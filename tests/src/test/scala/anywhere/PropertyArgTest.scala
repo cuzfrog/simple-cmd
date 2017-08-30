@@ -6,8 +6,12 @@ import com.github.cuzfrog.scmd.{ScalacheckIntegration, ScmdDefTest}
 import com.github.cuzfrog.scmd.runtime.ArgParseException
 import org.junit._
 import org.scalacheck.Prop.forAll
+import org.scalacheck.Test
 
 class PropertyArgTest extends ScalacheckIntegration {
+
+  override protected def scalacheckParams: Test.Parameters = Test.Parameters
+    .defaultVerbose.withMinSuccessfulTests(200)
 
   import scmdValueConverter._
 

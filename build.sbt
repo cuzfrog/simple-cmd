@@ -33,7 +33,7 @@ val scmd = (project in file("."))
     description := "simple-cmd, a command-line argument parsing library for scala.",
     mappings in(Compile, packageBin) ++= mappings.in(internalMacros, Compile, packageBin).value,
     mappings in(Compile, packageSrc) ++= mappings.in(internalMacros, Compile, packageSrc).value,
-    doc in Compile := {new File("/dev/null")},
+    doc in Compile := {new File("/dev/null")}
     //scalacOptions in(Compile, doc) ++= Seq("-Ydoc-debug", "-verbose")
   ).dependsOn(internalMacros % "compile-internal, test-internal")
 

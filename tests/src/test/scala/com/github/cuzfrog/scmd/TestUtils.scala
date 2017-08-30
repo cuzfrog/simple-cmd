@@ -17,7 +17,8 @@ trait ScalacheckIntegration extends SimpleLogging {
 
   protected def arbInt: Gen[Int] = Arbitrary.arbInt.arbitrary
   /**Non-empty arbitrary string.*/
-  protected def arbStr: Gen[String] = Arbitrary.arbString.arbitrary suchThat (_.nonEmpty)
+  protected def arbStr: Gen[String] =
+    Gen.alphaNumStr suchThat (s=>s.nonEmpty && !s.contains("\u0085"))
 
   implicit def checkProp(p: org.scalacheck.Prop): Boolean = {
     import org.scalacheck.Test.Parameters

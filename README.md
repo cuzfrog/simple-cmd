@@ -114,7 +114,7 @@ val yourProject = project
   .settings(macroAnnotationSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.cuzfrog" %% "scmd" % "0.1.1"
+      "com.github.cuzfrog" %% "scmd" % "0.1.2"
     )
   )
 ```

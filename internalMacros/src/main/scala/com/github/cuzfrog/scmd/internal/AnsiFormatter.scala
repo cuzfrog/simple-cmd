@@ -9,7 +9,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 import scala.util.control.NonFatal
 
-private[scmd] object AnsiFormatter {
+object AnsiFormatter {
 
   implicit class FormattedHelper(val sc: StringContext) extends AnyVal {
 

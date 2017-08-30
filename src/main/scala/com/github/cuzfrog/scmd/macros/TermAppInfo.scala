@@ -1,63 +1,71 @@
 package com.github.cuzfrog.scmd.macros
 
-import com.github.cuzfrog.scmd.AppInfo
 import com.github.cuzfrog.scmd.internal.RawArgMacro
 
+import scala.collection.immutable
 import scala.meta._
 
-private case class TermAppInfo(term: Term, appInfo: AppInfo)
+private case class TermAppInfo(name: String,
+                               shortDescription: Option[Term] = None,
+                               fullDescription: Option[Term] = None,
+                               version: Option[Term] = None,
+                               license: Option[Term] = None,
+                               author: Option[Term] = None,
+                               customs: immutable.Seq[(Term, Term)] = Nil)
 
 private object TermAppInfo {
 
   private val NameExtractor = """(\w+)Defs?""".r
-  def collectAppInfo(stats: Seq[Stat], name: Type.Name): TermAppInfo = {
+  def collectAppInfo(stats: immutable.Seq[Stat], name: Type.Name): TermAppInfo = {
 
     val inferredName = name.value match {
       case NameExtractor(n) => n.toLowerCase
       case n => n.toLowerCase
     }
 
-    val basicSeq = stats zip stats.map(_.pos) collect {
-      case (q"appDef(..$params)", pos) =>
-        implicit val position: Position = pos
-        import RawArgMacro.extract
-        val name = extract[String](params).getOrElse(inferredName)
-        val shortDescription = extract[String](params)
-        val fullDescription = extract[String](params)
-        val version = extract[String](params)
-        val license = extract[String](params)
-        val author = extract[String](params)
-        AppInfo(name, shortDescription, fullDescription, version, license, author)
+    val basic = {
+      val basicSeq = stats zip stats.map(_.pos) collect {
+        case (q"appDef(..$params)", pos) =>
+          implicit val position: Position = pos
+          import RawArgMacro.extract
+          val name = extract[String](params).getOrElse(inferredName)
+          val shortDescription = extract[Term](params)
+          val fullDescription = extract[Term](params)
+          val version = extract[Term](params)
+          val license = extract[Term](params)
+          val author = extract[Term](params)
+          TermAppInfo(name, shortDescription, fullDescription, version, license, author, Nil)
+      }
+      if (basicSeq.size > 1) abort(stats.last.pos, "appDef cannot be duplicated.")
+      basicSeq.headOption.getOrElse(TermAppInfo(inferredName))
     }
 
-    val customSeq: Seq[AppInfo] = stats.collect {
-      case q"appDefCustom(..$params)" =>
-        val custom = params.collect {
-          case q"${Lit.String(n)} -> ${Lit.String(v)}" if Option(v).nonEmpty => n -> v
-        }
-        AppInfo(inferredName, custom = custom)
+    val customs: immutable.Seq[(Term, Term)] = {
+      val customSeq = stats.collect {
+        case q"appDefCustom(..$params)" =>
+          params.map {
+            case q"$n -> ${v:Term}" => n -> v
+            case Term.Tuple(List(n, v: Term)) => n -> v
+            case Term.Tuple(List(n, v)) =>
+              abort(n.pos, s"Complex syntax '${v.syntax}' is not supported, in ${n.syntax}")
+          }
+      }
+      if (customSeq.size > 1) abort(stats.last.pos, "appDefCustom cannot be duplicated.")
+      customSeq.flatten
     }
 
-    if (basicSeq.size > 1 || customSeq.size > 1) abort(stats.last.pos, "appDef cannot be duplicated.")
-
-    val appInfo = (basicSeq.headOption, customSeq.headOption) match {
-      case (Some(basic), Some(custom)) => basic.copy(custom = custom.custom)
-      case (Some(basic), None) => basic
-      case (None, Some(custom)) => custom
-      case (None, None) => AppInfo(inferredName)
-    }
-    TermAppInfo(appInfo.defnTerm, appInfo)
+    basic.copy(customs = customs)
   }
 
-  implicit val definable: Definable[AppInfo] =
-    new Definable[AppInfo] {
-      override def defnTerm(a: AppInfo): Term = {
-        val version = a.version match{
+  implicit val definable: Definable[TermAppInfo] =
+    new Definable[TermAppInfo] {
+      override def defnTerm(a: TermAppInfo): Term = {
+        val version = a.version match {
           case None => q"Option(getClass.getPackage.getImplementationVersion)"
           case vOpt => vOpt.defnTerm
         }
 
-        val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
+        val customTerm = a.customs.map { case (n, v) => Term.Tuple(List(n, v)) }
         q"""runtime.addAppInfo(
           name = ${a.name.defnTerm},
           shortDescription = ${a.shortDescription.defnTerm},

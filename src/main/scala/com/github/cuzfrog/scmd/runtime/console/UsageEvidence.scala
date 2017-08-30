@@ -8,7 +8,6 @@ private[runtime] trait UsageEvidence[A] {
                builder: StringBuilder, indent: Indent): StringBuilder
 }
 
-
 private object UsageEvidence extends BuilderUtils {
   implicit val defaultUsage: UsageEvidence[UsageArgTree] = new UsageEvidence[UsageArgTree] {
     override def genUsage(a: UsageArgTree)
@@ -42,6 +41,12 @@ private object UsageEvidence extends BuilderUtils {
       // -------- Section3 arguments info -------
       ansi"%underline{Descr:}".add.line
       a.toTopNode.genUsage
+      // -------- Section4 custom info -------
+      a.appInfo.custom.foreach {case (cusTitle,cusCont) =>
+        ansi"%underline{$cusTitle:}".add.line
+        cusCont.add
+      }
+      // -------- Section last version -------
       a.appInfo.version.foreach(v => ansi"%underline{Version}: $v".add.line)
       builder
     }

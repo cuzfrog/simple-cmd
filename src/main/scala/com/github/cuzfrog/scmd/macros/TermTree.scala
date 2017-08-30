@@ -75,7 +75,7 @@ private object TermArgTree {
         val topLimitations = q"$TERM_immutable.Seq(..${a.topLimitations.map(_.defnTerm)})"
         val globalLimitations = q"$TERM_immutable.Seq(..${a.globalLimitations.map(_.defnTerm)})"
         q"""runtime.buildArgTree(
-          appInfo = ${a.appInfo.term},
+          appInfo = ${a.appInfo.defnTerm},
           topParams = $TERM_immutable.Seq(..$topParams),
           topOpts = $TERM_immutable.Seq(..$topOpts),
           priors = $TERM_immutable.Seq(..$priors),

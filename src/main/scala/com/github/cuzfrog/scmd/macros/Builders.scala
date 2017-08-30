@@ -334,7 +334,7 @@ private final class DslTermNodeBuilder(appInfo: TermAppInfo,
     }
 
     val scopeCmdSymbol = Lit.Symbol(scala.Symbol(termCmdOpt.map(_.name)
-      .getOrElse(appInfo.appInfo.name)))
+      .getOrElse(appInfo.name)))
     TermCmdNode(
       cmd = termCmdOpt.getOrElse(TermCmd.dummy),
       params = termArgs.collect { case a: TermParam => a.copy(parent = scopeCmdSymbol) },

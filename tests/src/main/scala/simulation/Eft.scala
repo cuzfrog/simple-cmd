@@ -7,6 +7,13 @@ import Scmd._
 object Eft {
   @ScmdDef
   private class EftDef(args: Seq[String]) extends ScmdDefStub{
+    appDef(shortDescription = "Effective file transfer tool")
+    appDefCustom(
+      "Example" ->
+        """  eft push /path/file1 --port 8888
+          |  eft pull -n 192.168.116.1:8888""".stripMargin
+    )
+
     //arg tree is inferred by order below:
     val port = optDef[Int](abbr = "p", description = "manually specify tcp port to use")
     val debug = optDef[Boolean](description = "debug mode")

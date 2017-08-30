@@ -3,7 +3,7 @@ package com.github.cuzfrog.scmd.macros
 import com.github.cuzfrog.scmd.internal.SimpleLogging
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.macros.argutils.RawArg
-import com.github.cuzfrog.scmd.{AppInfo, Argument, BuiltInArg, Command}
+import com.github.cuzfrog.scmd.{Argument, BuiltInArg, Command}
 
 import scala.collection.immutable
 import scala.meta._
@@ -24,7 +24,7 @@ private sealed trait TermArg {
 }
 private object TermArg extends SimpleLogging {
   override protected val loggerLevel: SimpleLogging.Level = SimpleLogging.Info
-  def toTermArg(rawArg: RawArg)(implicit appInfo: AppInfo): TermArg = {
+  def toTermArg(rawArg: RawArg)(implicit appInfo: TermAppInfo): TermArg = {
     import RawArg._
 
     val topCmdSymbol = Lit.Symbol(Command.topCmd(appInfo.name).symbol)
@@ -74,7 +74,7 @@ private object TermArg extends SimpleLogging {
 
   //todo: (low priority) make builtInArgs more generic.
   /** Used in ScmdDefMacro to generate built-in args. */
-  def builtInArgs(implicit appInfo: AppInfo): immutable.Seq[TermArg] = Argument.builtInArgs.map {
+  def builtInArgs(implicit appInfo: TermAppInfo): immutable.Seq[TermArg] = Argument.builtInArgs.map {
     case (symbol, _) =>
       val topCmdSymbol = Lit.Symbol(Command.topCmd(appInfo.name).symbol)
       new TermPrior(symbol.name,

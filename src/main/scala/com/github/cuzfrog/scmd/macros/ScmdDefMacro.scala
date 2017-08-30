@@ -1,7 +1,6 @@
 package com.github.cuzfrog.scmd.macros
 
 
-import com.github.cuzfrog.scmd.AppInfo
 import com.github.cuzfrog.scmd.macros.Constants._
 import com.github.cuzfrog.scmd.macros.argutils.ArgUtils
 
@@ -26,8 +25,8 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
     }
 
 
-    val appInfo = TermAppInfo.collectAppInfo(stats, name)
-    implicit val _appInfo: AppInfo = appInfo.appInfo
+    implicit val appInfo: TermAppInfo = TermAppInfo.collectAppInfo(stats, name)
+    //implicit val _appInfo: AppInfo = appInfo.appInfo
     /**
       * A TermArg is macro time term of arg Node.
       *

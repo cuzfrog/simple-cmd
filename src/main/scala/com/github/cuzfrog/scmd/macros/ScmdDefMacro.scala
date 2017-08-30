@@ -26,14 +26,7 @@ private class ScmdDefMacro(isTestMode: Boolean = true) extends ScmdMacro {
     }
 
 
-    val appInfo = {
-      val NameExtractor = """(\w+)Defs?""".r
-      val inferredName = name.value match {
-        case NameExtractor(n) => n
-        case n => n
-      }
-      TermAppInfo.collectAppInfo(stats, inferredName.toLowerCase)
-    }
+    val appInfo = TermAppInfo.collectAppInfo(stats, name)
     implicit val _appInfo: AppInfo = appInfo.appInfo
     /**
       * A TermArg is macro time term of arg Node.

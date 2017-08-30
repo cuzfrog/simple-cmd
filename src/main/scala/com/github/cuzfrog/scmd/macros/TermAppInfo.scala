@@ -9,7 +9,13 @@ private case class TermAppInfo(term: Term, appInfo: AppInfo)
 
 private object TermAppInfo {
 
-  def collectAppInfo(stats: Seq[Stat], inferredName: String): TermAppInfo = {
+  private val NameExtractor = """(\w+)Defs?""".r
+  def collectAppInfo(stats: Seq[Stat], name: Type.Name): TermAppInfo = {
+
+    val inferredName = name.value match {
+      case NameExtractor(n) => n.toLowerCase
+      case n => n.toLowerCase
+    }
 
     val basicSeq = stats zip stats.map(_.pos) collect {
       case (q"appDef(..$params)", pos) =>
@@ -46,13 +52,17 @@ private object TermAppInfo {
   implicit val definable: Definable[AppInfo] =
     new Definable[AppInfo] {
       override def defnTerm(a: AppInfo): Term = {
+        val version = a.version match{
+          case None => q"Option(getClass.getPackage.getImplementationVersion)"
+          case vOpt => vOpt.defnTerm
+        }
 
         val customTerm = a.custom.map { case (n, v) => q"(${Lit.String(n)}, ${Lit.String(v)})" }
         q"""runtime.addAppInfo(
           name = ${a.name.defnTerm},
           shortDescription = ${a.shortDescription.defnTerm},
           fullDescription = ${a.fullDescription.defnTerm},
-          version = ${a.version.defnTerm},
+          version = $version,
           license = ${a.license.defnTerm},
           author = ${a.author.defnTerm},
           custom = Seq(..$customTerm)

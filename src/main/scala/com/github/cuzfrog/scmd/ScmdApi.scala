@@ -107,7 +107,7 @@ trait ScmdDefApi {
   /**
     * Define app with basic info.
     */
-  final def appDef(name: String,
+  final def appDef(name: String = "",
                    shortDescription: String = "",
                    fullDescription: String = "",
                    version: String = "",

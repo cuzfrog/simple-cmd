@@ -27,4 +27,3 @@ package object Scmd extends ScmdValidationApi {
 
   type ArgRoute = com.github.cuzfrog.scmd.ArgRoute
 }
-

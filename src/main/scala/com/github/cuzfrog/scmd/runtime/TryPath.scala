@@ -26,6 +26,12 @@ private[runtime] case class MultiAnchor(anchors: Seq[Anchor]) extends Anchor {
   def node: Node = anchors.head.node
   def contextSnapshot: ContextSnapshot = anchors.head.contextSnapshot
 }
+private[runtime] case object NoneAnchor extends Anchor {
+  override def node: Node = notSupported
+  override def contextSnapshot: ContextSnapshot = notSupported
+  override def anchors: Seq[Anchor] = notSupported
+  private def notSupported = throw new UnsupportedOperationException
+}
 
 /**
   * Paths represent a tree of any possible parsing trail. With context snapshot preserved.
@@ -179,7 +185,7 @@ private class TryPath(argAnchor: Anchor) {
     this.branches match {
       case arr if arr.isEmpty => false
       case arr if arr.contains(TryPath.CompletePath) => true
-      case arr => arr.map(_.isComplete).forall(_ == true)
+      case arr => arr.map(_.isComplete).forall(identity)
     }
   }
 }
@@ -188,7 +194,7 @@ private object TryPath {
 
   def apply(argAnchor: => Anchor): TryPath = new TryPath(argAnchor) with TryPathLogging
 
-  private case object CompletePath extends TryPath(null) {
+  private case object CompletePath extends TryPath(NoneAnchor) {
     override def anchor: Anchor =
       throw new UnsupportedOperationException(s"CompletePath's anchor is empty.")
   }

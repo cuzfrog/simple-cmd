@@ -114,5 +114,4 @@ private object UsageArgTree {
         UsagePropNode(name, flag, description)
       }
     }
-
 }

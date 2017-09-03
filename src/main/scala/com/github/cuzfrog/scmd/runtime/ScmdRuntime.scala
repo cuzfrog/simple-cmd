@@ -109,7 +109,6 @@ sealed trait ScmdRuntime {
   @throws[ArgValidationException]("when mutual limitation validation failed.")
   def parse(args: Seq[String]): Seq[String]
 
-
   /**
     * Key method to return parsed/evaluated argument to client def class.
     * <br><br>
@@ -128,8 +127,8 @@ sealed trait ScmdRuntime {
     * @return an evaluated Argument.
     */
   @throws[ArgValidationException]("when type validation failed.")
-  def getEvaluatedArgumentByName
-  [T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag](name: scala.Symbol): A
+  def getEvaluatedArgumentByName[T: ClassTag : ArgTypeEvidence, A <: Argument[T] : ClassTag]
+  (name: scala.Symbol): A
 
   def handleException[E <: ScmdException : ScmdExceptionHandler](e: E): Nothing
 
@@ -471,5 +470,4 @@ private class ScmdRuntimeImpl extends ScmdRuntime {
     argTreeOpt.getOrElse(throw new IllegalStateException("argTree not initialized."))
   private implicit def useAppInfo(appInfoOpt: Option[AppInfo]): AppInfo =
     appInfoOpt.getOrElse(throw new IllegalStateException("appInfo not initialized."))
-
 }

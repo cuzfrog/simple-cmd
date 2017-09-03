@@ -11,7 +11,7 @@ sealed trait MutualLimitation
 sealed trait MutuallyExclusive extends MutualLimitation
 sealed trait MutuallyDependent extends MutualLimitation
 //trait used by dsl.
-
+//todo: check if this can be made private
 object MutualLimitation {
   def apply(name: scala.Symbol): MutualLimitation = name match {
     case 'MExclusive => Limitation.MExclusive

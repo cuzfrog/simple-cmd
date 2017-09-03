@@ -121,10 +121,12 @@ private class TreeBuilder {
   }
   private def checkAmbiguity(params: Seq[TermParam]): Seq[(TermParam, TermParam)] = {
     val beginsWithVariable = params.dropWhile(_.isVariable.unary_!)
-    if (beginsWithVariable.lengthCompare(2) < 0) return Nil
-    val variable = beginsWithVariable.head
-    beginsWithVariable.drop(1).filter(p => p.isVariable || !p.isMandatory).map { p =>
-      (variable, p)
+    if (beginsWithVariable.lengthCompare(2) < 0) Nil
+    else {
+      val variable = beginsWithVariable.head
+      beginsWithVariable.drop(1).filter(p => p.isVariable || !p.isMandatory).map { p =>
+        (variable, p)
+      }
     }
   }
 

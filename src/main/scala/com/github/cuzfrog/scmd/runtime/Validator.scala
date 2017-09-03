@@ -19,10 +19,9 @@ private object Validator {
     * @return the validated and converted typed value(s).
     */
   @throws[ArgValidationException]("When type conversion failed or validation function throws an exception.")
-  def validateValueNode
-  [T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T],
-                                  cs: ContextSnapshot,
-                                  valiFuncOpt: Option[Function1[_, Unit]]): Seq[T] = {
+  def validateValueNode[T: ClassTag : ArgTypeEvidence](valueNode: ValueNode[T],
+                                                       cs: ContextSnapshot,
+                                                       valiFuncOpt: Option[Function1[_, Unit]]): Seq[T] = {
     checkType(valueNode)
     val typedValues = valueNode.value.map(v => verify(v, valueNode, cs)).toList
 
@@ -127,6 +126,5 @@ private object Validator {
       else cmdNode.subCmdEntry.children.find(n => recLocate(n).nonEmpty)
     }
   }
-
 
 }

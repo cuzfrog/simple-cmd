@@ -82,7 +82,7 @@ $cp -recursive file1 dest      //option can be put at anywhere.
 Then use them:
 ```scala
 object CpApp extends App{
-    val conf = (new CpDef(args)).parsed
+    val conf = (new CpDef(args)).parse
     import scmdValueConverter._
     conf.SRC.value // Seq[File]
     conf.DEST.value // File
